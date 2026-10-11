@@ -1,0 +1,91 @@
+> Historical edition-08 source, retained for provenance. Commands and deployment claims here are superseded by [the current lab guide](../DEVELOPMENT.md).
+
+# Entity relocation verification — 11 October 2026
+
+Executed for edition 08:
+
+- Browser engine: movement, record conservation, updates/deletes during copy, catch-up, validation invalidation, source fencing, receipt handoff, deadlines, stale events and blocked reversal.
+- Real four-file SQLite repositories: durable transactions, copy checkpoint restart, independent UK command while the entity lock is held, final source cleanup and retained authority fence. Full scenario repeated against real OPA 1.9.0 with telemetry disabled.
+- FastAPI HTTP contracts: staging/retired read guards, invalid batch rejection, idempotency conflicts and targeted reset. Injected crashes after source fence and after ACTIVATING checkpoint leave no dual writer and recover forward.
+- OpenTelemetry SDK spans captured in memory with explicit test sampling; bounded work.class attributes checked. This does not test OTLP export.
+- Live uvicorn/HTTP generator walkthrough passed in SQLite mode, including source commit, India commit and final cleanup. UI click handlers passed a Node structural test; this is not browser-rendered QA.
+- Actual OPA Rego suite: **24/24** (12 existing rules tests + 12 migration tests).
+
+Run `node poc/tests/migration_engine.mjs`, `python3 poc/tests/migration_test.py`, `python3 poc/tests/migration_api_test.py`, and `opa test poc/policies`. For the full live API walkthrough use `poc/scripts/migration_commands.py --walkthrough` against a fresh DRAFT scenario. See [MIGRATION.md](../../MIGRATION.md).
+
+The new adapter uses isolated typed row envelopes, not the normalized v3 tables. Single-coordinator safety does not prove distributed fencing or foreground performance isolation. CockroachDB execution remains unverified: Docker is unavailable and the native binary's process CPU probe previously prevented startup. Browser-rendered visual QA, physical residency/HA, OTLP export and retained-storage erasure are not claimed.
+
+# Capacity modeling verification — 11 October 2026
+
+- Executed 16 × 3 seeded queue scenarios: **17,280,000** foreground requests and **2,218,221** background jobs. Full-scale cardinality is analytic, not instantiated in a database.
+- Validated population/edge conservation, storage arithmetic, recovery drain, separate regional queues, hot-key serialization, percentile/sample accounting and pilot dependencies with `scale/validate.py`.
+- Observed actual OPA 1.9.0 sequential loopback timings: 1/16/64/256-resource batches, 1,200 measured requests each after 100 warmups, with telemetry disabled. See the recorded environment and limits.
+- Inspected the generated capacity chart image; JavaScript syntax and site link/asset checks pass. Interactive browser visual QA remains unavailable.
+- No new CockroachDB performance, HA, WAN, migration or full-volume integration claim is made. Targets need the gated pilot benchmark.
+
+# Verification — operational edition v3
+
+Verified 11 October 2026:
+
+- Actual OPA v1.9.0 and browser mirror: **840 scope/recipient cases, 7,290 row decisions**. Global party fields, US exclusions, table defaults, resource restrictions, classification and contextual consent match.
+- Python core: all 11 command types, shared-row fanout, typed source references and filtered graph closure. Node workflow tests: idempotency, stale expected version, paused-store read fencing, table/key narrowing, restoration and expiry.
+- UI functions render business-model and service-lab markup in Node; JavaScript syntax and Python compilation pass. This is structural verification, not browser visual QA.
+- Original Rego **12/12** and **990** entity policy comparisons pass again.
+
+Database execution remains unverified for the environment reason recorded below. The new typed SQL, atomic replacement and persistent receipt behaviour must pass the local suite before adoption. No browser visual QA or OTLP end-to-end verification was possible here.
+
+```bash
+node poc/tests/operational_engine.mjs
+python3 poc/tests/operational_core_test.py --opa /path/to/opa
+# With the local Docker stack running:
+python3 poc/tests/operational_integration.py
+```
+
+The integration suite changes only synthetic examples, restores consent/table/party restrictions afterwards, and leaves generated holdings/history in place. Inspect global party vs relationship rows using the SQL in OPERATIONAL.md. Additional required gates: failed owner transaction must roll back outbox and business rows together; recipient crash must retain the previous complete graph or new complete graph, never a partial graph; duplicate deliveries must not duplicate effects; cross-owner/scope foreign keys must reject contamination. Exercise malformed scope IDs, an unavailable source authority, multiple retry attempts and control changes during a backlog.
+
+The source graph and browser/OPA checks do not prove database atomicity or physical residency.
+
+## Previous entity edition checks
+
+Verified 10 October 2026:
+
+- **Actual OPA v1.9.0:** 12/12 Rego tests passed. Entity deny, physical deny, local-placement mismatch, store-binding mismatch, same-store isolation, missing grant, expiry, purpose and field profiles are covered.
+- **Policy parity:** 990 browser/actual-OPA comparisons passed (33 generated records × 30 recipient entities), comparing allow, reason and fields.
+- **Executable browser engine tests:** catalog grouping 3/8/3/5/11; SG→UK/US exclusion; shared-store isolation; three recipient projections in one physical store; geographic and placement deny; pause/revoke/purge; stale policy edits; independent owner versions; read-only migration planning; grant expiry.
+- **Structural checks:** JS syntax, Python compilation/imports, catalog consistency, design-page links and package contents are checked during delivery.
+
+Not claimed:
+
+- Full CockroachDB integration. Native v25.4.0 startup previously failed because this execution environment cannot satisfy its process CPU probe (`unable to get proc cpu time: no such process`). Docker is unavailable here. v2 integration tests are supplied for a capable local Docker host.
+- Browser-rendered visual/accessibility QA. No supported browser control is available in this environment. The responsive interface and reduced-motion support require manual browser inspection.
+- OTLP Collector end-to-end export, production authentication, physical residency, HA, distributed fencing, regulatory deletion or throughput measurements.
+
+## Local acceptance
+
+```bash
+docker compose up --build
+python3 poc/tests/integration.py
+node poc/tests/engine.mjs
+docker compose run --rm opa-sg test /policies -v
+```
+
+The integration suite adds synthetic records. It verifies database-backed entity projections, denied reads, identity-disclosure restrictions, independent owner relationships, pause/revoke/resume, geography deny, placement conflicts and expiry.
+
+Direct SQL example:
+
+```bash
+docker compose exec db-us ./cockroach sql --insecure --execute 'SELECT owner, customer, destination, doc FROM fe_replicas'
+```
+
+For a canonical Singapore/UK-only customer UUID, inspect `fe_replicas`, `fe_fences` and `fe_audit` at the US store. No customer-specific destination artefact should exist. A source-side denied-candidate audit is allowed and expected.
+
+## Additional gates before distributing the harness
+
+1. Crash after recipient commit before source acknowledgement: exactly one final projection and idempotent receipt.
+2. Kill recipient DB and OPA separately: retries and unknown states must be honest.
+3. Revoke while stale work is queued; replay stale permits against the future network importer.
+4. Expire separate destination grants at different times and narrow contact profile to minimal.
+5. Restart with persistent outbox work. Pause toggle intentionally resets.
+6. Change catalog mapping against existing data: startup must refuse, not silently redirect ownership.
+7. Test failed migration stages and restore in quarantine once execution exists.
+8. Inspect 375/768/1440px layouts, keyboard operation, map fullscreen, reduced motion, generator start/stop, dirty policy forms and copy-versus-permission semantics.

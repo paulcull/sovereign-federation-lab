@@ -1,0 +1,515 @@
+{
+  "version": 2,
+  "assumption": "Synthetic entities and policies, not statements of local law. Asia assumes one entity in each of eight countries.",
+  "stores": [
+    {
+      "id": "STORE-SG-01",
+      "region": "SG",
+      "country": "SG",
+      "name": "Singapore",
+      "city": "Singapore",
+      "lat": 1.35,
+      "lon": 103.82
+    },
+    {
+      "id": "STORE-GB-01",
+      "region": "UK",
+      "country": "GB",
+      "name": "United Kingdom",
+      "city": "London",
+      "lat": 51.5,
+      "lon": -0.12
+    },
+    {
+      "id": "STORE-US-01",
+      "region": "US",
+      "country": "US",
+      "name": "United States",
+      "city": "New York",
+      "lat": 40.71,
+      "lon": -74
+    }
+  ],
+  "entities": [
+    {
+      "id": "LE-GB-01",
+      "name": "Meridian London Retail",
+      "group": "UK",
+      "country": "GB",
+      "city": "London Retail",
+      "lat": 51.5,
+      "lon": -0.12,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-GB-02",
+      "name": "Meridian London Markets",
+      "group": "UK",
+      "country": "GB",
+      "city": "London Markets",
+      "lat": 51.5,
+      "lon": -0.12,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-GB-03",
+      "name": "Meridian London Private Bank",
+      "group": "UK",
+      "country": "GB",
+      "city": "London Private Bank",
+      "lat": 51.5,
+      "lon": -0.12,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-SG-01",
+      "name": "Meridian Singapore",
+      "group": "Asia",
+      "country": "SG",
+      "city": "Singapore",
+      "lat": 1.35,
+      "lon": 103.82,
+      "store_id": "STORE-SG-01",
+      "approved_countries": [
+        "SG"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-IN-01",
+      "name": "Meridian Mumbai",
+      "group": "Asia",
+      "country": "IN",
+      "city": "Mumbai",
+      "lat": 19.08,
+      "lon": 72.88,
+      "store_id": "STORE-SG-01",
+      "approved_countries": [
+        "IN"
+      ],
+      "placement_version": 1,
+      "rule": "country-local",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-JP-01",
+      "name": "Meridian Tokyo",
+      "group": "Asia",
+      "country": "JP",
+      "city": "Tokyo",
+      "lat": 35.68,
+      "lon": 139.69,
+      "store_id": "STORE-SG-01",
+      "approved_countries": [
+        "SG"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-ID-01",
+      "name": "Meridian Jakarta",
+      "group": "Asia",
+      "country": "ID",
+      "city": "Jakarta",
+      "lat": -6.2,
+      "lon": 106.85,
+      "store_id": "STORE-SG-01",
+      "approved_countries": [
+        "ID"
+      ],
+      "placement_version": 1,
+      "rule": "country-local",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-MY-01",
+      "name": "Meridian Kuala Lumpur",
+      "group": "Asia",
+      "country": "MY",
+      "city": "Kuala Lumpur",
+      "lat": 3.14,
+      "lon": 101.69,
+      "store_id": "STORE-SG-01",
+      "approved_countries": [
+        "SG"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-TH-01",
+      "name": "Meridian Bangkok",
+      "group": "Asia",
+      "country": "TH",
+      "city": "Bangkok",
+      "lat": 13.75,
+      "lon": 100.5,
+      "store_id": "STORE-SG-01",
+      "approved_countries": [
+        "SG"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-VN-01",
+      "name": "Meridian Ho Chi Minh City",
+      "group": "Asia",
+      "country": "VN",
+      "city": "Ho Chi Minh City",
+      "lat": 10.82,
+      "lon": 106.63,
+      "store_id": "STORE-SG-01",
+      "approved_countries": [
+        "SG"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-PH-01",
+      "name": "Meridian Manila",
+      "group": "Asia",
+      "country": "PH",
+      "city": "Manila",
+      "lat": 14.6,
+      "lon": 120.98,
+      "store_id": "STORE-SG-01",
+      "approved_countries": [
+        "SG"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-US-01",
+      "name": "Meridian New York",
+      "group": "Americas",
+      "country": "US",
+      "city": "New York",
+      "lat": 40.71,
+      "lon": -74,
+      "store_id": "STORE-US-01",
+      "approved_countries": [
+        "US"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-CA-01",
+      "name": "Meridian Toronto",
+      "group": "Americas",
+      "country": "CA",
+      "city": "Toronto",
+      "lat": 43.65,
+      "lon": -79.38,
+      "store_id": "STORE-US-01",
+      "approved_countries": [
+        "US"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-MX-01",
+      "name": "Meridian Mexico City",
+      "group": "Americas",
+      "country": "MX",
+      "city": "Mexico City",
+      "lat": 19.43,
+      "lon": -99.13,
+      "store_id": "STORE-US-01",
+      "approved_countries": [
+        "US"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-AE-01",
+      "name": "Meridian Dubai",
+      "group": "MENAT",
+      "country": "AE",
+      "city": "Dubai",
+      "lat": 25.2,
+      "lon": 55.27,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-SA-01",
+      "name": "Meridian Riyadh",
+      "group": "MENAT",
+      "country": "SA",
+      "city": "Riyadh",
+      "lat": 24.71,
+      "lon": 46.68,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "SA"
+      ],
+      "placement_version": 1,
+      "rule": "country-local",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-EG-01",
+      "name": "Meridian Cairo",
+      "group": "MENAT",
+      "country": "EG",
+      "city": "Cairo",
+      "lat": 30.04,
+      "lon": 31.24,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-TR-01",
+      "name": "Meridian Istanbul",
+      "group": "MENAT",
+      "country": "TR",
+      "city": "Istanbul",
+      "lat": 41,
+      "lon": 28.97,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-QA-01",
+      "name": "Meridian Doha",
+      "group": "MENAT",
+      "country": "QA",
+      "city": "Doha",
+      "lat": 25.29,
+      "lon": 51.53,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-DE-01",
+      "name": "Meridian Frankfurt",
+      "group": "Europe",
+      "country": "DE",
+      "city": "Frankfurt",
+      "lat": 50.11,
+      "lon": 8.68,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "DE"
+      ],
+      "placement_version": 1,
+      "rule": "country-local",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-FR-01",
+      "name": "Meridian Paris",
+      "group": "Europe",
+      "country": "FR",
+      "city": "Paris",
+      "lat": 48.86,
+      "lon": 2.35,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-IE-01",
+      "name": "Meridian Dublin",
+      "group": "Europe",
+      "country": "IE",
+      "city": "Dublin",
+      "lat": 53.35,
+      "lon": -6.26,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-ES-01",
+      "name": "Meridian Madrid",
+      "group": "Europe",
+      "country": "ES",
+      "city": "Madrid",
+      "lat": 40.42,
+      "lon": -3.7,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-IT-01",
+      "name": "Meridian Milan",
+      "group": "Europe",
+      "country": "IT",
+      "city": "Milan",
+      "lat": 45.46,
+      "lon": 9.19,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-NL-01",
+      "name": "Meridian Amsterdam",
+      "group": "Europe",
+      "country": "NL",
+      "city": "Amsterdam",
+      "lat": 52.37,
+      "lon": 4.9,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-CH-01",
+      "name": "Meridian Zurich",
+      "group": "Europe",
+      "country": "CH",
+      "city": "Zurich",
+      "lat": 47.38,
+      "lon": 8.54,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "CH"
+      ],
+      "placement_version": 1,
+      "rule": "country-local",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-BE-01",
+      "name": "Meridian Brussels",
+      "group": "Europe",
+      "country": "BE",
+      "city": "Brussels",
+      "lat": 50.85,
+      "lon": 4.35,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-SE-01",
+      "name": "Meridian Stockholm",
+      "group": "Europe",
+      "country": "SE",
+      "city": "Stockholm",
+      "lat": 59.33,
+      "lon": 18.07,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-PL-01",
+      "name": "Meridian Warsaw",
+      "group": "Europe",
+      "country": "PL",
+      "city": "Warsaw",
+      "lat": 52.23,
+      "lon": 21.01,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    },
+    {
+      "id": "LE-LU-01",
+      "name": "Meridian Luxembourg",
+      "group": "Europe",
+      "country": "LU",
+      "city": "Luxembourg",
+      "lat": 49.61,
+      "lon": 6.13,
+      "store_id": "STORE-GB-01",
+      "approved_countries": [
+        "GB"
+      ],
+      "placement_version": 1,
+      "rule": "approved-hub",
+      "accepts_inbound": true
+    }
+  ]
+}

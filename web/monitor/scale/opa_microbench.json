@@ -1,0 +1,59 @@
+{
+  "kind": "observed_microbenchmark",
+  "opa_version": "1.9.0",
+  "environment": {
+    "python": "3.12.14",
+    "cpu_quota": "800000 100000",
+    "memory_limit_bytes": 8589934592
+  },
+  "notes": [
+    "Shared sandbox; 8 vCPU quota and 8 GiB memory, not dedicated hardware",
+    "100 warm-up requests discarded for each batch size; built-in telemetry explicitly disabled",
+    "Sequential HTTP client, JSON encode/decode and OPA response read included",
+    "Repeated actual seeded resources; batch-size stress, not a full operational graph benchmark",
+    "No CockroachDB, persistence, WAN, TLS, gateway, concurrent tenant load or sustained saturation",
+    "Measured results are NOT used as database service-time calibration"
+  ],
+  "results": [
+    {
+      "rows": 1,
+      "samples": 1200,
+      "p50_ms": 1.005962,
+      "p95_ms": 1.6841297,
+      "p99_ms": 2.4485925499999985,
+      "eval_p99_ms": 1.0967490599999998,
+      "request_bytes": 1516,
+      "mode": "sequential warmed loopback HTTP"
+    },
+    {
+      "rows": 16,
+      "samples": 1200,
+      "p50_ms": 3.3339895,
+      "p95_ms": 5.42876265,
+      "p99_ms": 6.762142149999998,
+      "eval_p99_ms": 3.82782583,
+      "request_bytes": 11284,
+      "mode": "sequential warmed loopback HTTP"
+    },
+    {
+      "rows": 64,
+      "samples": 1200,
+      "p50_ms": 5.664162,
+      "p95_ms": 8.063444,
+      "p99_ms": 9.67591289,
+      "eval_p99_ms": 5.20395137,
+      "request_bytes": 42412,
+      "mode": "sequential warmed loopback HTTP"
+    },
+    {
+      "rows": 256,
+      "samples": 1200,
+      "p50_ms": 14.0888235,
+      "p95_ms": 18.242420949999996,
+      "p99_ms": 24.358668889999997,
+      "eval_p99_ms": 8.65021668,
+      "request_bytes": 166924,
+      "mode": "sequential warmed loopback HTTP"
+    }
+  ]
+}

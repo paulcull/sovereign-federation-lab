@@ -1,0 +1,1558 @@
+{
+  "version": 3,
+  "owner_entity_id": "LE-SG-01",
+  "tables": {
+    "party": {
+      "label": "Party",
+      "service": "Party Service",
+      "columns": {
+        "id": "UUID",
+        "global_party_id": "UUID",
+        "party_type": "STRING",
+        "display_name": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "global_party_id",
+        "party_type",
+        "display_name"
+      ],
+      "parents": [],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "global_minimum",
+      "major_key": "party_id",
+      "global_fields": [
+        "id",
+        "global_party_id",
+        "party_type"
+      ]
+    },
+    "relationship": {
+      "label": "Relationship",
+      "service": "Relationship Service",
+      "columns": {
+        "id": "UUID",
+        "relationship_type": "STRING",
+        "status": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "relationship_type",
+        "status"
+      ],
+      "parents": [],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "relationship_type",
+        "status"
+      ]
+    },
+    "party_relationship": {
+      "label": "Party\u2013relationship role",
+      "service": "Relationship Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "role": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "role"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "role"
+      ]
+    },
+    "product_holding": {
+      "label": "Product holding",
+      "service": "Holdings Service",
+      "columns": {
+        "id": "UUID",
+        "relationship_id": "UUID",
+        "product_type": "STRING",
+        "status": "STRING",
+        "currency": "STRING",
+        "balance": "DECIMAL(18,2)"
+      },
+      "export_fields": [
+        "id",
+        "relationship_id",
+        "product_type",
+        "status",
+        "currency"
+      ],
+      "parents": [
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "holding_id",
+      "global_fields": [
+        "id",
+        "relationship_id",
+        "product_type",
+        "status",
+        "currency"
+      ]
+    },
+    "contact_info": {
+      "label": "Contact information",
+      "service": "Contact Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "channel": "STRING",
+        "value": "STRING",
+        "is_primary": "BOOL"
+      },
+      "export_fields": [
+        "id",
+        "party_id",
+        "channel",
+        "value",
+        "is_primary"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": true,
+      "default_mode": "relationship_policy",
+      "major_key": "party_id",
+      "global_fields": [
+        "id",
+        "party_id",
+        "channel",
+        "value",
+        "is_primary"
+      ]
+    },
+    "consent": {
+      "label": "Consent",
+      "service": "Consent & Preference Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "purpose": "STRING",
+        "channel": "STRING",
+        "status": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "purpose",
+        "channel",
+        "status"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "purpose",
+        "channel",
+        "status"
+      ]
+    },
+    "preference": {
+      "label": "Preference",
+      "service": "Consent & Preference Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "channel": "STRING",
+        "language": "STRING",
+        "contact_window": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "channel",
+        "language",
+        "contact_window"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": true,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "channel",
+        "language",
+        "contact_window"
+      ]
+    },
+    "contact_history": {
+      "label": "Contact history",
+      "service": "Interaction Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "channel": "STRING",
+        "occurred_at": "FLOAT",
+        "summary": "STRING",
+        "agent_id": "STRING"
+      },
+      "export_fields": [
+        "id"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": true,
+      "needs_contact_consent": false,
+      "default_mode": "owner_only",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id"
+      ]
+    },
+    "party_alternate_id": {
+      "label": "Party alternate ID",
+      "service": "Identity Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "scheme": "STRING",
+        "value": "STRING"
+      },
+      "export_fields": [
+        "id"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        }
+      ],
+      "owner_only": true,
+      "needs_contact_consent": false,
+      "default_mode": "owner_only",
+      "major_key": "party_id",
+      "global_fields": [
+        "id"
+      ]
+    },
+    "relationship_alternate_id": {
+      "label": "Relationship alternate ID",
+      "service": "Identity Service",
+      "columns": {
+        "id": "UUID",
+        "relationship_id": "UUID",
+        "scheme": "STRING",
+        "value": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "relationship_id",
+        "scheme",
+        "value"
+      ],
+      "parents": [
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "relationship_id",
+        "scheme",
+        "value"
+      ]
+    },
+    "holding_alternate_id": {
+      "label": "Holding alternate ID",
+      "service": "Identity Service",
+      "columns": {
+        "id": "UUID",
+        "holding_id": "UUID",
+        "scheme": "STRING",
+        "value": "STRING"
+      },
+      "export_fields": [
+        "id"
+      ],
+      "parents": [
+        {
+          "field": "holding_id",
+          "table": "product_holding"
+        }
+      ],
+      "owner_only": true,
+      "needs_contact_consent": false,
+      "default_mode": "owner_only",
+      "major_key": "holding_id",
+      "global_fields": [
+        "id"
+      ]
+    },
+    "classification": {
+      "label": "Classification assignment",
+      "service": "Classification Service",
+      "columns": {
+        "id": "UUID",
+        "subject_type": "STRING",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "holding_id": "UUID",
+        "code": "STRING",
+        "level": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "subject_type",
+        "party_id",
+        "relationship_id",
+        "holding_id",
+        "code",
+        "level"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        },
+        {
+          "field": "holding_id",
+          "table": "product_holding"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "typed_subject",
+      "global_fields": [
+        "id",
+        "subject_type",
+        "party_id",
+        "relationship_id",
+        "holding_id",
+        "code",
+        "level"
+      ]
+    }
+  },
+  "rows": {
+    "party": [
+      {
+        "id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "global_party_id": "93b203fd-dfac-5089-8aba-2e383e229f9a",
+        "party_type": "PERSON",
+        "display_name": "Aster Example"
+      },
+      {
+        "id": "346ae5f5-d91f-5eb5-9900-b2f503c83bae",
+        "global_party_id": "411fefcb-bc85-54fa-9d36-f4df24e25cf0",
+        "party_type": "ORGANISATION",
+        "display_name": "Example Trading Ltd"
+      }
+    ],
+    "relationship": [
+      {
+        "id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+        "relationship_type": "PERSONAL_BANKING",
+        "status": "ACTIVE"
+      },
+      {
+        "id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+        "relationship_type": "BUSINESS_BANKING",
+        "status": "ACTIVE"
+      }
+    ],
+    "party_relationship": [
+      {
+        "id": "35c8c366-345b-5ccb-a5c3-8f68a2d173c0",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "relationship_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+        "role": "HOLDER"
+      },
+      {
+        "id": "ce65bbaf-03ad-5853-ac77-3a3968caf033",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "relationship_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+        "role": "AUTHORISED_SIGNATORY"
+      },
+      {
+        "id": "6cbff322-8a44-588e-a20c-459efc51fb63",
+        "party_id": "346ae5f5-d91f-5eb5-9900-b2f503c83bae",
+        "relationship_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+        "role": "ACCOUNT_OWNER"
+      }
+    ],
+    "product_holding": [
+      {
+        "id": "c68b73ce-e205-5edb-83dd-45c84373e9d2",
+        "relationship_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+        "product_type": "DEPOSIT",
+        "status": "ACTIVE",
+        "currency": "SGD",
+        "balance": "12000.00"
+      },
+      {
+        "id": "8cdc98bf-88fd-5099-b3ad-a25a82f0aca9",
+        "relationship_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+        "product_type": "CARD",
+        "status": "ACTIVE",
+        "currency": "SGD",
+        "balance": "250.00"
+      },
+      {
+        "id": "b32941df-2828-5752-8619-c98e0e2f5bf0",
+        "relationship_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+        "product_type": "LOAN",
+        "status": "ACTIVE",
+        "currency": "SGD",
+        "balance": "50000.00"
+      }
+    ],
+    "contact_info": [
+      {
+        "id": "0b8930f6-fbd6-54bc-a452-3990e886fbcb",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "channel": "EMAIL",
+        "value": "aster@example.invalid",
+        "is_primary": true
+      },
+      {
+        "id": "7b7c0bfd-f33a-51e3-b7b6-bfd33b17cd75",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "channel": "PHONE",
+        "value": "+00 000 000 000",
+        "is_primary": false
+      }
+    ],
+    "consent": [
+      {
+        "id": "c1d2ae1e-1aa1-5114-808e-33d5c335911e",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "relationship_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+        "purpose": "servicing",
+        "channel": "EMAIL",
+        "status": "GRANTED"
+      },
+      {
+        "id": "ede1137a-e27e-5a43-82fb-d1a7dbd7a222",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "relationship_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+        "purpose": "servicing",
+        "channel": "EMAIL",
+        "status": "GRANTED"
+      }
+    ],
+    "preference": [
+      {
+        "id": "6b8adc6c-25f0-50fe-9bd1-815a0ff6d032",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "relationship_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+        "channel": "EMAIL",
+        "language": "en",
+        "contact_window": "09:00\u201317:00"
+      },
+      {
+        "id": "098f25b6-e9a2-5258-b28e-aac434bac5d9",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "relationship_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+        "channel": "EMAIL",
+        "language": "en",
+        "contact_window": "09:00\u201317:00"
+      }
+    ],
+    "contact_history": [
+      {
+        "id": "7485ecd3-b0cf-5569-a274-1b06f004ade1",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "relationship_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+        "channel": "EMAIL",
+        "occurred_at": 1791700000,
+        "summary": "Synthetic internal servicing discussion",
+        "agent_id": "DEMO-AGENT-01"
+      },
+      {
+        "id": "7a251d6b-0bf4-5d62-b933-6b1d1f917d1a",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "relationship_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+        "channel": "EMAIL",
+        "occurred_at": 1791700000,
+        "summary": "Synthetic internal servicing discussion",
+        "agent_id": "DEMO-AGENT-01"
+      }
+    ],
+    "party_alternate_id": [
+      {
+        "id": "ba0a712c-d74d-5c18-9052-922d8c4b452c",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "scheme": "NATIONAL_ID",
+        "value": "SYNTHETIC-NOT-A-REAL-ID"
+      }
+    ],
+    "relationship_alternate_id": [
+      {
+        "id": "c61d6225-6814-5486-ae60-c25574bd7bc6",
+        "relationship_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+        "scheme": "CRM_REFERENCE",
+        "value": "DEMO-REL-PERSONAL"
+      },
+      {
+        "id": "71d06019-fde7-595d-b095-48678fc6b6cc",
+        "relationship_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+        "scheme": "CRM_REFERENCE",
+        "value": "DEMO-REL-BUSINESS"
+      }
+    ],
+    "holding_alternate_id": [
+      {
+        "id": "07206b0b-e345-53e7-9617-787ae8a9cb4b",
+        "holding_id": "c68b73ce-e205-5edb-83dd-45c84373e9d2",
+        "scheme": "CORE_ACCOUNT",
+        "value": "DEMO-ACCOUNT-1"
+      },
+      {
+        "id": "29afbfac-57fd-52de-888e-bcddcab675fa",
+        "holding_id": "8cdc98bf-88fd-5099-b3ad-a25a82f0aca9",
+        "scheme": "CORE_ACCOUNT",
+        "value": "DEMO-ACCOUNT-2"
+      },
+      {
+        "id": "ba7db5ef-5107-5904-9f6a-83148fb66b09",
+        "holding_id": "b32941df-2828-5752-8619-c98e0e2f5bf0",
+        "scheme": "CORE_ACCOUNT",
+        "value": "DEMO-ACCOUNT-3"
+      }
+    ],
+    "classification": [
+      {
+        "id": "f4237713-6251-565a-bdc3-929e64c9f4b6",
+        "subject_type": "party",
+        "party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+        "relationship_id": null,
+        "holding_id": null,
+        "code": "RETAIL",
+        "level": "INTERNAL"
+      },
+      {
+        "id": "527b806e-a2c8-56dd-adf0-7e1cddaf5ff9",
+        "subject_type": "holding",
+        "party_id": null,
+        "relationship_id": null,
+        "holding_id": "c68b73ce-e205-5edb-83dd-45c84373e9d2",
+        "code": "STANDARD_PRODUCT",
+        "level": "INTERNAL"
+      },
+      {
+        "id": "a0e19e54-674c-5ade-867e-ebba8ee2a62d",
+        "subject_type": "relationship",
+        "party_id": null,
+        "relationship_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+        "holding_id": null,
+        "code": "SME",
+        "level": "INTERNAL"
+      }
+    ]
+  },
+  "scopes": [
+    {
+      "id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "name": "Aster \u00b7 Personal relationship",
+      "owner_entity_id": "LE-SG-01",
+      "relationship_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+      "primary_party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+      "home_store_id": "STORE-SG-01",
+      "data_version": 1,
+      "policy_generation": 1,
+      "decision_revision": 1,
+      "contacted": [],
+      "expired_seen": [],
+      "policy": {
+        "owner_entity_id": "LE-SG-01",
+        "allowed_entities": [
+          "LE-GB-02",
+          "LE-US-01"
+        ],
+        "denied_entities": [],
+        "allowed_countries": [
+          "SG",
+          "GB",
+          "US"
+        ],
+        "denied_countries": [
+          "US"
+        ],
+        "purpose": "servicing",
+        "grants": {
+          "LE-GB-02": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "contact",
+            "purpose": "servicing"
+          },
+          "LE-US-01": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "contact",
+            "purpose": "servicing"
+          }
+        }
+      },
+      "scope_kind": "relationship",
+      "root_type": "relationship",
+      "root_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce"
+    },
+    {
+      "id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "name": "Aster \u00b7 Business relationship",
+      "owner_entity_id": "LE-SG-01",
+      "relationship_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+      "primary_party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+      "home_store_id": "STORE-SG-01",
+      "data_version": 1,
+      "policy_generation": 1,
+      "decision_revision": 1,
+      "contacted": [],
+      "expired_seen": [],
+      "policy": {
+        "owner_entity_id": "LE-SG-01",
+        "allowed_entities": [
+          "LE-GB-03",
+          "LE-US-01"
+        ],
+        "denied_entities": [],
+        "allowed_countries": [
+          "SG",
+          "GB",
+          "US"
+        ],
+        "denied_countries": [
+          "US"
+        ],
+        "purpose": "servicing",
+        "grants": {
+          "LE-GB-03": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "minimal",
+            "purpose": "servicing"
+          },
+          "LE-US-01": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "minimal",
+            "purpose": "servicing"
+          }
+        }
+      },
+      "scope_kind": "relationship",
+      "root_type": "relationship",
+      "root_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04"
+    },
+    {
+      "id": "2a3d5d08-f79e-50c3-a1d4-5f8173ad6513",
+      "name": "Aster \u00b7 Global party minimum",
+      "scope_kind": "party",
+      "root_type": "party",
+      "root_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+      "owner_entity_id": "LE-SG-01",
+      "relationship_id": null,
+      "primary_party_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+      "home_store_id": "STORE-SG-01",
+      "data_version": 1,
+      "policy_generation": 1,
+      "decision_revision": 1,
+      "contacted": [],
+      "expired_seen": [],
+      "policy": {
+        "owner_entity_id": "LE-SG-01",
+        "allowed_entities": [
+          "LE-GB-02",
+          "LE-GB-03",
+          "LE-US-01"
+        ],
+        "denied_entities": [],
+        "allowed_countries": [
+          "SG",
+          "GB",
+          "US"
+        ],
+        "denied_countries": [],
+        "purpose": "identity_resolution",
+        "grants": {
+          "LE-GB-02": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "minimal",
+            "purpose": "identity_resolution"
+          },
+          "LE-GB-03": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "minimal",
+            "purpose": "identity_resolution"
+          },
+          "LE-US-01": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "minimal",
+            "purpose": "identity_resolution"
+          }
+        }
+      }
+    },
+    {
+      "id": "8c6c1900-2e97-590a-8ef4-abfdf614eb17",
+      "name": "Example Trading \u00b7 Global party minimum",
+      "scope_kind": "party",
+      "root_type": "party",
+      "root_id": "346ae5f5-d91f-5eb5-9900-b2f503c83bae",
+      "owner_entity_id": "LE-SG-01",
+      "relationship_id": null,
+      "primary_party_id": "346ae5f5-d91f-5eb5-9900-b2f503c83bae",
+      "home_store_id": "STORE-SG-01",
+      "data_version": 1,
+      "policy_generation": 1,
+      "decision_revision": 1,
+      "contacted": [],
+      "expired_seen": [],
+      "policy": {
+        "owner_entity_id": "LE-SG-01",
+        "allowed_entities": [
+          "LE-GB-02",
+          "LE-GB-03",
+          "LE-US-01"
+        ],
+        "denied_entities": [],
+        "allowed_countries": [
+          "SG",
+          "GB",
+          "US"
+        ],
+        "denied_countries": [],
+        "purpose": "identity_resolution",
+        "grants": {
+          "LE-GB-02": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "minimal",
+            "purpose": "identity_resolution"
+          },
+          "LE-GB-03": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "minimal",
+            "purpose": "identity_resolution"
+          },
+          "LE-US-01": {
+            "active": true,
+            "expires_at": 4102444800,
+            "profile": "minimal",
+            "purpose": "identity_resolution"
+          }
+        }
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "party",
+      "resource_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "relationship",
+      "resource_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "party_relationship",
+      "resource_id": "35c8c366-345b-5ccb-a5c3-8f68a2d173c0"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "product_holding",
+      "resource_id": "c68b73ce-e205-5edb-83dd-45c84373e9d2"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "product_holding",
+      "resource_id": "8cdc98bf-88fd-5099-b3ad-a25a82f0aca9"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "contact_info",
+      "resource_id": "0b8930f6-fbd6-54bc-a452-3990e886fbcb"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "contact_info",
+      "resource_id": "7b7c0bfd-f33a-51e3-b7b6-bfd33b17cd75"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "consent",
+      "resource_id": "c1d2ae1e-1aa1-5114-808e-33d5c335911e"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "preference",
+      "resource_id": "6b8adc6c-25f0-50fe-9bd1-815a0ff6d032"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "contact_history",
+      "resource_id": "7485ecd3-b0cf-5569-a274-1b06f004ade1"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "party_alternate_id",
+      "resource_id": "ba0a712c-d74d-5c18-9052-922d8c4b452c"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "relationship_alternate_id",
+      "resource_id": "c61d6225-6814-5486-ae60-c25574bd7bc6"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "holding_alternate_id",
+      "resource_id": "07206b0b-e345-53e7-9617-787ae8a9cb4b"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "holding_alternate_id",
+      "resource_id": "29afbfac-57fd-52de-888e-bcddcab675fa"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "classification",
+      "resource_id": "f4237713-6251-565a-bdc3-929e64c9f4b6"
+    },
+    {
+      "scope_id": "d81c94cc-dc6d-5c81-99a1-a95ffcaf69d6",
+      "resource_type": "classification",
+      "resource_id": "527b806e-a2c8-56dd-adf0-7e1cddaf5ff9"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "party",
+      "resource_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "party",
+      "resource_id": "346ae5f5-d91f-5eb5-9900-b2f503c83bae"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "relationship",
+      "resource_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "party_relationship",
+      "resource_id": "ce65bbaf-03ad-5853-ac77-3a3968caf033"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "party_relationship",
+      "resource_id": "6cbff322-8a44-588e-a20c-459efc51fb63"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "product_holding",
+      "resource_id": "b32941df-2828-5752-8619-c98e0e2f5bf0"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "contact_info",
+      "resource_id": "0b8930f6-fbd6-54bc-a452-3990e886fbcb"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "contact_info",
+      "resource_id": "7b7c0bfd-f33a-51e3-b7b6-bfd33b17cd75"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "consent",
+      "resource_id": "ede1137a-e27e-5a43-82fb-d1a7dbd7a222"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "preference",
+      "resource_id": "098f25b6-e9a2-5258-b28e-aac434bac5d9"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "contact_history",
+      "resource_id": "7a251d6b-0bf4-5d62-b933-6b1d1f917d1a"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "party_alternate_id",
+      "resource_id": "ba0a712c-d74d-5c18-9052-922d8c4b452c"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "relationship_alternate_id",
+      "resource_id": "71d06019-fde7-595d-b095-48678fc6b6cc"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "holding_alternate_id",
+      "resource_id": "ba7db5ef-5107-5904-9f6a-83148fb66b09"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "classification",
+      "resource_id": "f4237713-6251-565a-bdc3-929e64c9f4b6"
+    },
+    {
+      "scope_id": "336c3f0a-2b9e-5ebc-9a71-db685a3e88c7",
+      "resource_type": "classification",
+      "resource_id": "a0e19e54-674c-5ade-867e-ebba8ee2a62d"
+    },
+    {
+      "scope_id": "2a3d5d08-f79e-50c3-a1d4-5f8173ad6513",
+      "resource_type": "party",
+      "resource_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e"
+    },
+    {
+      "scope_id": "8c6c1900-2e97-590a-8ef4-abfdf614eb17",
+      "resource_type": "party",
+      "resource_id": "346ae5f5-d91f-5eb5-9900-b2f503c83bae"
+    }
+  ],
+  "rules": [
+    {
+      "resource_type": "party",
+      "resource_id": "4dbd7ba1-b51f-5855-a199-dffa9b82e08e",
+      "allowed_countries": [
+        "SG",
+        "GB",
+        "US"
+      ],
+      "denied_countries": [],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "party",
+      "resource_id": "346ae5f5-d91f-5eb5-9900-b2f503c83bae",
+      "allowed_countries": [
+        "SG",
+        "GB",
+        "US"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "relationship",
+      "resource_id": "5a6e294f-ca6c-5865-8d5d-9fbc8bb850ce",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "relationship",
+      "resource_id": "594fa14f-f2ff-5a3c-bb47-60ac79079c04",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "party_relationship",
+      "resource_id": "35c8c366-345b-5ccb-a5c3-8f68a2d173c0",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "party_relationship",
+      "resource_id": "ce65bbaf-03ad-5853-ac77-3a3968caf033",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "party_relationship",
+      "resource_id": "6cbff322-8a44-588e-a20c-459efc51fb63",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "product_holding",
+      "resource_id": "c68b73ce-e205-5edb-83dd-45c84373e9d2",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "product_holding",
+      "resource_id": "8cdc98bf-88fd-5099-b3ad-a25a82f0aca9",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "product_holding",
+      "resource_id": "b32941df-2828-5752-8619-c98e0e2f5bf0",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "contact_info",
+      "resource_id": "0b8930f6-fbd6-54bc-a452-3990e886fbcb",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "contact_info",
+      "resource_id": "7b7c0bfd-f33a-51e3-b7b6-bfd33b17cd75",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "consent",
+      "resource_id": "c1d2ae1e-1aa1-5114-808e-33d5c335911e",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "consent",
+      "resource_id": "ede1137a-e27e-5a43-82fb-d1a7dbd7a222",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "preference",
+      "resource_id": "6b8adc6c-25f0-50fe-9bd1-815a0ff6d032",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "preference",
+      "resource_id": "098f25b6-e9a2-5258-b28e-aac434bac5d9",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "contact_history",
+      "resource_id": "7485ecd3-b0cf-5569-a274-1b06f004ade1",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "contact_history",
+      "resource_id": "7a251d6b-0bf4-5d62-b933-6b1d1f917d1a",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "party_alternate_id",
+      "resource_id": "ba0a712c-d74d-5c18-9052-922d8c4b452c",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "relationship_alternate_id",
+      "resource_id": "c61d6225-6814-5486-ae60-c25574bd7bc6",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "relationship_alternate_id",
+      "resource_id": "71d06019-fde7-595d-b095-48678fc6b6cc",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "holding_alternate_id",
+      "resource_id": "07206b0b-e345-53e7-9617-787ae8a9cb4b",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "holding_alternate_id",
+      "resource_id": "29afbfac-57fd-52de-888e-bcddcab675fa",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "holding_alternate_id",
+      "resource_id": "ba7db5ef-5107-5904-9f6a-83148fb66b09",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "classification",
+      "resource_id": "f4237713-6251-565a-bdc3-929e64c9f4b6",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "classification",
+      "resource_id": "527b806e-a2c8-56dd-adf0-7e1cddaf5ff9",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    },
+    {
+      "resource_type": "classification",
+      "resource_id": "a0e19e54-674c-5ade-867e-ebba8ee2a62d",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ],
+      "allowed_profiles": [
+        "minimal",
+        "contact"
+      ],
+      "sensitivity": "INTERNAL"
+    }
+  ],
+  "notes": "Synthetic contact-sharing consent rule for servicing. Not a determination that consent is the lawful basis for every banking activity.",
+  "table_rules": {
+    "party": {
+      "mode": "global_minimum",
+      "allowed_countries": [
+        "SG",
+        "GB",
+        "US"
+      ],
+      "denied_countries": []
+    },
+    "relationship": {
+      "mode": "relationship_policy",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "party_relationship": {
+      "mode": "relationship_policy",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "product_holding": {
+      "mode": "relationship_policy",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "contact_info": {
+      "mode": "relationship_policy",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "consent": {
+      "mode": "relationship_policy",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "preference": {
+      "mode": "relationship_policy",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "contact_history": {
+      "mode": "owner_only",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "party_alternate_id": {
+      "mode": "owner_only",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "relationship_alternate_id": {
+      "mode": "relationship_policy",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "holding_alternate_id": {
+      "mode": "owner_only",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    },
+    "classification": {
+      "mode": "relationship_policy",
+      "allowed_countries": [
+        "SG",
+        "GB"
+      ],
+      "denied_countries": [
+        "US"
+      ]
+    }
+  }
+}

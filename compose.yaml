@@ -1,0 +1,328 @@
+{
+  "name": "sovereign-lab",
+  "services": {
+    "db-sg": {
+      "image": "cockroachdb/cockroach:v25.4.0",
+      "command": [
+        "start-single-node",
+        "--insecure",
+        "--listen-addr=0.0.0.0:26257",
+        "--http-addr=0.0.0.0:8080",
+        "--cache=64MiB",
+        "--max-sql-memory=64MiB",
+        "--locality=country=SG"
+      ],
+      "volumes": [
+        "db-sg:/cockroach/cockroach-data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "/cockroach/cockroach",
+          "sql",
+          "--insecure",
+          "--host=localhost:26257",
+          "-e",
+          "SELECT 1"
+        ],
+        "interval": "5s",
+        "timeout": "5s",
+        "retries": 30,
+        "start_period": "20s"
+      },
+      "restart": "unless-stopped"
+    },
+    "opa-sg": {
+      "image": "openpolicyagent/opa:1.9.0",
+      "command": [
+        "run",
+        "--disable-telemetry",
+        "--server",
+        "--addr=0.0.0.0:8181",
+        "/policies"
+      ],
+      "volumes": [
+        "./poc/policies:/policies:ro"
+      ],
+      "restart": "unless-stopped"
+    },
+    "db-uk": {
+      "image": "cockroachdb/cockroach:v25.4.0",
+      "command": [
+        "start-single-node",
+        "--insecure",
+        "--listen-addr=0.0.0.0:26257",
+        "--http-addr=0.0.0.0:8080",
+        "--cache=64MiB",
+        "--max-sql-memory=64MiB",
+        "--locality=country=GB"
+      ],
+      "volumes": [
+        "db-uk:/cockroach/cockroach-data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "/cockroach/cockroach",
+          "sql",
+          "--insecure",
+          "--host=localhost:26257",
+          "-e",
+          "SELECT 1"
+        ],
+        "interval": "5s",
+        "timeout": "5s",
+        "retries": 30,
+        "start_period": "20s"
+      },
+      "restart": "unless-stopped"
+    },
+    "opa-uk": {
+      "image": "openpolicyagent/opa:1.9.0",
+      "command": [
+        "run",
+        "--disable-telemetry",
+        "--server",
+        "--addr=0.0.0.0:8181",
+        "/policies"
+      ],
+      "volumes": [
+        "./poc/policies:/policies:ro"
+      ],
+      "restart": "unless-stopped"
+    },
+    "db-us": {
+      "image": "cockroachdb/cockroach:v25.4.0",
+      "command": [
+        "start-single-node",
+        "--insecure",
+        "--listen-addr=0.0.0.0:26257",
+        "--http-addr=0.0.0.0:8080",
+        "--cache=64MiB",
+        "--max-sql-memory=64MiB",
+        "--locality=country=US"
+      ],
+      "volumes": [
+        "db-us:/cockroach/cockroach-data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "/cockroach/cockroach",
+          "sql",
+          "--insecure",
+          "--host=localhost:26257",
+          "-e",
+          "SELECT 1"
+        ],
+        "interval": "5s",
+        "timeout": "5s",
+        "retries": 30,
+        "start_period": "20s"
+      },
+      "restart": "unless-stopped"
+    },
+    "opa-us": {
+      "image": "openpolicyagent/opa:1.9.0",
+      "command": [
+        "run",
+        "--disable-telemetry",
+        "--server",
+        "--addr=0.0.0.0:8181",
+        "/policies"
+      ],
+      "volumes": [
+        "./poc/policies:/policies:ro"
+      ],
+      "restart": "unless-stopped"
+    },
+    "otel-collector": {
+      "image": "otel/opentelemetry-collector:0.140.0",
+      "command": [
+        "--config=/etc/otel.yaml"
+      ],
+      "volumes": [
+        "./poc/otel-collector.yaml:/etc/otel.yaml:ro"
+      ],
+      "restart": "unless-stopped"
+    },
+    "monitor": {
+      "build": {
+        "context": ".",
+        "dockerfile": "poc/Dockerfile"
+      },
+      "environment": {
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4318",
+        "DB_SG": "postgresql://root@db-sg:26257/defaultdb?sslmode=disable",
+        "OPA_SG": "http://opa-sg:8181",
+        "DB_UK": "postgresql://root@db-uk:26257/defaultdb?sslmode=disable",
+        "OPA_UK": "http://opa-uk:8181",
+        "DB_US": "postgresql://root@db-us:26257/defaultdb?sslmode=disable",
+        "OPA_US": "http://opa-us:8181",
+        "MIGRATION_ENABLED": "1",
+        "MIGRATION_STORAGE": "cockroach",
+        "DB_IN": "postgresql://root@db-in:26257/defaultdb?sslmode=disable",
+        "MIGRATION_OPA_URL": "http://opa-sg:8181",
+        "MIGRATION_OPA_IN_URL": "http://opa-in:8181",
+        "LAB_DEPLOYMENT": "1",
+        "OTEL_TRACES_SAMPLER": "always_on",
+        "NO_PROXY": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector"
+      },
+      "volumes": [
+        "telemetry:/app/telemetry"
+      ],
+      "depends_on": {
+        "db-sg": {
+          "condition": "service_healthy"
+        },
+        "opa-sg": {
+          "condition": "service_started"
+        },
+        "db-uk": {
+          "condition": "service_healthy"
+        },
+        "opa-uk": {
+          "condition": "service_started"
+        },
+        "db-us": {
+          "condition": "service_healthy"
+        },
+        "opa-us": {
+          "condition": "service_started"
+        },
+        "db-in": {
+          "condition": "service_healthy"
+        },
+        "opa-in": {
+          "condition": "service_started"
+        },
+        "otel-collector": {
+          "condition": "service_started"
+        }
+      },
+      "restart": "unless-stopped",
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "/app/poc/health_probe.py"
+        ],
+        "interval": "10s",
+        "timeout": "12s",
+        "retries": 18,
+        "start_period": "90s"
+      }
+    },
+    "db-in": {
+      "image": "cockroachdb/cockroach:v25.4.0",
+      "command": [
+        "start-single-node",
+        "--insecure",
+        "--listen-addr=0.0.0.0:26257",
+        "--http-addr=0.0.0.0:8080",
+        "--cache=64MiB",
+        "--max-sql-memory=64MiB",
+        "--locality=country=IN"
+      ],
+      "volumes": [
+        "db-in:/cockroach/cockroach-data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "/cockroach/cockroach",
+          "sql",
+          "--insecure",
+          "--host=localhost:26257",
+          "-e",
+          "SELECT 1"
+        ],
+        "interval": "5s",
+        "timeout": "5s",
+        "retries": 30,
+        "start_period": "20s"
+      },
+      "restart": "unless-stopped"
+    },
+    "opa-in": {
+      "image": "openpolicyagent/opa:1.9.0",
+      "command": [
+        "run",
+        "--disable-telemetry",
+        "--server",
+        "--addr=0.0.0.0:8181",
+        "/policies"
+      ],
+      "volumes": [
+        "./poc/policies:/policies:ro"
+      ],
+      "restart": "unless-stopped"
+    },
+    "gateway": {
+      "build": {
+        "context": ".",
+        "dockerfile": "infra/Gateway.Dockerfile"
+      },
+      "ports": [
+        "127.0.0.1:${LAB_PORT:-8080}:8080"
+      ],
+      "depends_on": {
+        "monitor": {
+          "condition": "service_healthy"
+        }
+      },
+      "restart": "unless-stopped",
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "wget",
+          "-q",
+          "--spider",
+          "http://127.0.0.1:8080/healthz"
+        ],
+        "interval": "10s",
+        "timeout": "3s",
+        "retries": 6
+      }
+    },
+    "tools": {
+      "profiles": [
+        "tools"
+      ],
+      "build": {
+        "context": ".",
+        "dockerfile": "poc/Dockerfile"
+      },
+      "working_dir": "/workspace",
+      "volumes": [
+        ".:/workspace"
+      ],
+      "entrypoint": [
+        "python"
+      ],
+      "environment": {
+        "POC_URL": "http://gateway:8080"
+      }
+    },
+    "node-tools": {
+      "profiles": [
+        "tools"
+      ],
+      "image": "node:22.14.0-alpine",
+      "working_dir": "/workspace",
+      "volumes": [
+        ".:/workspace"
+      ],
+      "entrypoint": [
+        "node"
+      ]
+    }
+  },
+  "volumes": {
+    "db-sg": {},
+    "db-uk": {},
+    "db-us": {},
+    "telemetry": {},
+    "db-in": {}
+  }
+}

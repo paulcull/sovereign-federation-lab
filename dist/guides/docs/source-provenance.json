@@ -1,0 +1,13 @@
+{
+  "assembled": "2026-10-11",
+  "sources": [
+    {
+      "name": "sovereign-data-monitor",
+      "commit": "1dd60535b4807b7fcef790d4e40c202edee4f2e7"
+    },
+    {
+      "name": "customer-federation-design",
+      "commit": "140908f199badba36d54c74342aef8e569a00983"
+    }
+  ]
+}

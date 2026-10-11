@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {simulate,admission,purgeAllowed} from '../dist/isolation/model.mjs';
+const base=simulate({burst:0}),burst=simulate();
+assert(burst.summary.shared.p99>10000,'Shared FIFO must expose head-of-line delay');
+assert.equal(burst.summary.isolated.p99,base.summary.isolated.p99,'Bulk work cannot consume operational reservation in this model');
+assert(burst.summary.isolated.p99<100);
+assert(simulate({rate:800}).summary.isolated.p99>1000,'Isolation must not conceal operational overload');
+assert.equal(burst.config.guard+burst.config.operational+burst.config.reconcile,burst.config.total);
+for(const r of [base,burst,simulate({burst:100000}),simulate({rate:800})]) for(const s of r.series) for(const m of ['shared','isolated']) {
+  assert.equal(s[m]+s[m+'Completed'],s.arrivals,'Conserve foreground arrivals');assert(s[m]>=0);assert(s[m+'Bulk']>=0&&s[m+'Bulk']<=r.config.burst);
+}
+const s={verified:true,validUntil:10,appliedWatermark:8,requiredWatermark:8,homeEpoch:1,placementVersion:1,authorityRevision:8,allowed:true,dataVersion:21,fieldSet:'minimum'};
+const e={homeEpoch:1,placementVersion:1,authorityRevision:8,dataVersion:22,fieldSet:'minimum'};
+assert(admission(e,s,6).allow);
+assert(!admission({...e,authorityRevision:7},s,6).allow,'Old queue event must reauthorise');
+assert(!admission(e,{...s,allowed:false},6).allow,'Current exclusion wins over operational priority');
+assert(!admission(e,{...s,appliedWatermark:7},6).allow,'A watermark gap blocks affected work');
+assert(!admission(e,s,10).allow,'Lease expiry is exclusive');
+assert(!admission(e,{...s,verified:false},6).allow);
+assert(!admission({...e,dataVersion:20},s,6).allow,'Backfill cannot overwrite a newer operational version');
+assert(!admission({...e,placementVersion:0},s,6).allow);
+assert(!admission({...e,homeEpoch:0},s,6).allow);
+assert(!admission({...e,dataVersion:21,fieldSet:'contact'},s,6).allow);
+assert(!admission({...e,fieldSet:'contact'},s,6).allow,'A newer data version cannot widen approved fields');
+const job={authorityRevision:8,homeEpoch:1,placementVersion:1,manifestVersion:21};
+assert(purgeAllowed(job,{...s,allowed:false},6));
+assert(!purgeAllowed(job,{...s,authorityRevision:9,allowed:true},6),'Old purge cannot erase a regranted projection');
+assert(!purgeAllowed(job,{...s,allowed:false,dataVersion:22},6),'Purge must compare current manifest');
+assert(!purgeAllowed(job,{...s,allowed:false},10),'Expired authority cannot authorise cleanup');
+assert.throws(()=>simulate({rate:-1}));
+console.log(JSON.stringify({checks:'queue conservation, reservations, overload, fences, expiry, replay and purge races passed',modeled_p99_ms:burst.summary,guard_effective_s:burst.guardAt},null,2));

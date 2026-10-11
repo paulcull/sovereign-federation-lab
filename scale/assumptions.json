@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "seed": 20261011,
+  "population": {
+    "parties": 50000000,
+    "relationships": 100000000,
+    "party_relationship_edges_per_relationship": 1.25
+  },
+  "traffic": {
+    "normal_reads_per_second": 10000,
+    "normal_writes_per_second": 1000,
+    "peak_reads_per_second": 30000,
+    "peak_writes_per_second": 5000,
+    "region_mix": [
+      0.45,
+      0.4,
+      0.15
+    ],
+    "operation_mix": {
+      "party_read": 0.4,
+      "relationship_read": 0.45714285714285713,
+      "write": 0.14285714285714285
+    },
+    "remote_projection_copies_per_relationship": 0.8,
+    "party_contact_fraction_of_writes": 0.1,
+    "contact_fanout_size_biased_fraction": 0.2
+  },
+  "storage": {
+    "history_days": 90,
+    "history_fraction_of_normal_writes": 0.1,
+    "hot_audit_days": 7,
+    "audit_records_per_write": 2,
+    "audit_row_bytes": 512,
+    "index_multiplier": 1.7,
+    "kv_multiplier": 1.35,
+    "mvcc_multiplier": 1.25,
+    "replication_factor": 3,
+    "target_disk_fill": 0.6,
+    "remote_graph_bytes": 1800,
+    "delta_event_bytes": 900,
+    "full_graph_event_bytes": 6000,
+    "retained_bus_hours": 24
+  },
+  "queue_model": {
+    "db_slots": [
+      192,
+      192,
+      96
+    ],
+    "gateway_slots": [
+      40,
+      40,
+      20
+    ],
+    "opa_slots": [
+      32,
+      32,
+      16
+    ],
+    "samples_per_run": 360000,
+    "warmup_samples": 20000,
+    "replicates": 3,
+    "operation_names": [
+      "party_read",
+      "relationship_read",
+      "write"
+    ],
+    "db_medians_ms": [
+      3.0,
+      10.0,
+      14.0
+    ],
+    "db_lognormal_sigma": [
+      0.65,
+      0.6,
+      0.65
+    ],
+    "gateway_median_ms": 1.2,
+    "opa_median_ms": 1.1,
+    "local_network_median_ms": 2.5,
+    "cold_miss_probability": [
+      0.01,
+      0.035,
+      0.01
+    ],
+    "cold_miss_median_ms": 25,
+    "serialization_retry_probability": 0.02,
+    "retry_backoff_ms": 15,
+    "timeout_ms": 1000,
+    "description": "Open arrival finite-horizon multiserver stage model. Service times and concurrency capacity are assumptions, not measured CockroachDB performance. Queue service demand is modeled wall-clock slot occupancy, not CPU time."
+  },
+  "hardware_candidate": {
+    "db_nodes": [
+      9,
+      9,
+      6
+    ],
+    "vcpus_per_node": 16,
+    "ram_gib_per_node": 64,
+    "disk_tb_per_node": 2,
+    "zones_per_region": 3,
+    "regions": [
+      "Singapore",
+      "UK",
+      "US"
+    ],
+    "notes": "Load-test candidate for full-scale rehearsal, NOT a measured sizing recommendation. Pilot starts 3 nodes per region; production size depends on measured vCPU, IOPS, compaction and failure headroom."
+  },
+  "targets": [
+    {
+      "id": "party_read",
+      "name": "Regional party lookup",
+      "p95_ms": 30,
+      "p99_ms": 75,
+      "boundary": "Regional gateway ingress to response; approved indexed ID lookup; no WAN authority call"
+    },
+    {
+      "id": "relationship_read",
+      "name": "Bounded relationship view",
+      "p95_ms": 75,
+      "p99_ms": 150,
+      "boundary": "Regional gateway to response; at most 50 rows / 32 KiB; keyset page history/holdings"
+    },
+    {
+      "id": "write",
+      "name": "Local business commit + outbox",
+      "p95_ms": 100,
+      "p99_ms": 250,
+      "boundary": "Regional gateway to durable local success; bounded transaction; does not wait for remote projection"
+    },
+    {
+      "id": "federation",
+      "name": "Approved federation visibility",
+      "p95_ms": 2000,
+      "p99_ms": 5000,
+      "boundary": "Owner commit to recipient query visibility; healthy WAN/cells; eligible destinations only"
+    },
+    {
+      "id": "deny",
+      "name": "Revocation enforced at recipient",
+      "p95_ms": 1000,
+      "p99_ms": 5000,
+      "boundary": "Owner restriction commit to denied reads; priority epoch channel plus max 5s authority lease incl. clock budget; proposed design"
+    },
+    {
+      "id": "purge",
+      "name": "Live projection purge acknowledgement",
+      "p95_ms": 5000,
+      "p99_ms": 30000,
+      "boundary": "Healthy recipient; retained audit/backups excluded; outage purge reported as pending"
+    }
+  ]
+}

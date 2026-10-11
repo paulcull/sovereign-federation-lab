@@ -1,0 +1,92 @@
+{
+  "services": {
+    "db-in": {
+      "image": "cockroachdb/cockroach:v25.4.0",
+      "command": [
+        "start-single-node",
+        "--insecure",
+        "--listen-addr=0.0.0.0:26257",
+        "--http-addr=0.0.0.0:8080",
+        "--cache=64MiB",
+        "--max-sql-memory=64MiB"
+      ],
+      "volumes": [
+        "db-in:/cockroach/cockroach-data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "/cockroach/cockroach",
+          "sql",
+          "--insecure",
+          "--host=localhost:26257",
+          "-e",
+          "SELECT 1"
+        ],
+        "interval": "5s",
+        "timeout": "5s",
+        "retries": 30
+      }
+    },
+    "opa-in": {
+      "image": "openpolicyagent/opa:1.9.0",
+      "command": [
+        "run",
+        "--disable-telemetry",
+        "--server",
+        "--addr=0.0.0.0:8181",
+        "/policies"
+      ],
+      "volumes": [
+        "./poc/policies:/policies:ro"
+      ]
+    },
+    "monitor": {
+      "environment": {
+        "MIGRATION_ENABLED": "1",
+        "MIGRATION_STORAGE": "cockroach",
+        "DB_IN": "postgresql://root@db-in:26257/defaultdb?sslmode=disable",
+        "MIGRATION_OPA_URL": "http://opa-sg:8181",
+        "MIGRATION_OPA_IN_URL": "http://opa-in:8181"
+      },
+      "depends_on": {
+        "db-in": {
+          "condition": "service_healthy"
+        },
+        "opa-in": {
+          "condition": "service_started"
+        }
+      }
+    },
+    "opa-sg": {
+      "command": [
+        "run",
+        "--disable-telemetry",
+        "--server",
+        "--addr=0.0.0.0:8181",
+        "/policies"
+      ]
+    },
+    "opa-uk": {
+      "command": [
+        "run",
+        "--disable-telemetry",
+        "--server",
+        "--addr=0.0.0.0:8181",
+        "/policies"
+      ]
+    },
+    "opa-us": {
+      "command": [
+        "run",
+        "--disable-telemetry",
+        "--server",
+        "--addr=0.0.0.0:8181",
+        "/policies"
+      ]
+    }
+  },
+  "volumes": {
+    "db-in": {}
+  }
+}

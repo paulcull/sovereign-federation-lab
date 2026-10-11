@@ -1,0 +1,702 @@
+{
+  "stores": {
+    "SG": {
+      "name": "Singapore",
+      "country": "SG",
+      "lat": 1.35,
+      "lon": 103.82
+    },
+    "UK": {
+      "name": "London",
+      "country": "GB",
+      "lat": 51.5,
+      "lon": -0.12
+    },
+    "US": {
+      "name": "New York",
+      "country": "US",
+      "lat": 40.71,
+      "lon": -74
+    },
+    "IN": {
+      "name": "Mumbai",
+      "country": "IN",
+      "lat": 19.08,
+      "lon": 72.88
+    }
+  },
+  "rows": [
+    {
+      "id": "P-001",
+      "kind": "party",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "global_party_id": "GLOBAL-001",
+        "party_type": "person",
+        "display_name": "Synthetic India Party 1"
+      },
+      "parents": []
+    },
+    {
+      "id": "R-001",
+      "kind": "relationship",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "status": "active",
+        "type": "retail"
+      },
+      "parents": []
+    },
+    {
+      "id": "PR-001",
+      "kind": "party_relationship",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-001",
+        "relationship_id": "R-001",
+        "role": "holder"
+      },
+      "parents": [
+        "P-001",
+        "R-001"
+      ]
+    },
+    {
+      "id": "H-001",
+      "kind": "product_holding",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "relationship_id": "R-001",
+        "product": "deposit",
+        "balance": 1001,
+        "currency": "INR"
+      },
+      "parents": [
+        "R-001"
+      ]
+    },
+    {
+      "id": "C-001",
+      "kind": "contact_info",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-001",
+        "channel": "EMAIL",
+        "value": "person1@example.invalid"
+      },
+      "parents": [
+        "P-001"
+      ]
+    },
+    {
+      "id": "CO-001",
+      "kind": "consent",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-001",
+        "relationship_id": "R-001",
+        "purpose": "servicing",
+        "active": true
+      },
+      "parents": [
+        "P-001",
+        "R-001"
+      ]
+    },
+    {
+      "id": "PF-001",
+      "kind": "preference",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-001",
+        "channel": "EMAIL"
+      },
+      "parents": [
+        "P-001"
+      ]
+    },
+    {
+      "id": "CH-001",
+      "kind": "contact_history",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-001",
+        "relationship_id": "R-001",
+        "event": "synthetic onboarding"
+      },
+      "parents": [
+        "P-001",
+        "R-001"
+      ]
+    },
+    {
+      "id": "PA-001",
+      "kind": "party_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-001",
+        "value": "SYNTHETIC-P-1"
+      },
+      "parents": [
+        "P-001"
+      ]
+    },
+    {
+      "id": "RA-001",
+      "kind": "relationship_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "relationship_id": "R-001",
+        "value": "SYNTHETIC-R-1"
+      },
+      "parents": [
+        "R-001"
+      ]
+    },
+    {
+      "id": "HA-001",
+      "kind": "holding_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "holding_id": "H-001",
+        "value": "SYNTHETIC-H-1"
+      },
+      "parents": [
+        "H-001"
+      ]
+    },
+    {
+      "id": "CL-001",
+      "kind": "classification",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "resource_id": "H-001",
+        "classification": "confidential"
+      },
+      "parents": [
+        "H-001"
+      ]
+    },
+    {
+      "id": "P-002",
+      "kind": "party",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "global_party_id": "GLOBAL-002",
+        "party_type": "person",
+        "display_name": "Synthetic India Party 2"
+      },
+      "parents": []
+    },
+    {
+      "id": "R-002",
+      "kind": "relationship",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "status": "active",
+        "type": "retail"
+      },
+      "parents": []
+    },
+    {
+      "id": "PR-002",
+      "kind": "party_relationship",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-002",
+        "relationship_id": "R-002",
+        "role": "holder"
+      },
+      "parents": [
+        "P-002",
+        "R-002"
+      ]
+    },
+    {
+      "id": "H-002",
+      "kind": "product_holding",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "relationship_id": "R-002",
+        "product": "deposit",
+        "balance": 1002,
+        "currency": "INR"
+      },
+      "parents": [
+        "R-002"
+      ]
+    },
+    {
+      "id": "C-002",
+      "kind": "contact_info",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-002",
+        "channel": "EMAIL",
+        "value": "person2@example.invalid"
+      },
+      "parents": [
+        "P-002"
+      ]
+    },
+    {
+      "id": "CO-002",
+      "kind": "consent",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-002",
+        "relationship_id": "R-002",
+        "purpose": "servicing",
+        "active": true
+      },
+      "parents": [
+        "P-002",
+        "R-002"
+      ]
+    },
+    {
+      "id": "PF-002",
+      "kind": "preference",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-002",
+        "channel": "EMAIL"
+      },
+      "parents": [
+        "P-002"
+      ]
+    },
+    {
+      "id": "CH-002",
+      "kind": "contact_history",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-002",
+        "relationship_id": "R-002",
+        "event": "synthetic onboarding"
+      },
+      "parents": [
+        "P-002",
+        "R-002"
+      ]
+    },
+    {
+      "id": "PA-002",
+      "kind": "party_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-002",
+        "value": "SYNTHETIC-P-2"
+      },
+      "parents": [
+        "P-002"
+      ]
+    },
+    {
+      "id": "RA-002",
+      "kind": "relationship_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "relationship_id": "R-002",
+        "value": "SYNTHETIC-R-2"
+      },
+      "parents": [
+        "R-002"
+      ]
+    },
+    {
+      "id": "HA-002",
+      "kind": "holding_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "holding_id": "H-002",
+        "value": "SYNTHETIC-H-2"
+      },
+      "parents": [
+        "H-002"
+      ]
+    },
+    {
+      "id": "CL-002",
+      "kind": "classification",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "resource_id": "H-002",
+        "classification": "confidential"
+      },
+      "parents": [
+        "H-002"
+      ]
+    },
+    {
+      "id": "P-003",
+      "kind": "party",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "global_party_id": "GLOBAL-003",
+        "party_type": "person",
+        "display_name": "Synthetic India Party 3"
+      },
+      "parents": []
+    },
+    {
+      "id": "R-003",
+      "kind": "relationship",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "status": "active",
+        "type": "retail"
+      },
+      "parents": []
+    },
+    {
+      "id": "PR-003",
+      "kind": "party_relationship",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-003",
+        "relationship_id": "R-003",
+        "role": "holder"
+      },
+      "parents": [
+        "P-003",
+        "R-003"
+      ]
+    },
+    {
+      "id": "H-003",
+      "kind": "product_holding",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "relationship_id": "R-003",
+        "product": "deposit",
+        "balance": 1003,
+        "currency": "INR"
+      },
+      "parents": [
+        "R-003"
+      ]
+    },
+    {
+      "id": "C-003",
+      "kind": "contact_info",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-003",
+        "channel": "EMAIL",
+        "value": "person3@example.invalid"
+      },
+      "parents": [
+        "P-003"
+      ]
+    },
+    {
+      "id": "CO-003",
+      "kind": "consent",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-003",
+        "relationship_id": "R-003",
+        "purpose": "servicing",
+        "active": true
+      },
+      "parents": [
+        "P-003",
+        "R-003"
+      ]
+    },
+    {
+      "id": "PF-003",
+      "kind": "preference",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-003",
+        "channel": "EMAIL"
+      },
+      "parents": [
+        "P-003"
+      ]
+    },
+    {
+      "id": "CH-003",
+      "kind": "contact_history",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-003",
+        "relationship_id": "R-003",
+        "event": "synthetic onboarding"
+      },
+      "parents": [
+        "P-003",
+        "R-003"
+      ]
+    },
+    {
+      "id": "PA-003",
+      "kind": "party_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-003",
+        "value": "SYNTHETIC-P-3"
+      },
+      "parents": [
+        "P-003"
+      ]
+    },
+    {
+      "id": "RA-003",
+      "kind": "relationship_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "relationship_id": "R-003",
+        "value": "SYNTHETIC-R-3"
+      },
+      "parents": [
+        "R-003"
+      ]
+    },
+    {
+      "id": "HA-003",
+      "kind": "holding_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "holding_id": "H-003",
+        "value": "SYNTHETIC-H-3"
+      },
+      "parents": [
+        "H-003"
+      ]
+    },
+    {
+      "id": "CL-003",
+      "kind": "classification",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "resource_id": "H-003",
+        "classification": "confidential"
+      },
+      "parents": [
+        "H-003"
+      ]
+    },
+    {
+      "id": "P-004",
+      "kind": "party",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "global_party_id": "GLOBAL-004",
+        "party_type": "person",
+        "display_name": "Synthetic India Party 4"
+      },
+      "parents": []
+    },
+    {
+      "id": "R-004",
+      "kind": "relationship",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "status": "active",
+        "type": "retail"
+      },
+      "parents": []
+    },
+    {
+      "id": "PR-004",
+      "kind": "party_relationship",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-004",
+        "relationship_id": "R-004",
+        "role": "holder"
+      },
+      "parents": [
+        "P-004",
+        "R-004"
+      ]
+    },
+    {
+      "id": "H-004",
+      "kind": "product_holding",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "relationship_id": "R-004",
+        "product": "deposit",
+        "balance": 1004,
+        "currency": "INR"
+      },
+      "parents": [
+        "R-004"
+      ]
+    },
+    {
+      "id": "C-004",
+      "kind": "contact_info",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-004",
+        "channel": "EMAIL",
+        "value": "person4@example.invalid"
+      },
+      "parents": [
+        "P-004"
+      ]
+    },
+    {
+      "id": "CO-004",
+      "kind": "consent",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-004",
+        "relationship_id": "R-004",
+        "purpose": "servicing",
+        "active": true
+      },
+      "parents": [
+        "P-004",
+        "R-004"
+      ]
+    },
+    {
+      "id": "PF-004",
+      "kind": "preference",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-004",
+        "channel": "EMAIL"
+      },
+      "parents": [
+        "P-004"
+      ]
+    },
+    {
+      "id": "CH-004",
+      "kind": "contact_history",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-004",
+        "relationship_id": "R-004",
+        "event": "synthetic onboarding"
+      },
+      "parents": [
+        "P-004",
+        "R-004"
+      ]
+    },
+    {
+      "id": "PA-004",
+      "kind": "party_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "party_id": "P-004",
+        "value": "SYNTHETIC-P-4"
+      },
+      "parents": [
+        "P-004"
+      ]
+    },
+    {
+      "id": "RA-004",
+      "kind": "relationship_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "relationship_id": "R-004",
+        "value": "SYNTHETIC-R-4"
+      },
+      "parents": [
+        "R-004"
+      ]
+    },
+    {
+      "id": "HA-004",
+      "kind": "holding_alternate_id",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "holding_id": "H-004",
+        "value": "SYNTHETIC-H-4"
+      },
+      "parents": [
+        "H-004"
+      ]
+    },
+    {
+      "id": "CL-004",
+      "kind": "classification",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "resource_id": "H-004",
+        "classification": "confidential"
+      },
+      "parents": [
+        "H-004"
+      ]
+    },
+    {
+      "id": "POLICY",
+      "kind": "sovereignty_policy",
+      "version": 1,
+      "deleted": false,
+      "data": {
+        "transition_countries": [
+          "SG",
+          "IN"
+        ],
+        "future_countries": [
+          "IN"
+        ],
+        "denied_countries": [
+          "US"
+        ],
+        "synthetic_deadline": 600
+      },
+      "parents": []
+    }
+  ]
+}

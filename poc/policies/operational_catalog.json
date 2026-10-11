@@ -1,0 +1,411 @@
+{
+  "operational_catalog": {
+    "party": {
+      "label": "Party",
+      "service": "Party Service",
+      "columns": {
+        "id": "UUID",
+        "global_party_id": "UUID",
+        "party_type": "STRING",
+        "display_name": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "global_party_id",
+        "party_type",
+        "display_name"
+      ],
+      "parents": [],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "global_minimum",
+      "major_key": "party_id",
+      "global_fields": [
+        "id",
+        "global_party_id",
+        "party_type"
+      ]
+    },
+    "relationship": {
+      "label": "Relationship",
+      "service": "Relationship Service",
+      "columns": {
+        "id": "UUID",
+        "relationship_type": "STRING",
+        "status": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "relationship_type",
+        "status"
+      ],
+      "parents": [],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "relationship_type",
+        "status"
+      ]
+    },
+    "party_relationship": {
+      "label": "Party\u2013relationship role",
+      "service": "Relationship Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "role": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "role"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "role"
+      ]
+    },
+    "product_holding": {
+      "label": "Product holding",
+      "service": "Holdings Service",
+      "columns": {
+        "id": "UUID",
+        "relationship_id": "UUID",
+        "product_type": "STRING",
+        "status": "STRING",
+        "currency": "STRING",
+        "balance": "DECIMAL(18,2)"
+      },
+      "export_fields": [
+        "id",
+        "relationship_id",
+        "product_type",
+        "status",
+        "currency"
+      ],
+      "parents": [
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "holding_id",
+      "global_fields": [
+        "id",
+        "relationship_id",
+        "product_type",
+        "status",
+        "currency"
+      ]
+    },
+    "contact_info": {
+      "label": "Contact information",
+      "service": "Contact Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "channel": "STRING",
+        "value": "STRING",
+        "is_primary": "BOOL"
+      },
+      "export_fields": [
+        "id",
+        "party_id",
+        "channel",
+        "value",
+        "is_primary"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": true,
+      "default_mode": "relationship_policy",
+      "major_key": "party_id",
+      "global_fields": [
+        "id",
+        "party_id",
+        "channel",
+        "value",
+        "is_primary"
+      ]
+    },
+    "consent": {
+      "label": "Consent",
+      "service": "Consent & Preference Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "purpose": "STRING",
+        "channel": "STRING",
+        "status": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "purpose",
+        "channel",
+        "status"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "purpose",
+        "channel",
+        "status"
+      ]
+    },
+    "preference": {
+      "label": "Preference",
+      "service": "Consent & Preference Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "channel": "STRING",
+        "language": "STRING",
+        "contact_window": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "channel",
+        "language",
+        "contact_window"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": true,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "party_id",
+        "relationship_id",
+        "channel",
+        "language",
+        "contact_window"
+      ]
+    },
+    "contact_history": {
+      "label": "Contact history",
+      "service": "Interaction Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "channel": "STRING",
+        "occurred_at": "FLOAT",
+        "summary": "STRING",
+        "agent_id": "STRING"
+      },
+      "export_fields": [
+        "id"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": true,
+      "needs_contact_consent": false,
+      "default_mode": "owner_only",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id"
+      ]
+    },
+    "party_alternate_id": {
+      "label": "Party alternate ID",
+      "service": "Identity Service",
+      "columns": {
+        "id": "UUID",
+        "party_id": "UUID",
+        "scheme": "STRING",
+        "value": "STRING"
+      },
+      "export_fields": [
+        "id"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        }
+      ],
+      "owner_only": true,
+      "needs_contact_consent": false,
+      "default_mode": "owner_only",
+      "major_key": "party_id",
+      "global_fields": [
+        "id"
+      ]
+    },
+    "relationship_alternate_id": {
+      "label": "Relationship alternate ID",
+      "service": "Identity Service",
+      "columns": {
+        "id": "UUID",
+        "relationship_id": "UUID",
+        "scheme": "STRING",
+        "value": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "relationship_id",
+        "scheme",
+        "value"
+      ],
+      "parents": [
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "relationship_id",
+      "global_fields": [
+        "id",
+        "relationship_id",
+        "scheme",
+        "value"
+      ]
+    },
+    "holding_alternate_id": {
+      "label": "Holding alternate ID",
+      "service": "Identity Service",
+      "columns": {
+        "id": "UUID",
+        "holding_id": "UUID",
+        "scheme": "STRING",
+        "value": "STRING"
+      },
+      "export_fields": [
+        "id"
+      ],
+      "parents": [
+        {
+          "field": "holding_id",
+          "table": "product_holding"
+        }
+      ],
+      "owner_only": true,
+      "needs_contact_consent": false,
+      "default_mode": "owner_only",
+      "major_key": "holding_id",
+      "global_fields": [
+        "id"
+      ]
+    },
+    "classification": {
+      "label": "Classification assignment",
+      "service": "Classification Service",
+      "columns": {
+        "id": "UUID",
+        "subject_type": "STRING",
+        "party_id": "UUID",
+        "relationship_id": "UUID",
+        "holding_id": "UUID",
+        "code": "STRING",
+        "level": "STRING"
+      },
+      "export_fields": [
+        "id",
+        "subject_type",
+        "party_id",
+        "relationship_id",
+        "holding_id",
+        "code",
+        "level"
+      ],
+      "parents": [
+        {
+          "field": "party_id",
+          "table": "party"
+        },
+        {
+          "field": "relationship_id",
+          "table": "relationship"
+        },
+        {
+          "field": "holding_id",
+          "table": "product_holding"
+        }
+      ],
+      "owner_only": false,
+      "needs_contact_consent": false,
+      "default_mode": "relationship_policy",
+      "major_key": "typed_subject",
+      "global_fields": [
+        "id",
+        "subject_type",
+        "party_id",
+        "relationship_id",
+        "holding_id",
+        "code",
+        "level"
+      ]
+    }
+  }
+}

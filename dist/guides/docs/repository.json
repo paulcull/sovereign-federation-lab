@@ -1,0 +1,7 @@
+{
+  "provider": "Sites Git",
+  "visibility": "private",
+  "remote_url": "https://git.chatgpt-team.site/92d245bb-eb02-455f-b736-47293e598a35/appgprj_6acb94b068088191aa1884a0a181b8e1.git",
+  "portal": "https://sovereign-federation-lab.paulcull.chatgpt.site",
+  "commit_reference": "dist/downloads/release.json is generated from the initial commit; GitHub export is optional and not yet performed"
+}

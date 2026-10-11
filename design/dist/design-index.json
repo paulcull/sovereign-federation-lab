@@ -1,0 +1,142 @@
+[
+  {
+    "slug": "index",
+    "title": "Global identity. Independent business boundaries.",
+    "summary": "A party relationship platform with sovereignty alongside the operational data model: table contracts, business-key policies and accountable movement."
+  },
+  {
+    "slug": "project-context",
+    "title": "The reasoning, preserved and expanded.",
+    "summary": "The original Singapore\u2013UK example now sits inside a 30-legal-entity operating model."
+  },
+  {
+    "slug": "control-plane",
+    "title": "See both the legal and physical footprint.",
+    "summary": "The control plane answers who may use the data and where each authorised copy resides."
+  },
+  {
+    "slug": "policy-lab",
+    "title": "Test the contradiction, not just the happy path.",
+    "summary": "Entity permission is necessary; it is never enough on its own."
+  },
+  {
+    "slug": "operations",
+    "title": "Desired state is not observed state.",
+    "summary": "Separate policy permission, physical copy presence and destination acknowledgement."
+  },
+  {
+    "slug": "architecture",
+    "title": "Entity sovereignty, physical placement.",
+    "summary": "Separate the business federation boundary from the database deployment boundary."
+  },
+  {
+    "slug": "platform",
+    "title": "Operate stores; govern entities.",
+    "summary": "Infrastructure management and customer federation remain distinct control planes."
+  },
+  {
+    "slug": "gateways",
+    "title": "Authenticate the entity. Resolve the store.",
+    "summary": "Business API access needs both legal-entity context and a permitted physical processing location."
+  },
+  {
+    "slug": "opa",
+    "title": "Permission meets physical reality.",
+    "summary": "OPA evaluates the recipient legal entity and the actual resolved storage country together."
+  },
+  {
+    "slug": "transactions",
+    "title": "One owner transaction. Explicit federation.",
+    "summary": "Keep local business invariants atomic and make remote projection progress observable."
+  },
+  {
+    "slug": "replication-options",
+    "title": "Placement and entitlement are separate problems.",
+    "summary": "Choose a transport after the ownership, exclusion and physical-boundary rules are explicit."
+  },
+  {
+    "slug": "federation",
+    "title": "Move the approved projection, not the customer universe.",
+    "summary": "Candidate legal entities are resolved and checked before any destination receives identifying data."
+  },
+  {
+    "slug": "lifecycle",
+    "title": "Revoke access. Reconcile copies. Prove each step.",
+    "summary": "Policy changes and entity relocation are different workflows with different completion evidence."
+  },
+  {
+    "slug": "decisions",
+    "title": "Make the remaining decisions visible.",
+    "summary": "The prototype chooses small, reversible implementation boundaries while retaining the harder questions."
+  },
+  {
+    "slug": "observability",
+    "title": "Observe the fleet without exporting its customers.",
+    "summary": "Entity and store dimensions explain movement; customer data stays out of telemetry."
+  },
+  {
+    "slug": "audit",
+    "title": "Evidence for each legal and physical boundary.",
+    "summary": "Receipts must identify both the recipient entity and the actual storage destination."
+  },
+  {
+    "slug": "apis",
+    "title": "Entity-aware contracts from the first request.",
+    "summary": "API routes identify a relationship record; its owner and global identity remain explicit data."
+  },
+  {
+    "slug": "engineering",
+    "title": "An executable thin slice, with explicit next gates.",
+    "summary": "Start with the packaged v2 prototype, then replace one boundary at a time."
+  },
+  {
+    "slug": "references",
+    "title": "Sources, assumptions and verification.",
+    "summary": "The executable policy checks and design assumptions are documented separately from deployment claims."
+  },
+  {
+    "slug": "entity-model",
+    "title": "Global identity. Independent entity authority.",
+    "summary": "Model each legal entity\u2019s customer relationship explicitly; shared identity does not merge policies."
+  },
+  {
+    "slug": "placement",
+    "title": "An entity directory is not a relocation switch.",
+    "summary": "Bind entities to approved physical stores, then evaluate every candidate crossing against that binding."
+  },
+  {
+    "slug": "operational-model",
+    "title": "Global party. Federated relationships.",
+    "summary": "Two independent distribution paths on top of one coherent party relationship model."
+  },
+  {
+    "slug": "sovereignty-integration",
+    "title": "A parallel control layer. Explicit joins.",
+    "summary": "Table defaults establish the contract. Business keys and context determine which rows may cross."
+  },
+  {
+    "slug": "service-transactions",
+    "title": "Local business commit. Independent federation.",
+    "summary": "Deploy regional modular services behind regional gateways, with an explicit boundary between local success and remote delivery."
+  },
+  {
+    "slug": "performance-scale",
+    "title": "Engineer for the work. Budget for the tails.",
+    "summary": "50 million parties, 100 million relationships, explicit p95/p99 targets and reproducible capacity scenarios."
+  },
+  {
+    "slug": "pilot-plan",
+    "title": "Prove correctness. Then earn the scale.",
+    "summary": "A gated backlog with named ownership, dependencies and measurable exit evidence."
+  },
+  {
+    "slug": "work-isolation",
+    "title": "Operational work keeps its own capacity.",
+    "summary": "Decouple the cost of changing placement from the small act of changing authority. Policy campaigns cannot sit ahead of operational records."
+  },
+  {
+    "slug": "entity-migration",
+    "title": "Bring the legal entity home.",
+    "summary": "Add Mumbai as a fourth physical store, move the India entity while source operations continue, then change authority once and account for old copies."
+  }
+]

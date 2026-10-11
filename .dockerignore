@@ -1,0 +1,10 @@
+.git
+.openai
+.env
+.env.*
+.venv
+**/__pycache__
+**/*.pyc
+artifacts
+dist/downloads
+docs/history

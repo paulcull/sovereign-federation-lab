@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+*.sqlite*
+*.log
+.DS_Store
+artifacts/*
+!artifacts/.gitkeep
+dist/downloads/*
+!dist/downloads/.gitkeep
