@@ -23,6 +23,8 @@ jobs:
           python3 -m playwright install --with-deps chromium
       - name: Live Chromium generator and migration walkthrough
         run: python3 poc/tests/browser_acceptance.py 2>&1 | tee artifacts/browser.log
+      - name: Microsite reader journey
+        run: python3 design/tests/reader_browser.py 2>&1 | tee artifacts/reader-guide.log
       - name: Collect container diagnostics
         if: always()
         run: |

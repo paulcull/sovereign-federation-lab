@@ -51,6 +51,7 @@ case "${1:-help}" in
   test)
     ready
     dc run --rm --no-deps --user "$(id -u):$(id -g)" tools scripts/verify.py
+    dc run --rm --no-deps tools design/tests/check_links.py
     dc run --rm --no-deps tools poc/tests/deployment_test.py
     for file in engine.mjs operational_engine.mjs migration_engine.mjs migration_ui.mjs lab_mode.mjs; do
       dc run --rm --no-deps node-tools "poc/tests/$file"

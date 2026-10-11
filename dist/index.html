@@ -1,6 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sovereign Federation Lab · Sovereign Lab</title><link rel="stylesheet" href="/lab.css"></head><body><header><a class="brand" href="/">SOVEREIGN <span>DEVELOPMENT LAB</span></a><nav aria-label="Lab navigation"><a href="/monitor.html">Monitor</a><a href="/migration.html">Relocation</a><a href="/design/index.html">Design</a><a href="/design/adr-register.html">ADRs</a><a href="/design/development-lab.html">Run guide</a></nav></header><main><p class="eyebrow">CUSTOMER DATA FEDERATION / DEVELOPMENT EDITION 09</p>
-<h1>One lab.<br>Every boundary made explicit.</h1>
-<p class="lead">CockroachDB, OPA and OpenTelemetry. Thirty legal entities, three base geographic stores and a fourth store in Mumbai. Business data, sovereign controls and the decisions connecting them.</p>
+<h1>Share useful data.<br>Respect each business’s boundaries.</h1>
+<p class="lead">One person can have relationships with several bank businesses. This synthetic lab explores who owns each relationship, who may receive selected information, and where an approved copy may live.</p>
+<section><h2>New to the project? Start with an example.</h2><p>Singapore owns a relationship. An authorised UK entity receives selected fields. An excluded US destination receives none of that relationship data. Eligible minimal party identity follows a separate policy-controlled path.</p><a class="button" href="/design/index.html">Follow the reader guide →</a></section>
 <div class="notice" id="mode">This hosted portal provides the documentation and browser demonstrations. Run the downloaded containers to use real CockroachDB and OPA. Container mode requires the live API; there is no database fallback.</div>
 <section class="hero"><p class="eyebrow">DEPLOY THE COMPLETE LAB</p><h2>Start with three commands.</h2><pre>./lab doctor
 ./lab up

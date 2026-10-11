@@ -1,13 +1,13 @@
 [
   {
     "slug": "index",
-    "title": "Global identity. Independent business boundaries.",
-    "summary": "A party relationship platform with sovereignty alongside the operational data model: table contracts, business-key policies and accountable movement."
+    "title": "Share useful data. Respect each business\u2019s boundaries.",
+    "summary": "How can a bank serve the same person across legal entities without sharing every relationship, every field or every location? This synthetic lab makes those choices visible."
   },
   {
     "slug": "project-context",
-    "title": "The reasoning, preserved and expanded.",
-    "summary": "The original Singapore\u2013UK example now sits inside a 30-legal-entity operating model."
+    "title": "Why this lab exists.",
+    "summary": "Explore useful sharing across bank businesses without treating identity, access and location as the same decision."
   },
   {
     "slug": "control-plane",
@@ -87,7 +87,7 @@
   {
     "slug": "engineering",
     "title": "An executable thin slice, with explicit next gates.",
-    "summary": "Start with the packaged v2 prototype, then replace one boundary at a time."
+    "summary": "Continue from the validated container lab; earn each pilot capability with its own acceptance evidence."
   },
   {
     "slug": "references",
@@ -96,8 +96,8 @@
   },
   {
     "slug": "entity-model",
-    "title": "Global identity. Independent entity authority.",
-    "summary": "Model each legal entity\u2019s customer relationship explicitly; shared identity does not merge policies."
+    "title": "One person. Separate banking relationships.",
+    "summary": "Knowing who someone is does not tell every bank entity what it may see or change."
   },
   {
     "slug": "placement",

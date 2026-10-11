@@ -1,5 +1,17 @@
 # Unified lab verification — edition 09
 
+The microsite reader journey has a read-only real-gateway Chromium check:
+`python3 design/tests/reader_browser.py`, using the Playwright setup described in
+[container acceptance](docs/CONTAINER_ACCEPTANCE.md). It follows the portal entry,
+eight-page previous/next sequence, glossary and evidence links, checks all 28
+component pages for obsolete acceptance claims, exercises the mobile menu and
+captures 375/768/1440px layouts. CI includes it after the live lab walkthrough.
+Offline and browser checks share `design/tests/status_claims.py`: known obsolete
+claims are rejected, and the operations/observability pages must state both the
+validated scope and its remaining migration/telemetry limits.
+This verifies navigation and bounded rendering; comprehension still needs feedback
+from first-time readers. Screenshots are saved under ignored `artifacts/reader-guide/`.
+
 The complete Docker lab passed `./lab doctor`, `./lab up` and `./lab test` on 11 October 2026, followed by the live Chromium generator/migration walkthrough. Actual source OPA and Collector outage probes passed fail-closed export and SQL-audit isolation checks. See [container acceptance evidence](docs/CONTAINER_ACCEPTANCE.md) for the environment, failures fixed, exact commands and limits. Service entry points require CockroachDB and there is no SQLite fallback.
 
 Execution-limit statements under the historical editions below describe their original authoring runs. They do not describe this subsequent container acceptance. A PR workflow result must be checked separately at its exact commit.
