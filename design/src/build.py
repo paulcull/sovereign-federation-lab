@@ -329,17 +329,27 @@ for component in pages:
         component['body']=section('Implemented container logging extension', '<p>The consolidated lab exports minimised JSON application logs through the OTel Collector to Loki and provisions Grafana at the local gateway path <code>/grafana/</code>. Traces still use a debug exporter; metrics backends and regional telemetry isolation remain pilot work. Run <code>./lab telemetry</code> for the end-to-end gate. See the consolidated lab observability guide for exact configuration and execution limits.</p>')+component['body']
 
 
+# Present the current story after the component history has been assembled.
+exec((ROOT/'src/reader_update.py').read_text())
+
 # Produce actual separate pages, with shared navigation and browser-local demo code.
 nav=''
-for group in ['Explore','Experience','Design','Deliver']:
+names={'entity-migration':'Moving the India entity','work-isolation':'Work isolation proposal','project-context':'Why this lab exists','platform':'Platform proposal','replication-options':'Replication options','decisions':'Open decisions','control-plane':'Customer console model','policy-lab':'Policy model','operations':'Operations model','gateways':'Gateway proposal','transactions':'Transactions','lifecycle':'Policy lifecycle','observability':'Logs & traces','audit':'Audit & retention','apis':'API contracts','engineering':'Engineering next steps','references':'Evidence & sources','placement':'Placement details','sovereignty-integration':'Business and policy tables','service-transactions':'Service deployment proposal','performance-scale':'Capacity model'}
+names.update({slug:name for slug,name,_ in reading_path})
+navigation_groups=[('Start here',[slug for slug,_,_ in reading_path]),
+                   ('Explore browser models',['control-plane','policy-lab','operations']),
+                   ('Technical reference',['placement','sovereignty-integration','transactions','service-transactions','gateways','platform','replication-options','lifecycle','decisions','apis','observability','audit','work-isolation','performance-scale']),
+                   ('Evidence and context',['engineering','references','project-context'])]
+assert len({slug for _,slugs in navigation_groups for slug in slugs})==len(pages)
+for group,slugs in navigation_groups:
     nav+=f'<div class="nav-group">{group}</div>'
-    for p in pages:
-        if p['group']==group:
-            names={'entity-migration':'Entity relocation','work-isolation':'Work isolation','project-context':'Origin & requirements','platform':'On-prem platform control','replication-options':'Replication options','decisions':'Consistency & outage reads','index':'Overview','control-plane':'Customer console','policy-lab':'Policy lab','operations':'Operations','architecture':'Regional architecture','gateways':'Gateways & APIs','opa':'OPA policy platform','transactions':'Transactions & performance','federation':'Federation pipeline','lifecycle':'Policy lifecycle','observability':'OpenTelemetry','audit':'Audit & retention','apis':'API & data contracts','engineering':'Engineering plan','references':'Sources & assumptions'}
-            nav+=f'<a href="{p["slug"]}.html" data-page="{p["slug"]}"><span class="nav-mark"></span>{names.get(p["slug"], {"entity-model":"Entity & identity model","placement":"Physical placement"}.get(p["slug"],p["title"]))}</a>'
+    for slug in slugs:
+        nav+=f'<a href="{slug}.html" data-page="{slug}"><span class="nav-mark"></span>{names[slug]}</a>'
 for i,p in enumerate(pages):
     prompt=html.escape(p['prompt'])
     body=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="{html.escape(p['summary'],quote=True)}"><title>{html.escape(p['title'])} · Federation Studio</title><link rel="stylesheet" href="style.css"></head><body data-page="{p['slug']}"><a class="skip-link" href="#main">Skip to content</a><aside class="sidebar" id="sidebar"><a class="brand" href="index.html"><span class="brand-symbol">F</span><span>FEDERATION<small>Architecture studio</small></span></a><div class="nav-caption">CUSTOMER DATA PLATFORM</div><nav aria-label="Main navigation">{nav}</nav><div class="sidebar-foot"><span class="status-dot"></span> DESIGN EDITION 08<br><small>30 entities · 3 base stores + India lab</small></div></aside><div class="workspace"><header class="topbar"><button id="menu-toggle" class="menu-toggle" aria-expanded="false" aria-controls="sidebar">Menu</button><span>Work research <b>/</b> Customer federation</span><div class="top-right"><span class="pill">DESIGN PROTOTYPE</span><button id="print-page" class="quiet">Print page</button></div></header><main id="main"><div class="page-intro"><div class="eyebrow">{p['kicker']}</div><h1>{p['title']}</h1><p class="lead">{p['summary']}</p></div>{p['body']}<section class="engineer-prompt"><div><span class="eyebrow">HAND OFF TO ENGINEERING</span><h2>Build this component</h2><p>A focused prompt with scope, contracts and acceptance criteria.</p></div><button class="copy-prompt primary" data-target="engineering-prompt">Copy engineering prompt</button><details><summary>Read the full prompt</summary><pre id="engineering-prompt">{prompt}</pre></details><span class="copy-status" aria-live="polite"></span></section><footer><a href="index.html">Federation Studio</a><span>Design decisions · 11 October 2026</span><a href="references.html">Sources & assumptions ↗</a></footer></main></div><script src="app.js"></script></body></html>'''
+    body=body.replace('DESIGN EDITION 08','READER GUIDE · EDITION 09').replace('DESIGN PROTOTYPE','SYNTHETIC LAB & DESIGN').replace('Work research <b>/</b> Customer federation','Sovereign Lab <b>/</b> Understanding federation')
+    body=body.replace('<section class="engineer-prompt">','<details class="engineer-prompt"><summary>For implementers: engineering brief</summary>').replace('</section><footer>','</details><footer>')
     (OUT/(p['slug']+'.html')).write_text(body)
 (OUT/'design-index.json').write_text(json.dumps([{k:p[k] for k in ['slug','title','summary']} for p in pages],indent=2))
 print(f'Built {len(pages)} pages')

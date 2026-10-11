@@ -1,6 +1,8 @@
 from pathlib import Path
 from html.parser import HTMLParser
+from urllib.parse import urlsplit,unquote
 root=Path(__file__).resolve().parents[1]/'dist'
+lab_root=root.parents[1]/'dist'
 class Check(HTMLParser):
  def __init__(self):super().__init__();self.ids=[];self.links=[]
  def handle_starttag(self,tag,attrs):
@@ -15,8 +17,14 @@ for p in files:
  c=Check();c.feed(p.read_text());assert len(c.ids)==len(set(c.ids)),p
  for link in c.links:
   if link.startswith(('https:','http:')):continue
-  if link.startswith('#'):assert link[1:] in c.ids,(p,link)
-  elif link:assert (root/link.split('#')[0]).exists(),(p,link)
+  if not link:continue
+  parsed=urlsplit(link)
+  target=(lab_root/parsed.path.lstrip('/')) if parsed.path.startswith('/') else p.parent/parsed.path
+  if not parsed.path:target=p
+  assert target.exists(),(p,link)
+  if parsed.fragment and target.suffix=='.html':
+   dest=Check();dest.feed(target.read_text())
+   assert unquote(parsed.fragment) in dest.ids,(p,link)
  assert 'engineering-prompt' in c.ids
  assert 'HAND OFF TO ENGINEERING' in p.read_text()
 opa=__import__('html').unescape((root/'opa.html').read_text())
@@ -24,7 +32,11 @@ federation=__import__('html').unescape((root/'federation.html').read_text())
 assert '"owner_entity_id": "LE-SG-01"' in opa
 assert '"denied_countries": ["US"]' in opa
 assert '"destination_entity_id": "LE-GB-02"' in federation
-assert 'Confirmed direction' in (root/'project-context.html').read_text()
+context=(root/'project-context.html').read_text()
+assert 'What the demonstration answers' in context and 'independent business ownership' in context
+for p in files:
+ assert 'database end-to-end execution is not verified' not in p.read_text(),p
+ assert 'controlled migration execution is deferred' not in p.read_text(),p
 isolation=(root/'work-isolation.html').read_text()
 for contract in ['Authority guard','Operational delivery','Policy reconciliation','202 Accepted','contiguous applied revocation watermark']:
  assert contract in isolation,contract

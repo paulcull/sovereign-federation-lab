@@ -1,3 +1,16 @@
+# Start with the reader guide
+
+The supporting microsite explains the banking example before its technical contracts.
+Open `http://localhost:8080/design/index.html` after `./lab up`, then follow:
+people and relationships → what can be shared → permission → movement → lab
+architecture → India migration → pilot evidence. A glossary explains the terms;
+previous/next links keep the sequence explicit. The 28 component pages, technical
+examples and expandable engineering briefs remain available as references.
+
+The current operational model uses independent party and relationship scopes.
+The older flat-record sandbox below is a separate teaching example. The guide
+labels the implemented lab, browser models and proposed pilot work separately.
+
 # Scale and pilot extension
 
 Edition 08 adds an isolated, executable [entity relocation slice](MIGRATION.md): Singapore to a fourth Mumbai store, with source-writable copy, catch-up, validation, durable source fencing, India activation and live-copy cleanup. The unified container deployment requires CockroachDB. Its explicitly selected SQLite adapter is retained only for historical unit tests. The original record/normalized-table harness below is unchanged; moving those tables is an explicit adapter extension.

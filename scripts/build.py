@@ -27,8 +27,7 @@ for src in (ROOT/'design/dist').rglob('*'):
     if src.suffix in ('.html','.js','.json'):
         s=portable(src.read_text())
         if src.suffix=='.html':
-            s=s.replace('</nav>','<div class="nav-group">Development lab</div><a href="/">Lab home</a><a href="/design/development-lab.html">Container run guide</a><a href="/design/adr-register.html">ADR register</a></nav>')
-            s=s.replace('<main id="main">','<main id="main"><aside class="callout"><strong>Implementation status · edition 09</strong><p>Four CockroachDB stores and a local HTTP gateway form the container lab. Regional production gateways, HA, CDC/Kafka and distributed resource isolation are target designs. <a href="/design/development-lab.html#status">Check the implementation matrix</a> before engineering from this page.</p></aside>')
+            s=s.replace('</nav>','<div class="nav-group">Development lab</div><a href="/">Lab home</a><a href="/design/development-lab.html">Container run guide</a><a href="/design/adr-register.html">ADR register</a></nav>',1)
         dest.write_text(s)
     else:shutil.copy2(src,dest)
 adrs=json.loads((ROOT/'docs/adrs.json').read_text());cards=[]
