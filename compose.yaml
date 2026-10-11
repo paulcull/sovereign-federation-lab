@@ -30,7 +30,10 @@
         "retries": 30,
         "start_period": "20s"
       },
-      "restart": "unless-stopped"
+      "restart": "unless-stopped",
+      "entrypoint": [
+        "/cockroach/cockroach"
+      ]
     },
     "opa-sg": {
       "image": "openpolicyagent/opa:1.9.0",
@@ -75,7 +78,10 @@
         "retries": 30,
         "start_period": "20s"
       },
-      "restart": "unless-stopped"
+      "restart": "unless-stopped",
+      "entrypoint": [
+        "/cockroach/cockroach"
+      ]
     },
     "opa-uk": {
       "image": "openpolicyagent/opa:1.9.0",
@@ -120,7 +126,10 @@
         "retries": 30,
         "start_period": "20s"
       },
-      "restart": "unless-stopped"
+      "restart": "unless-stopped",
+      "entrypoint": [
+        "/cockroach/cockroach"
+      ]
     },
     "opa-us": {
       "image": "openpolicyagent/opa:1.9.0",
@@ -149,6 +158,10 @@
         "loki": {
           "condition": "service_started"
         }
+      },
+      "environment": {
+        "NO_PROXY": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana,gateway",
+        "no_proxy": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana,gateway"
       }
     },
     "monitor": {
@@ -171,7 +184,8 @@
         "MIGRATION_OPA_IN_URL": "http://opa-in:8181",
         "LAB_DEPLOYMENT": "1",
         "OTEL_TRACES_SAMPLER": "always_on",
-        "NO_PROXY": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana"
+        "NO_PROXY": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana,gateway",
+        "no_proxy": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana,gateway"
       },
       "volumes": [
         "telemetry:/app/telemetry"
@@ -247,7 +261,10 @@
         "retries": 30,
         "start_period": "20s"
       },
-      "restart": "unless-stopped"
+      "restart": "unless-stopped",
+      "entrypoint": [
+        "/cockroach/cockroach"
+      ]
     },
     "opa-in": {
       "image": "openpolicyagent/opa:1.9.0",
@@ -284,6 +301,8 @@
         "test": [
           "CMD",
           "wget",
+          "-Y",
+          "off",
           "-q",
           "--spider",
           "http://127.0.0.1:8080/healthz"
@@ -309,7 +328,9 @@
         "python"
       ],
       "environment": {
-        "POC_URL": "http://gateway:8080"
+        "POC_URL": "http://gateway:8080",
+        "NO_PROXY": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana,gateway",
+        "no_proxy": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana,gateway"
       }
     },
     "node-tools": {
@@ -347,7 +368,9 @@
         "GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION": "true",
         "GF_ANALYTICS_REPORTING_ENABLED": "false",
         "GF_ANALYTICS_CHECK_FOR_UPDATES": "false",
-        "GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES": "false"
+        "GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES": "false",
+        "NO_PROXY": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana,gateway",
+        "no_proxy": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana,gateway"
       },
       "volumes": [
         "grafana:/var/lib/grafana",

@@ -115,7 +115,7 @@ Actual runtime spans include `operational.command`, `operational.dataset_gate`, 
 
 ## Acceptance and limits
 
-Executed: actual OPA v1.9.0, 840 browser/OPA cases (7,290 row decisions), Python business commands/graph closure, Node workflow tests, original 12 Rego tests and 990 entity parity cases. SQL execution, actual DB crash/retry behaviour, OTLP end-to-end delivery and browser visual QA remain unverified here. Run the supplied integration suite on Docker and inspect typed tables before treating this as an executable acceptance baseline.
+Executed: actual OPA v1.9.0, 840 browser/OPA cases (7,290 row decisions), Python business commands/graph closure, Node workflow tests, original 12 Rego tests and 990 entity parity cases. The subsequent [container acceptance](docs/CONTAINER_ACCEPTANCE.md) passed actual CockroachDB business commands, typed SQL projection checks, API restart persistence, OTLP log delivery and the live Chromium walkthrough. Database crash/partition/serialization-retry tests and a full accessibility review remain pilot gates.
 
 ```bash
 docker compose exec db-us ./cockroach sql --insecure --execute 'SELECT owner_entity_id, scope_id, destination_entity_id, global_party_id, party_type, display_name FROM projection.party'

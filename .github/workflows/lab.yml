@@ -9,9 +9,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build and start CockroachDB lab
-        run: ./lab up
+        run: |
+          mkdir -p artifacts
+          ./lab doctor 2>&1 | tee artifacts/doctor.txt
+          ./lab up 2>&1 | tee artifacts/startup.log
       - name: Execute integration and restart gates
-        run: ./lab test
+        run: ./lab test 2>&1 | tee artifacts/acceptance.log
+      - name: Actual OPA and Collector outage gates
+        run: ./lab faults 2>&1 | tee artifacts/faults.log
+      - name: Install browser acceptance tools
+        run: |
+          python3 -m pip install playwright==1.62.0
+          python3 -m playwright install --with-deps chromium
+      - name: Live Chromium generator and migration walkthrough
+        run: python3 poc/tests/browser_acceptance.py 2>&1 | tee artifacts/browser.log
       - name: Collect container diagnostics
         if: always()
         run: |

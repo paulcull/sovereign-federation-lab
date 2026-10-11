@@ -212,7 +212,7 @@ def state():
                     local=[r[0] for r in c.execute('SELECT doc FROM fe_masters')];records+=local
                     projections=[r[0] for r in c.execute('SELECT doc FROM fe_replicas')]
                     events += [r[0] for r in c.execute('SELECT doc FROM fe_audit ORDER BY ts DESC LIMIT 80')]
-                    queue += [dict(zip(['id','record_id','source_store','destination_entity_id','status','attempts','reason'],row)) for row in c.execute("SELECT id,record_id,%s,destination,status,attempts,reason FROM fe_outbox WHERE status IN ('queued','retry')",(sid,))]
+                    queue += [dict(source_store=sid, **dict(zip(['id','record_id','destination_entity_id','status','attempts','reason'],row))) for row in c.execute("SELECT id,record_id,destination,status,attempts,reason FROM fe_outbox WHERE status IN ('queued','retry')")]
                     stores.append({**s.info,'online':True,'paused':PAUSED[sid],'masters':len(local),'replicas':projections})
             except Exception:stores.append({**s.info,'online':False,'paused':PAUSED[sid],'masters':None,'replicas':[]})
         operational=OPERATIONAL.snapshot()

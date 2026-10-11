@@ -1,5 +1,6 @@
 """Entity federation integration suite. Run against the real local v2 stack."""
 import json,time,os,urllib.request,urllib.error
+import psycopg
 URL=os.getenv('POC_URL','http://127.0.0.1:8000')
 def call(path,body=None,method=None):
     req=urllib.request.Request(URL+'/api'+path,data=json.dumps(body).encode() if body is not None else None,headers={'Content-Type':'application/json'},method=method or ('POST' if body is not None else 'GET'))
@@ -24,8 +25,19 @@ def generate(scenario):return call('/generate',{'count':1,'scenario':scenario})[
 def run():
     cat=call('/catalog');check(len(cat['entities'])==30 and len(cat['stores'])==3,'30 legal entities and 3 physical stores')
     c=generate('sg-uk-no-us');rid=c['id'];s=settled(rid);ps=copies(s,rid)
+    check(all(store['online'] for store in s['stores']),'Monitor reads all three real SQL stores without masking query errors as offline')
     check(len(ps)==1 and ps[0]['destination_entity_id']=='LE-GB-02' and ps[0]['store_id']=='STORE-GB-01','SG owner → UK Markets only; US excluded')
     check(set(ps[0]['fields'])=={'name','tier'},'Minimal fields; owner-only email/notes absent')
+    # A denied read alone cannot prove source-side exclusion. Inspect the actual
+    # destination, including customer-linked control/audit artefacts.
+    with psycopg.connect(os.environ['DB_SG']) as source:
+        tasks=[r[0] for r in source.execute('SELECT id FROM fe_outbox WHERE record_id=%s AND destination=%s',(rid,'LE-US-01'))]
+    with psycopg.connect(os.environ['DB_US']) as destination:
+        for table in ['fe_masters','fe_replicas','fe_fences']:
+            assert destination.execute(f'SELECT count(*) FROM {table} WHERE owner=%s AND customer=%s',(c['owner_entity_id'],c['global_customer_id'])).fetchone()[0]==0,table
+        assert destination.execute('SELECT count(*) FROM fe_inbox WHERE id=ANY(%s)',(tasks,)).fetchone()[0]==0
+        assert destination.execute("SELECT count(*) FROM fe_audit WHERE doc->>'record_id'=%s",(rid,)).fetchone()[0]==0
+    check(True,'Never-authorised US store has no payload, fence, inbox or customer-linked audit artefact')
     denied(f'/records/{rid}/read/LE-US-01')
     denied(f'/records/{rid}/relationship',{'owner_entity_id':'LE-US-01'})
     sibling=call(f'/records/{rid}/relationship',{'owner_entity_id':'LE-GB-02'})
@@ -37,6 +49,7 @@ def run():
     try:
         c=call(f'/records/{rid}/policy',{'expected_generation':c['generation'],'denied_entities':['LE-GB-02']},'PATCH')
         s=wait(lambda s:any(q['record_id']==rid and 'purge pending' in q['reason'] for q in s['queue']),'purge pending')
+        check(all(q['source_store']=='STORE-SG-01' for q in s['queue'] if q['record_id']==rid),'Monitor queue retains source-store identity for pending work')
         check(len(copies(s,rid))==1,'Paused store retains copy; purge not falsely acknowledged')
         denied(f'/records/{rid}/read/LE-GB-02')
     finally:call('/stores/STORE-GB-01/pause',{'paused':False})
