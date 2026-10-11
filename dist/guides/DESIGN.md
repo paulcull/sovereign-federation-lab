@@ -1,6 +1,6 @@
 # Scale and pilot extension
 
-Edition 08 adds an isolated, executable [entity relocation slice](MIGRATION.md): Singapore to a fourth Mumbai store, with source-writable copy, catch-up, validation, durable source fencing, India activation and live-copy cleanup. It has a persistent SQLite adapter and optional CockroachDB profile. The original record/normalized-table harness below is unchanged; moving those tables is an explicit adapter extension.
+Edition 08 adds an isolated, executable [entity relocation slice](MIGRATION.md): Singapore to a fourth Mumbai store, with source-writable copy, catch-up, validation, durable source fencing, India activation and live-copy cleanup. The unified container deployment requires CockroachDB. Its explicitly selected SQLite adapter is retained only for historical unit tests. The original record/normalized-table harness below is unchanged; moving those tables is an explicit adapter extension.
 
 See [scale/SCALE_AND_PILOT.md](scale/SCALE_AND_PILOT.md) for workload assumptions, performance targets, simulations and P01–P24. The scale data path is a proposed evolution; the downloadable operational runtime below is unchanged.
 
@@ -10,7 +10,7 @@ The normalized model, parallel sovereignty layer, global party scope, table/key 
 
 # Legal entity federation — engineering design v2
 
-The live architecture companion has 21 updated pages, with a prompt on each:
+The live architecture companion has 28 component pages, with a prompt on each:
 /design/index.html
 
 ## Ownership and placement

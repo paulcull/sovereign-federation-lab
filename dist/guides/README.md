@@ -54,7 +54,7 @@ The lab implements actual SQL stores and OPA decisions; SQL outbox polling, fiel
 
 CDC/Kafka, regional production gateways/identity, signed policy distribution, distributed fencing, large-scale worker isolation, local HA, normalized-table migration and retained-storage erasure are pilot work. The original worker is serial; the queue-isolation page models the future design. The migration control row remains in SG, so source-cell decommissioning is not demonstrated.
 
-**Execution limit:** Docker is unavailable in the authoring environment. Container integration has not passed here. Historical SQLite adapter tests and browser models are not CockroachDB evidence; run `./lab test` on the development host before acceptance. See TESTING.md.
+**Acceptance scope:** The complete Docker lab and live Chromium walkthrough passed on 11 October 2026. See [reproducible container evidence](docs/CONTAINER_ACCEPTANCE.md) and [testing status](TESTING.md). This is a small synthetic single-host acceptance run, not a performance, HA, physical-residency or retained-storage-erasure claim. Historical SQLite adapter tests remain separate evidence.
 
 ## Repository layout
 

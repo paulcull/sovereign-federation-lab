@@ -78,9 +78,12 @@ separately prove audit completeness. No Docker socket is mounted for log scrapin
 
 The authoring checks exercised the pinned Python SDK against a real local OTLP HTTP
 receiver, protobuf decoding, trace correlation, sensitive-data canaries, unmatched
-routes, server failures and exporter failure isolation. Docker is unavailable in
-the authoring environment, so Loki/Grafana/container integration is **not yet passed**.
-The GitHub Actions lab workflow runs `./lab up` and `./lab test` on a Docker host.
+routes, server failures and exporter failure isolation. The subsequent Docker run
+passed API → Collector → Loki delivery with matching request-header/log/span trace IDs,
+Grafana provisioning and rendered dashboard access. A real Collector outage also
+preserved business commits, mandatory CockroachDB audit and request receipts.
+See [container acceptance](CONTAINER_ACCEPTANCE.md) for commands, images and limits.
+The GitHub Actions workflow repeats the container and browser gates.
 
 A cloud Codex session can work from this private repository once repository access
 is enabled. It is useful for ongoing implementation and reviews. It only resolves

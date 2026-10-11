@@ -1,5 +1,6 @@
 """Real CockroachDB + OPA acceptance. Run on disposable local POC only; mutates synthetic fixture."""
-import uuid
+import os,uuid
+import psycopg
 from integration import call,wait,check,denied
 
 def op():return call('/operational')
@@ -12,6 +13,11 @@ def run():
     call('/stores/STORE-GB-01/pause',{'paused':False});call('/stores/STORE-US-01/pause',{'paused':False})
     for c in ['restore_consent','classify_internal','table_contact_restore','restore_party_us']:command(sid,c)
     settled();rows=read(party['id'],'LE-US-01')['rows'];check(len(rows)==1 and set(rows[0]['row'])=={'id','global_party_id','party_type'},'US has party minimum only');denied(f'/operational/scopes/{sid}/read/LE-US-01')
+    with psycopg.connect(os.environ['DB_US']) as c:
+        assert c.execute('SELECT count(*) FROM projection.party WHERE scope_id=%s AND destination_entity_id=%s AND display_name IS NOT NULL',(party['id'],'LE-US-01')).fetchone()[0]==0
+        assert c.execute('SELECT count(*) FROM projection.relationship WHERE scope_id=%s',(sid,)).fetchone()[0]==0
+        assert c.execute('SELECT count(*) FROM projection.product_holding WHERE scope_id=%s',(sid,)).fetchone()[0]==0
+    check(True,'US SQL contains eligible party identity without name, relationship or holding payload')
     body=dict(command='update_contact',request_id=str(uuid.uuid4()),expected_version=scope(sid)['data_version'],value='integration.aster@example.invalid');result=call(f'/operational/scopes/{sid}/commands',body);check(len(result['affected_scope_ids'])==2,'One contact update affects both relationship scopes')
     replay=call(f'/operational/scopes/{sid}/commands',body);check(replay['idempotent_replay'],'Request ID replay returns receipt')
     denied(f'/operational/scopes/{sid}/commands',{**body,'command':'log_contact'},status=409)

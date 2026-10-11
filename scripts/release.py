@@ -26,7 +26,7 @@ with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
         info=zipfile.ZipInfo('sovereign-federation-lab/'+path,date_time=(2026,10,11,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED
         info.external_attr=(0o100755 if path=='lab' or path.endswith('.sh') else 0o100644)<<16
         z.writestr(info,data)
-    z.writestr('sovereign-federation-lab/RELEASE.json',json.dumps({'commit':commit,'file_count':len(files),'database':'cockroach','container_acceptance':'not executed in authoring environment'},indent=2)+'\n')
+    z.writestr('sovereign-federation-lab/RELEASE.json',json.dumps({'commit':commit,'file_count':len(files),'database':'cockroach','container_acceptance':'See TESTING.md and docs/CONTAINER_ACCEPTANCE.md; packaging does not execute acceptance'},indent=2)+'\n')
 with zipfile.ZipFile(archive) as z:assert z.testzip() is None
 shutil.copy2(archive,OUT/'sovereign-data-poc.zip') # Existing monitor download links remain valid.
 paths=[archive]

@@ -9,7 +9,7 @@ Retrospective decisions recorded on 11 October 2026.
 - [ADR-0005: One local ACID business boundary](ADR-0005.md) — Accepted; Python harness implemented, Spring Boot consolidation is pilot work
 - [ADR-0006: Outbox now, regional CDC and durable bus later](ADR-0006.md) — Accepted; SQL polling/journal implemented, CDC/Kafka proposed
 - [ADR-0007: OPA rules with trusted current facts](ADR-0007.md) — Accepted; local OPA calls implemented, signed distribution proposed
-- [ADR-0008: Audit evidence and OpenTelemetry are distinct](ADR-0008.md) — Accepted; SQL audit, traces and OTLP application log pipeline implemented; container gate pending
+- [ADR-0008: Audit evidence and OpenTelemetry are distinct](ADR-0008.md) — Accepted; SQL audit and OTLP logs container gates passed
 - [ADR-0009: Separate authority, operational and bulk capacity](ADR-0009.md) — Accepted target design; executable queue model only
 - [ADR-0010: Treat capacity results as models and targets](ADR-0010.md) — Accepted analysis method; measured database targets pending
 - [ADR-0011: Source-writable copy followed by fenced cutover](ADR-0011.md) — Accepted; isolated migration implemented

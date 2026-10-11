@@ -57,7 +57,7 @@ From the downloaded lab on a Docker-capable development host:
 ./lab test
 ```
 
-`./lab up` builds the documentation and images, starts all four stores and waits for SQL/OPA readiness. Only the gateway HTTP port is published on host loopback. OPA, SQL and Collector ports stay internal. Named volumes survive `./lab down`. One coordinator process only; synthetic data, insecure SQL and no API authentication. Use an SSH tunnel for a remote development host. See [the deployment guide](docs/DEVELOPMENT.md).
+`./lab up` builds the documentation and images, starts all four stores and waits for SQL/OPA readiness. Only the gateway HTTP port is published on host loopback. OPA, SQL and Collector ports stay internal. Named volumes survive `./lab down`. One coordinator process only; synthetic data, insecure SQL and no API authentication. Use an SSH tunnel for a remote development host. See [the deployment guide](../guides/docs/DEVELOPMENT.md).
 
 The default API script still supports `--base-url` when run on a workstation. CLI generators inside the container use the local API port. Reloading the container UI preserves database state. Reloading the hosted browser example resets its simulation.
 
@@ -171,7 +171,7 @@ Migration consumes the capped reconciliation lane. Authority guard and operation
 
 Existing p95/p99 targets remain hypotheses for the pilot, not measured results of this small migration. Initial isolation acceptance: no more than 10% foreground p99 degradation versus the same hardware and arrival workload without bulk movement, while also measuring errors and completion lag. Agree an entity write-pause budget from final-delta and validation measurements; do not promise zero downtime. WAN time, target catch-up capacity, source retention and count/byte skew determine migration duration.
 
-Migration actions emit OpenTelemetry spans with `work.class` = guard / operational / reconciliation. The HTTP component test checks captured span attributes. The retained standalone CockroachDB entry point can export OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set; the Compose profile reuses the existing tracer/collector configuration. OTLP export end-to-end is not verified here. Configure sampling explicitly when diagnosing this small demo. No customer IDs or payloads are used as metric labels.
+Migration actions emit OpenTelemetry spans with `work.class` = guard / operational / reconciliation. The HTTP component test checks captured span attributes. The retained standalone CockroachDB entry point can export OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set; the Compose profile reuses the existing tracer/collector configuration. The unified container acceptance now observes spans in the Collector and trace-correlated application logs in Loki; see [the evidence](../guides/docs/CONTAINER_ACCEPTANCE.md). This does not verify every standalone exporter or provide a searchable trace backend. Configure sampling explicitly when diagnosing this small demo. No customer IDs or payloads are used as metric labels.
 
 The monitor's last 60 events are a demonstration log, not immutable audit. Pilot audit should append regional command/decision intents atomically, then relay them idempotently into region-governed append-only storage with retention and access controls. Record job, actor, rule/fact/placement revisions, source/target manifests, applied watermarks, cutover receipts and disposal evidence. Do not send customer payloads into global traces. Add metrics for copy bytes/rows, journal lag, per-shard checkpoints, denied stale writes, pause duration, cleanup age and outstanding backup obligations.
 
@@ -190,7 +190,7 @@ Historical edition-08 evidence: browser engine assertions; actual four-file SQLi
 
 Before pilot:
 
-1. Pass `./lab test` on a Docker-capable host and run the four-node CockroachDB walkthrough and kill/restart source, destination, controller and each OPA process at the documented boundaries. Add SERIALIZABLE retry handling and connection pooling.
+1. Reproduce the passed `./lab test` and live browser walkthrough on pilot hardware. Kill/restart databases and test partitions and migration crash boundaries with actual CockroachDB; the basic acceptance covers API restart and a source OPA outage. Add SERIALIZABLE retry handling and connection pooling.
 2. Replace the single coordinator lock with durable campaign ownership/leases and enforce monotonic authority against stale writers at the regional service/store boundary. Test partitions and two competing controllers; no route flip may create two writers.
 3. Implement normalized-table adapters, large-graph manifests, incoming recipient projections, pending outbox transfer, audit relay and idempotency-receipt retention/compaction. Preserve original event IDs across authority handoff.
 4. Provision lawful local HA, backups, encryption/key custody and regional gateways/services in Mumbai. Validate physical placement for every persistent surface and access path.

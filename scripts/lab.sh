@@ -2,7 +2,11 @@
 set -euo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$ROOT"
-dc() { docker compose --project-directory "$ROOT" -f "$ROOT/compose.yaml" "$@"; }
+dc() {
+  local files=(-f "$ROOT/compose.yaml")
+  if [ -n "${LAB_BUILD_CA:-}" ]; then files+=(-f "$ROOT/infra/compose.build-ca.yaml"); fi
+  docker compose --project-directory "$ROOT" "${files[@]}" "$@"
+}
 doctor() {
   command -v docker >/dev/null || { echo 'Docker is required. Install Docker Desktop or Docker Engine with Compose v2. No SQLite fallback.' >&2; return 1; }
   docker info >/dev/null || { echo 'Docker daemon is unavailable.' >&2; return 1; }
@@ -17,6 +21,19 @@ build() {
   dc run --rm --no-deps --user "$(id -u):$(id -g)" tools scripts/verify.py
 }
 ready() { dc exec -T monitor python health_probe.py; }
+faults() (
+  # Restore actual dependencies even when a fault assertion fails.
+  trap 'dc start opa-sg otel-collector >/dev/null' EXIT
+  dc stop otel-collector
+  dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/fault_acceptance.py telemetry
+  dc start otel-collector
+  dc stop opa-sg
+  dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/fault_acceptance.py policy
+  dc start opa-sg
+  dc exec -T monitor python health_probe.py --wait 45
+  dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/fault_acceptance.py recovered
+  dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/logging_integration.py
+)
 case "${1:-help}" in
   doctor) doctor ;;
   build) doctor; build ;;
@@ -30,14 +47,17 @@ case "${1:-help}" in
   status) dc ps; ready ;;
   smoke) dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/lab_acceptance.py --smoke ;;
   telemetry) dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/logging_integration.py ;;
+  faults) ready; faults ;;
   test)
     ready
     dc run --rm --no-deps --user "$(id -u):$(id -g)" tools scripts/verify.py
+    dc run --rm --no-deps tools poc/tests/deployment_test.py
     for file in engine.mjs operational_engine.mjs migration_engine.mjs migration_ui.mjs lab_mode.mjs; do
       dc run --rm --no-deps node-tools "poc/tests/$file"
     done
     dc run --rm --no-deps node-tools design/tests/check.js
     dc exec -T monitor python tests/observability_test.py
+    dc exec -T monitor python tests/health_probe_test.py
     dc exec -T opa-sg /opa test /policies
     dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/integration.py
     dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/operational_integration.py
@@ -86,6 +106,7 @@ Sovereign Federation Lab — CockroachDB only
   ./lab status       Container and dependency health
   ./lab smoke        Gateway, API, SQL identity and policy readiness
   ./lab telemetry    Verify API → Collector → Loki and Grafana provisioning
+  ./lab faults       Stop real OPA/Collector; verify fail-closed exports and SQL audit isolation
   ./lab test         Synthetic-data integration, migration, restart and OTel checks
   ./lab generate --count 5 --scenario sg-uk-no-us
   ./lab business --command open_holding --count 2

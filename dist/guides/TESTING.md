@@ -1,10 +1,12 @@
 # Unified lab verification — edition 09
 
-Docker is unavailable in this authoring environment. The unified container acceptance suite and GitHub Actions workflow have **not run here**. Run `./lab up` and `./lab test` on a Docker-capable development host. Service entry points require CockroachDB and there is no SQLite fallback.
+The complete Docker lab passed `./lab doctor`, `./lab up` and `./lab test` on 11 October 2026, followed by the live Chromium generator/migration walkthrough. Actual source OPA and Collector outage probes passed fail-closed export and SQL-audit isolation checks. See [container acceptance evidence](docs/CONTAINER_ACCEPTANCE.md) for the environment, failures fixed, exact commands and limits. Service entry points require CockroachDB and there is no SQLite fallback.
 
-Current source verification is recorded below; historical tests retain their original scope. `scripts/verify.py` checks generated documentation, navigation, ADRs and deployment contracts. `poc/tests/lab_acceptance.py` checks actual CockroachDB identity, gateway/API routes, OPA, migration SQL, source fencing and restart-persistent authority. The shell gate also requires OTel Collector span receipt. These checks cannot be substituted by SQLite evidence.
+Execution-limit statements under the historical editions below describe their original authoring runs. They do not describe this subsequent container acceptance. A PR workflow result must be checked separately at its exact commit.
 
-## Current source checks executed
+Source authoring verification is recorded below; historical tests retain their original scope. `scripts/verify.py` checks generated documentation, navigation, ADRs and deployment contracts. `poc/tests/lab_acceptance.py` checks actual CockroachDB identity, gateway/API routes, OPA, migration SQL, source fencing and restart-persistent authority. The shell gate also requires OTel Collector span receipt. These checks cannot be substituted by SQLite evidence.
+
+## Source authoring checks before container acceptance
 
 - 51 generated HTML pages; 1,498 local links/assets/fragments; 28 component-page links and engineering prompts; 16 complete ADR records; canonical fixtures and four-store deployment contracts.
 - Node: original federation engine, normalized business engine, migration engine, migration click handlers, deployment-mode fail-closed cases and current design navigation/menu/print/prompt-copy handlers.
@@ -77,10 +79,11 @@ Not claimed:
 ## Local acceptance
 
 ```bash
-docker compose up --build
-python3 poc/tests/integration.py
-node poc/tests/engine.mjs
-docker compose run --rm opa-sg test /policies -v
+./lab doctor
+./lab up
+./lab test
+# Optional browser gate, after the suite; requires Playwright and Chromium:
+python3 poc/tests/browser_acceptance.py
 ```
 
 The integration suite adds synthetic records. It verifies database-backed entity projections, denied reads, identity-disclosure restrictions, independent owner relationships, pause/revoke/resume, geography deny, placement conflicts and expiry.
@@ -106,4 +109,4 @@ For a canonical Singapore/UK-only customer UUID, inspect `fe_replicas`, `fe_fenc
 
 ## Application logging extension
 
-See [observability setup and evidence](docs/OBSERVABILITY.md). `./lab telemetry` verifies API → OTel Collector → Loki, trace correlation and Grafana provisioning. `./lab up` and `./lab test` include this gate. Python OTLP tests passed during authoring; full Docker/Loki/Grafana execution remains unverified. The starting Docker budget with this extension is 10 GB RAM and 15 GB disk, not measured.
+See [observability setup and evidence](docs/OBSERVABILITY.md). `./lab telemetry` verifies API → OTel Collector → Loki, trace correlation and Grafana provisioning. `./lab up` and `./lab test` include this gate. Python OTLP tests passed during authoring. The full Docker/Loki/Grafana path subsequently passed; see [container acceptance](docs/CONTAINER_ACCEPTANCE.md). The starting Docker budget with this extension is 10 GB RAM and 15 GB disk, not measured.

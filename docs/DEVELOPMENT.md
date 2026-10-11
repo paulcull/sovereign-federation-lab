@@ -12,6 +12,35 @@ The entry point is `./lab`. All deployed services use CockroachDB; SQLite is nev
 
 Images are pinned in Compose/Dockerfiles. Validate bank-approved patches, image digests and licensing before moving beyond a synthetic lab. A pinned tag is not a claim of ongoing vendor support.
 
+## HTTPS proxy and private-umask workspaces
+
+On a host that intercepts package-download HTTPS, keep certificate verification enabled:
+
+```bash
+# A PEM bundle containing normal roots and the approved proxy CA; build secret only.
+export LAB_BUILD_CA=/path/to/trusted-ca-bundle.pem
+./lab up
+```
+
+`LAB_BUILD_CA` selects the optional Compose build overlay. The CA is mounted only
+for pip installation and is not copied into the image. Internal lab traffic bypasses
+the outbound proxy through both `NO_PROXY` and `no_proxy`; the loopback-only gateway
+health probe explicitly disables proxy use for its local request.
+
+A workspace extracted with private permissions must make the non-sensitive,
+read-only policy/telemetry mounts readable by the image's non-root users:
+
+```bash
+find poc/policies infra/grafana -type d -exec chmod a+rx {} +
+find poc/policies infra/grafana -type f -exec chmod a+r {} +
+chmod a+r poc/otel-collector.yaml infra/loki.yaml
+```
+
+The gateway image independently normalizes permissions for its public assets and
+live-mode JSON. CockroachDB invokes `/cockroach/cockroach` directly: the pinned
+image's initialization wrapper rejects this lab's internal all-interface address.
+SQL stays inside Compose networking; only the gateway is published on loopback.
+
 ## Commands
 
 | Command | Effect |
@@ -20,6 +49,7 @@ Images are pinned in Compose/Dockerfiles. Validate bank-approved patches, image 
 | `./lab up` | Build docs/images; start and wait for SQL/OPA readiness |
 | `./lab status` | Container state and dependency readiness |
 | `./lab smoke` | Gateway routes, actual database identities and OPA |
+| `./lab faults` | Stop real source OPA/Collector; verify fail-closed export, durable SQL audit and recovery |
 | `./lab test` | Engines, Rego, real API/SQL scenarios, migration, restart and OTel receipt |
 | `./lab generate --count 5 --scenario sg-uk-no-us` | Add synthetic federation records |
 | `./lab business --command open_holding --count 2` | Generate normalized business commands |
@@ -72,7 +102,7 @@ The gateway supplies `mode=live,database=cockroach` through `/lab-config.json`; 
 
 ## Persistence and recovery
 
-Four named database volumes and one telemetry volume survive restart and `./lab down`. The base directory has a persisted catalog fingerprint; changing entity/store assignments on an existing volume is intentionally rejected. Use the isolated migration or a deliberate fresh synthetic environment.
+Four named database volumes plus local trace, Loki and Grafana volumes survive restart and `./lab down`. The base directory has a persisted catalog fingerprint; changing entity/store assignments on an existing volume is intentionally rejected. Use the isolated migration or a deliberate fresh synthetic environment.
 
 The migration snapshot/journal capture committed changes. Target batches are version-idempotent. SG authority is fenced before India becomes writable. Its SG control row remains a dependency: source-cell decommissioning and distributed directory availability are pilot work. Pre-fence cancellation requires lawful SG placement; deadline expiry never creates an exception.
 
@@ -96,10 +126,10 @@ Pause controls are logical fault injection, not process termination. The accepta
 
 ## CI and review
 
-The GitHub Actions workflow runs the lab gates, collects diagnostics and stops containers when this source is published to a GitHub repository with Actions enabled. It has not run in Sites Git. Retain actual development-host/CI evidence before declaring CockroachDB integration verified.
+The GitHub Actions workflow runs the lab gates and live browser acceptance, collects diagnostics/screenshots and stops containers. The managed development-host run is recorded in [container acceptance](CONTAINER_ACCEPTANCE.md); workflow results must be read from the exact PR commit, not inferred from configuration.
 
 Review the [ADR register](adr/README.md), [documentation audit](DOCUMENTATION_AUDIT.md) and [testing status](../TESTING.md) before pilot planning.
 
 ## Application logging extension
 
-See [observability setup and evidence](OBSERVABILITY.md). `./lab telemetry` verifies API → OTel Collector → Loki, trace correlation and Grafana provisioning. `./lab up` and `./lab test` include this gate. Python OTLP tests passed during authoring; full Docker/Loki/Grafana execution remains unverified. The starting Docker budget with this extension is 10 GB RAM and 15 GB disk, not measured.
+See [observability setup and evidence](OBSERVABILITY.md). `./lab telemetry` verifies API → OTel Collector → Loki, trace correlation and Grafana provisioning. `./lab up` and `./lab test` include this gate. Python OTLP tests passed during authoring. The full Docker/Loki/Grafana path subsequently passed; see [container acceptance](CONTAINER_ACCEPTANCE.md). The starting Docker budget with this extension is 10 GB RAM and 15 GB disk, not measured.

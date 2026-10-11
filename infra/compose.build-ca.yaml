@@ -1,0 +1,12 @@
+# Optional HTTPS proxy trust for dependency installation only.
+# LAB_BUILD_CA must point to a PEM bundle containing normal roots and the proxy CA.
+services:
+  tools:
+    build:
+      secrets: [proxy_ca]
+  monitor:
+    build:
+      secrets: [proxy_ca]
+secrets:
+  proxy_ca:
+    file: ${LAB_BUILD_CA:?Set LAB_BUILD_CA to the trusted CA bundle path}

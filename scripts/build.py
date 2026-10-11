@@ -1,6 +1,7 @@
 """Build the portable lab portal, monitor, design pages and ADRs. No network."""
 from pathlib import Path
-import html,json,re,shutil,subprocess,sys
+import html,json,os,re,shutil,subprocess,sys
+from urllib.parse import urlsplit
 ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'dist';OUT.mkdir(exist_ok=True)
 DESIGN_ORIGIN='https://customer-federation-design.paulcull.chatgpt.site'
 MONITOR_ORIGIN='https://sovereign-data-monitor.paulcull.chatgpt.site'
@@ -47,9 +48,19 @@ for folder in ['docs','scale']:
     for src in (ROOT/folder).rglob('*'):
         if src.is_file() and src.suffix in ('.md','.json','.csv') and 'history' not in src.parts:
             dest=OUT/'guides'/src.relative_to(ROOT);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_text(portable(src.read_text()))
-# Compatibility URLs for the existing download links, sourced from canonical documents.
-(OUT/'migration/migration-guide.md').write_text(portable((ROOT/'MIGRATION.md').read_text()))
-(OUT/'isolation/work-isolation.md').write_text(portable((ROOT/'WORK_ISOLATION.md').read_text()))
+# Compatibility downloads live outside guides; rebase canonical relative links.
+for source, destination in [('MIGRATION.md','migration/migration-guide.md'),
+                            ('WORK_ISOLATION.md','isolation/work-isolation.md')]:
+    target=OUT/destination
+    def rebase(match):
+        url=match[2];parsed=urlsplit(url)
+        if parsed.scheme or url.startswith(('/', '#')):return match[0]
+        canonical=(ROOT/source).parent/parsed.path
+        copied=OUT/'guides'/canonical.relative_to(ROOT)
+        relative=os.path.relpath(copied,target.parent)
+        return match[1]+relative+url[len(parsed.path):]+match[3]
+    text=portable((ROOT/source).read_text())
+    target.write_text(re.sub(r'(!?\[[^\]]*\]\()([^\s)]+)(\))',rebase,text))
 (OUT/'lab-config.json').write_text('{"mode":"simulation","edition":9}\n')
 shutil.copy2(ROOT/'web/lab.css',OUT/'lab.css')
 for src,dest in [('web/portal.html','index.html'),('web/development.html','design/development-lab.html')]:

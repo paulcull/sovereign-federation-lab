@@ -151,9 +151,11 @@ class OperationalRuntime:
                     with store.connect() as c:
                         for x in c.execute('SELECT owner_entity_id,scope_id,destination_entity_id,data_version,policy_generation,decision_revision,placement_version,row_counts FROM sovereignty.manifest').fetchall():
                             p=dict(owner_entity_id=x[0],scope_id=str(x[1]),destination_entity_id=x[2],store_id=sid,data_version=x[3],policy_generation=x[4],decision_revision=x[5],placement_version=x[6],row_counts=x[7],rows=[])
+                            scope=core.next_scope(model,p['scope_id'])
+                            field_set='global_fields' if scope['scope_kind']=='party' else 'export_fields'
                             for t in core.ORDER:
                                 cols=list(core.TABLES[t]['columns']);cur=c.execute('SELECT '+','.join(cols)+f' FROM projection.{t} WHERE owner_entity_id=%s AND scope_id=%s AND destination_entity_id=%s',x[:3])
-                                p['rows'] += [dict(table=t,row={k:v for k,v in clean(dict(zip(cols,r))).items() if k in core.TABLES[t]['export_fields']}) for r in cur.fetchall()]
+                                p['rows'] += [dict(table=t,row={k:v for k,v in clean(dict(zip(cols,r))).items() if k in core.TABLES[t].get(field_set,[])}) for r in cur.fetchall()]
                             projections.append(p)
                 except Exception:unavailable.append(sid)
             return dict(model=model,projections=projections,events=events,queue=queue,transactions=receipts,unavailable_stores=unavailable)

@@ -6,6 +6,8 @@ Also verifies gateway → Grafana and provisioned data source/dashboard.
 import json
 import os
 import time
+from collections import deque
+from pathlib import Path
 import httpx
 
 base = os.getenv('POC_URL', 'http://gateway:8080').rstrip('/')
@@ -26,6 +28,11 @@ with httpx.Client(timeout=10, trust_env=False) as client:
         except (httpx.HTTPError, KeyError, ValueError): pass
         time.sleep(1)
     assert matched, 'API request log did not arrive in Loki through the Collector'
+    traces = Path(os.getenv('TELEMETRY_DIR', '/app/telemetry')) / 'traces.jsonl'
+    with traces.open() as source:
+        spans = [json.loads(line) for line in deque(source, maxlen=500)]
+    assert any(s['trace_id'] == trace_id and s['span'] == 'http.server'
+               and s['attributes'].get('http.route') == '/api/health/live' for s in spans), 'Loki log and actual API span must share the generated trace ID'
     health = client.get(base + '/grafana/api/health'); health.raise_for_status()
     assert health.json()['database'] == 'ok'
     datasource = client.get(base + '/grafana/api/datasources/uid/sovereign-loki')
