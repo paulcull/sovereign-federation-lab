@@ -6,6 +6,9 @@ The microsite reader journey has a read-only real-gateway Chromium check:
 eight-page previous/next sequence, glossary and evidence links, checks all 28
 component pages for obsolete acceptance claims, exercises the mobile menu and
 captures 375/768/1440px layouts. CI includes it after the live lab walkthrough.
+Offline and browser checks share `design/tests/status_claims.py`: known obsolete
+claims are rejected, and the operations/observability pages must state both the
+validated scope and its remaining migration/telemetry limits.
 This verifies navigation and bounded rendering; comprehension still needs feedback
 from first-time readers. Screenshots are saved under ignored `artifacts/reader-guide/`.
 

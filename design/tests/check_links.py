@@ -1,6 +1,7 @@
 from pathlib import Path
 from html.parser import HTMLParser
 from urllib.parse import urlsplit,unquote
+from status_claims import assert_current_status
 root=Path(__file__).resolve().parents[1]/'dist'
 lab_root=root.parents[1]/'dist'
 class Check(HTMLParser):
@@ -35,8 +36,7 @@ assert '"destination_entity_id": "LE-GB-02"' in federation
 context=(root/'project-context.html').read_text()
 assert 'What the demonstration answers' in context and 'independent business ownership' in context
 for p in files:
- assert 'database end-to-end execution is not verified' not in p.read_text(),p
- assert 'controlled migration execution is deferred' not in p.read_text(),p
+ assert_current_status(p.read_text(),p.stem)
 isolation=(root/'work-isolation.html').read_text()
 for contract in ['Authority guard','Operational delivery','Policy reconciliation','202 Accepted','contiguous applied revocation watermark']:
  assert contract in isolation,contract

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 from playwright.sync_api import sync_playwright, expect
+from status_claims import assert_current_status
 
 base = os.getenv('POC_URL', 'http://127.0.0.1:8080').rstrip('/')
 out = Path(os.getenv('READER_ARTIFACTS', 'artifacts/reader-guide'))
@@ -47,8 +48,7 @@ with sync_playwright() as p:
         response = page.goto(base + '/design/' + item['slug'] + '.html', wait_until='domcontentloaded')
         assert response.status == 200
         text = page.locator('main').inner_text()
-        assert 'database end-to-end execution is not verified' not in text, item['slug']
-        assert 'controlled migration execution is deferred' not in text, item['slug']
+        assert_current_status(text, item['slug'])
         if item['slug'] != 'index':
             expect(page.locator('.reader-help a').first).to_have_attribute('href', 'index.html#reading-path')
             expect(page.locator('.reader-status summary')).to_be_visible()
