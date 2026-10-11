@@ -144,7 +144,12 @@
       "volumes": [
         "./poc/otel-collector.yaml:/etc/otel.yaml:ro"
       ],
-      "restart": "unless-stopped"
+      "restart": "unless-stopped",
+      "depends_on": {
+        "loki": {
+          "condition": "service_started"
+        }
+      }
     },
     "monitor": {
       "build": {
@@ -166,7 +171,7 @@
         "MIGRATION_OPA_IN_URL": "http://opa-in:8181",
         "LAB_DEPLOYMENT": "1",
         "OTEL_TRACES_SAMPLER": "always_on",
-        "NO_PROXY": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector"
+        "NO_PROXY": "localhost,127.0.0.1,db-sg,db-uk,db-us,db-in,opa-sg,opa-uk,opa-us,opa-in,otel-collector,loki,grafana"
       },
       "volumes": [
         "telemetry:/app/telemetry"
@@ -269,6 +274,9 @@
       "depends_on": {
         "monitor": {
           "condition": "service_healthy"
+        },
+        "grafana": {
+          "condition": "service_started"
         }
       },
       "restart": "unless-stopped",
@@ -316,6 +324,42 @@
       "entrypoint": [
         "node"
       ]
+    },
+    "loki": {
+      "image": "grafana/loki:3.5.7",
+      "command": [
+        "-config.file=/etc/loki/loki.yaml"
+      ],
+      "volumes": [
+        "./infra/loki.yaml:/etc/loki/loki.yaml:ro",
+        "loki:/loki"
+      ],
+      "restart": "unless-stopped"
+    },
+    "grafana": {
+      "image": "grafana/grafana:12.2.0",
+      "environment": {
+        "GF_SERVER_ROOT_URL": "http://localhost:${LAB_PORT:-8080}/grafana/",
+        "GF_SERVER_SERVE_FROM_SUB_PATH": "true",
+        "GF_AUTH_ANONYMOUS_ENABLED": "true",
+        "GF_AUTH_ANONYMOUS_ORG_ROLE": "Viewer",
+        "GF_AUTH_DISABLE_LOGIN_FORM": "true",
+        "GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION": "true",
+        "GF_ANALYTICS_REPORTING_ENABLED": "false",
+        "GF_ANALYTICS_CHECK_FOR_UPDATES": "false",
+        "GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES": "false"
+      },
+      "volumes": [
+        "grafana:/var/lib/grafana",
+        "./infra/grafana/provisioning:/etc/grafana/provisioning:ro",
+        "./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro"
+      ],
+      "depends_on": {
+        "loki": {
+          "condition": "service_started"
+        }
+      },
+      "restart": "unless-stopped"
     }
   },
   "volumes": {
@@ -323,6 +367,8 @@
     "db-uk": {},
     "db-us": {},
     "telemetry": {},
-    "db-in": {}
+    "db-in": {},
+    "loki": {},
+    "grafana": {}
   }
 }

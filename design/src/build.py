@@ -324,6 +324,10 @@ exec((ROOT/'src/scale_update.py').read_text())
 
 exec((ROOT/'src/isolation_update.py').read_text())
 exec((ROOT/'src/migration_update.py').read_text())
+for component in pages:
+    if component['slug']=='observability':
+        component['body']=section('Implemented container logging extension', '<p>The consolidated lab exports minimised JSON application logs through the OTel Collector to Loki and provisions Grafana at the local gateway path <code>/grafana/</code>. Traces still use a debug exporter; metrics backends and regional telemetry isolation remain pilot work. Run <code>./lab telemetry</code> for the end-to-end gate. See the consolidated lab observability guide for exact configuration and execution limits.</p>')+component['body']
+
 
 # Produce actual separate pages, with shared navigation and browser-local demo code.
 nav=''

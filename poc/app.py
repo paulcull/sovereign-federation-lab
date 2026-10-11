@@ -1,5 +1,5 @@
 """Single-process synthetic-data harness; adapters are the regional extension points."""
-import os, json, time, uuid, threading, hashlib
+import os, json, time, uuid, threading, hashlib, logging
 from pathlib import Path
 from contextlib import asynccontextmanager
 import httpx, psycopg
@@ -11,6 +11,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.sdk.resources import Resource
+from observability import ApplicationLogs, RequestTelemetry
 from seed import make_record, SCENARIOS, REGIONS, CATALOG, ENTITIES, STORE_INFO, placement
 
 LOCK = threading.RLock()  # Single harness serializes policy edits and delivery. Not a distributed fence.
@@ -32,6 +33,7 @@ if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
     provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
 trace.set_tracer_provider(provider)
 TRACER = trace.get_tracer("sovereign.federation")
+LOGS = ApplicationLogs("sovereign-poc-harness")
 
 class RegionStore:
     """Physical store adapter; entity rows remain distinct even on a shared node."""
@@ -157,7 +159,7 @@ def worker():
         try:
             tick()
             OPERATIONAL.tick()
-        except Exception as e:print('Worker retry:',type(e).__name__,flush=True)
+        except Exception:LOGS.emit('worker.retry', level=logging.WARNING)
         STOP.wait(.8)
 @asynccontextmanager
 async def lifespan(app):
@@ -186,9 +188,14 @@ async def lifespan(app):
     OPERATIONAL.initialize()
     if MIGRATION is not None:MIGRATION.initialize()
     STOP.clear();thread=threading.Thread(target=worker,daemon=True);thread.start()
-    yield
-    STOP.set();thread.join(timeout=5);provider.shutdown()
+    LOGS.emit('service.started')
+    try:
+        yield
+    finally:
+        STOP.set();thread.join(timeout=5)
+        LOGS.emit('service.stopped');LOGS.shutdown();provider.shutdown()
 app=FastAPI(title='Sovereign Federation Lab · CockroachDB',lifespan=lifespan,docs_url='/api-docs',redoc_url=None)
+app.add_middleware(RequestTelemetry, logs=LOGS, tracer=TRACER)
 from lab_health import router as health_router
 app.include_router(health_router())
 class Generate(BaseModel):

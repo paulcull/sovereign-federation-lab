@@ -5,7 +5,7 @@ The entry point is `./lab`. All deployed services use CockroachDB; SQLite is nev
 ## Prerequisites
 
 - Bash; Docker Engine/Desktop; Compose v2 with `up --wait --wait-timeout`.
-- Start with 8 GB Docker memory, four CPU cores and 10 GB free disk for the small fixture. This is a practical starting budget, not measured capacity.
+- Start with 10 GB Docker memory, four CPU cores and 15 GB free disk for the small fixture. This is a practical starting budget, not measured capacity.
 - Port 8080 free; copy `.env.example` to `.env` to change LAB_PORT or COMPOSE_PROJECT_NAME.
 - Allow image/package downloads for first build. Application flows then stay within Compose networking. OPA telemetry is disabled.
 - On Windows, use WSL2/Bash with Docker reachable from that shell.
@@ -44,6 +44,9 @@ flowchart TD
     A --> D[Four CockroachDB stores]
     A --> P[Four OPA services]
     A --> T[OpenTelemetry Collector]
+    T --> L[Loki logs]
+    G --> F[Grafana]
+    F --> L
 ```
 
 | URL | Purpose |
@@ -54,6 +57,7 @@ flowchart TD
 | `/migration.html` | India relocation |
 | `/design/index.html` | Component designs/prompts |
 | `/design/adr-register.html` | Architectural decisions |
+| `/grafana/d/sovereign-logs` | Searchable application log dashboard |
 | `/api-docs` | Executable OpenAPI explorer |
 | `/api/health/live` | Process liveness |
 | `/api/health/ready` | Actual CockroachDB identity and OPA across four stores |
@@ -95,3 +99,7 @@ Pause controls are logical fault injection, not process termination. The accepta
 The GitHub Actions workflow runs the lab gates, collects diagnostics and stops containers when this source is published to a GitHub repository with Actions enabled. It has not run in Sites Git. Retain actual development-host/CI evidence before declaring CockroachDB integration verified.
 
 Review the [ADR register](adr/README.md), [documentation audit](DOCUMENTATION_AUDIT.md) and [testing status](../TESTING.md) before pilot planning.
+
+## Application logging extension
+
+See [observability setup and evidence](OBSERVABILITY.md). `./lab telemetry` verifies API → OTel Collector → Loki, trace correlation and Grafana provisioning. `./lab up` and `./lab test` include this gate. Python OTLP tests passed during authoring; full Docker/Loki/Grafana execution remains unverified. The starting Docker budget with this extension is 10 GB RAM and 15 GB disk, not measured.

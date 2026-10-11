@@ -6,7 +6,7 @@ SG, UK and US serve the 30-entity federation examples. Mumbai is the fourth stor
 
 ## Start the development environment
 
-Requirements: Docker Engine/Desktop with Compose v2 supporting `--wait-timeout`; Bash (WSL2 on Windows); approximately 8 GB available Docker memory and 10 GB disk. Internet access is needed to pull pinned images and Python packages on first build. Python and Node run inside helper containers.
+Requirements: Docker Engine/Desktop with Compose v2 supporting `--wait-timeout`; Bash (WSL2 on Windows); approximately 10 GB available Docker memory and 15 GB disk (starting budget, not measured). Internet access is needed to pull pinned images and Python packages on first build. Python and Node run inside helper containers.
 
 ```bash
 ./lab doctor
@@ -15,6 +15,8 @@ Requirements: Docker Engine/Desktop with Compose v2 supporting `--wait-timeout`;
 ```
 
 Open **http://localhost:8080**. API explorer: **http://localhost:8080/api-docs**.
+
+Search application logs at **http://localhost:8080/grafana/d/sovereign-logs**. The provisioned Grafana dashboard queries Loki through a real OpenTelemetry logs pipeline. Run `./lab telemetry` to verify the complete path. See the [observability guide](docs/OBSERVABILITY.md).
 
 `./lab up` rebuilds documentation, validates local navigation, builds images and waits for actual CockroachDB/OPA readiness. Both service entry points reject SQLite configuration. A live API failure stays visible and never switches to browser simulation. The hosted portal is separately and explicitly configured as a browser demonstration.
 
@@ -79,6 +81,6 @@ cd sovereign-federation-lab
 ./lab test
 ```
 
-This import preserves the complete source of Sites Git commit `e8d5011f2a8407055db963c9c94ab8fc17c82bbb`, with this repository-location note updated. The existing GitHub starter commit is retained. Sites Git metadata and source provenance describe the original publication; they are historical provenance, not GitHub credentials. The downloadable Git bundle retains that original initial lab commit.
+This import preserves the complete source of Sites Git commit `e8d5011f2a8407055db963c9c94ab8fc17c82bbb`, with the repository-location note updated. Subsequent commits add the logging stack described above. The existing GitHub starter commit is retained. Sites Git metadata and source provenance describe the original publication; they are historical provenance, not GitHub credentials. The downloadable Git bundle retains that original initial lab commit.
 
 `./scripts/publish-github.sh OWNER/NEW-REPOSITORY` is an optional export helper for creating another private repository from an authenticated workstation; it intentionally refuses an existing repository. It is not required to use this repository.

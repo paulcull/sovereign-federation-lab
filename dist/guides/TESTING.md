@@ -103,3 +103,7 @@ For a canonical Singapore/UK-only customer UUID, inspect `fe_replicas`, `fe_fenc
 6. Change catalog mapping against existing data: startup must refuse, not silently redirect ownership.
 7. Test failed migration stages and restore in quarantine once execution exists.
 8. Inspect 375/768/1440px layouts, keyboard operation, map fullscreen, reduced motion, generator start/stop, dirty policy forms and copy-versus-permission semantics.
+
+## Application logging extension
+
+See [observability setup and evidence](docs/OBSERVABILITY.md). `./lab telemetry` verifies API → OTel Collector → Loki, trace correlation and Grafana provisioning. `./lab up` and `./lab test` include this gate. Python OTLP tests passed during authoring; full Docker/Loki/Grafana execution remains unverified. The starting Docker budget with this extension is 10 GB RAM and 15 GB disk, not measured.
