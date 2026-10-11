@@ -30,6 +30,7 @@ faults() (
   dc stop opa-sg
   dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/fault_acceptance.py policy
   dc start opa-sg
+  dc exec -T monitor python health_probe.py --wait 45
   dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/fault_acceptance.py recovered
   dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/logging_integration.py
 )
@@ -56,6 +57,7 @@ case "${1:-help}" in
     done
     dc run --rm --no-deps node-tools design/tests/check.js
     dc exec -T monitor python tests/observability_test.py
+    dc exec -T monitor python tests/health_probe_test.py
     dc exec -T opa-sg /opa test /policies
     dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/integration.py
     dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/operational_integration.py

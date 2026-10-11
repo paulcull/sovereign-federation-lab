@@ -77,6 +77,15 @@ Executed successfully:
 Earlier failed startup/test/browser attempts are retained as diagnostic evidence;
 none were converted into passes by skipping gates or weakening assertions.
 
+PR review follow-up: the recovery gate now polls actual CockroachDB/OPA readiness
+for up to 45 seconds after starting source OPA, before running the unchanged recovery
+assertions. Three probe unit regressions cover transient 503, timeout and wrong-database
+rejection; `./lab up`, `./lab test` and `./lab faults` were re-executed successfully.
+Generated migration download links are rebased to the copied guides and included
+in offline link checks (1,521 local references). The workflow uses Node 24-compatible
+checkout/upload Actions instead of deprecated Node 20 versions. Copilot's own
+firewall warning listed no blocked addresses; no broad allowlist change was made.
+
 ## Reproduce
 
 From the PR checkout on a Docker-capable development host:

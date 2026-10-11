@@ -44,6 +44,9 @@ for path,d in docs.items():
 for path in [*ROOT.glob('*.md'),*ROOT.glob('docs/*.md'),*ROOT.glob('docs/adr/*.md')]:
     content=re.sub(r'```[\s\S]*?```','',path.read_text())
     for match in re.finditer(r'!?\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)',content):check_url(path,match[1],False)
+for path in [OUT/'migration/migration-guide.md',OUT/'isolation/work-isolation.md']:
+    content=re.sub(r'```[\s\S]*?```','',path.read_text())
+    for match in re.finditer(r'!?\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)',content):check_url(path,match[1])
 for path in OUT.rglob('*'):
     if path.suffix in ('.js','.mjs'):
         for ref in re.findall(r'(?:from\s*|import\s*)[\'"]([^\'"]+)[\'"]',path.read_text()):
