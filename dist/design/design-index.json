@@ -116,8 +116,8 @@
   },
   {
     "slug": "service-transactions",
-    "title": "Local business commit. Independent federation.",
-    "summary": "Deploy regional modular services behind regional gateways, with an explicit boundary between local success and remote delivery."
+    "title": "Keep business services. Add governed federation.",
+    "summary": "Reuse existing banking services. A loosely coupled sovereignty layer governs location and movement; business services retain the interactions."
   },
   {
     "slug": "performance-scale",

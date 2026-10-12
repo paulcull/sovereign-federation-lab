@@ -4,6 +4,25 @@ For physical-home changes, see [Entity relocation](MIGRATION.md). The separate `
 
 The business model and sovereignty model are parallel. The local operational service commits both through one transaction hook. Federation keys can be a **party**, a **relationship**, or a resource such as a **product holding**; the table registry supplies a default contract, not unconditional permission.
 
+## Existing services, sovereignty peers and routing
+
+Business services retain banking interactions, business rules and authoritative operational records. Sovereignty services govern approved placement, authority and policy-scoped movement. Reuse existing services and their data models through adapters; the normalized lab tables are an example contract, not a required replacement banking master.
+
+The proposed regional sovereignty peer can support several participating services without merging entity permissions. A service outside governed sharing needs no federation adapter; its existing authentication, local controls and applicable residency obligations still apply. Readers of shared views need a guarded query adapter. Writers of governed data need a compatible transactional outbox or local hook that atomically records bindings, versions, export intent and mandatory audit with the business change. Every writer of that data, including bulk imports and maintenance, must follow the contract or have its credentials restricted. Raw CDC alone cannot establish contextual consent, scope membership or complete-transaction intent.
+
+Loose coupling separates local business success from remote projection delivery. It does not remove the local atomicity requirement or put a remote peer call inside the business transaction. Existing independent business-service boundaries can remain; only a proven business invariant justifies a shared local unit of work. Cross-service workflows need their own explicit consistency or saga contract.
+
+| Request | Proposed routing contract |
+|---|---|
+| Write | Gateway or service adapter resolves the current authoritative owner from trusted versioned placement. The owner business service revalidates writer authority and commits locally. Recipient copies cannot accept owner writes. |
+| Read an approved local view | Recipient business service uses its policy-scoped projection, checking current permission and placement plus the workflow's acceptable data freshness. |
+| Read requiring latest committed state | Use the owner service only along an authorised processing path. If no lawful fresh read is available, return unavailable or pending rather than silently use a stale view or broaden access. |
+| Migration | Old writer is durably fenced before new authority activates. Refresh stale routing and authority versions; a cached address cannot bypass the write fence. |
+
+Routing is not authorisation. Identity, legal entity, purpose, fields, processing location and storage placement are separate checks. Do not forward request bodies through a prohibited region, query all stores, promote a nearby replica or fall back to another writer on failure. Missing mandatory authority/policy fails closed for the affected operation. Replica and telemetry failures remain separate from mandatory transactional audit.
+
+The current implementation uses one FastAPI harness and independent OPA processes. Recipient reads consult current owner authority and can serve an older ordinary `data_version`; there is no offline authority lease, automatic owner-read fallback or API freshness negotiation. Independent authenticated peers, automatic read/write routing and normalized-table migration remain pilot work. See [ADR-0017](docs/adr/ADR-0017.md) and the microsite's “Business & sovereignty services” reader step.
+
 ## Two distribution paths
 
 1. **Party minimum:** `party.id`, `global_party_id`, `party_type`. Aster's explicit identity-resolution grants distribute this minimum to UK entities and the US entity; Singapore holds the authoritative row. Name, contact information and links to relationships are absent from this global scope.

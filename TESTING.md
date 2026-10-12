@@ -3,9 +3,15 @@
 The microsite reader journey has a read-only real-gateway Chromium check:
 `python3 design/tests/reader_browser.py`, using the Playwright setup described in
 [container acceptance](docs/CONTAINER_ACCEPTANCE.md). It follows the portal entry,
-eight-page previous/next sequence, glossary and evidence links, checks all 28
+nine-page previous/next sequence, glossary and evidence links, checks all 28
 component pages for obsolete acceptance claims, exercises the mobile menu and
 captures 375/768/1440px layouts. CI includes it after the live lab walkthrough.
+The service explanation also checks responsive rendering and keeps its routing
+and integration proposal visible before the expandable technical reference.
+The executive summary leads the overview while retaining the worked example;
+the service page checks include relationship risk, MDM scope and pilot labels.
+See [the executed existing-service guide review](docs/SERVICE_GUIDE_REVIEW.md)
+for the 12 October 2026 documentation, browser and complete container rerun.
 Offline and browser checks share `design/tests/status_claims.py`: known obsolete
 claims are rejected, and the operations/observability pages must state both the
 validated scope and its remaining migration/telemetry limits.

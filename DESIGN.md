@@ -1,8 +1,12 @@
 # Start with the reader guide
 
 The supporting microsite explains the banking example before its technical contracts.
+An executive summary explains sovereign data risk and the intended relationship-based
+controls: independent ownership, approved placement, scoped permissions and evidence.
+The service page describes why each relationship has its own permitted footprint and
+how this supports an enterprise MDM integration without combining access rights.
 Open `http://localhost:8080/design/index.html` after `./lab up`, then follow:
-people and relationships → what can be shared → permission → movement → lab
+people and relationships → business and sovereignty services → what can be shared → permission → movement → lab
 architecture → India migration → pilot evidence. A glossary explains the terms;
 previous/next links keep the sequence explicit. The 28 component pages, technical
 examples and expandable engineering briefs remain available as references.
@@ -10,6 +14,14 @@ examples and expandable engineering briefs remain available as references.
 The current operational model uses independent party and relationship scopes.
 The older flat-record sandbox below is a separate teaching example. The guide
 labels the implemented lab, browser models and proposed pilot work separately.
+
+The service explanation starts from an existing banking estate: business services
+retain their interactions and models; sovereignty peers govern location, authority
+and approved movement through adapters where sharing requires them. Writes target
+the current owner. Reads use an authorised local projection when freshness allows,
+or a lawful owner path when the latest state is required. Independent peer deployment
+and automatic routing are pilot proposals, not capabilities of the loopback gateway.
+See [the proposed integration and routing decision](docs/adr/ADR-0017.md).
 
 # Scale and pilot extension
 

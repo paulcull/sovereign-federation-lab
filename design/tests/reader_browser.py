@@ -12,7 +12,7 @@ from status_claims import assert_current_status
 base = os.getenv('POC_URL', 'http://127.0.0.1:8080').rstrip('/')
 out = Path(os.getenv('READER_ARTIFACTS', 'artifacts/reader-guide'))
 out.mkdir(parents=True, exist_ok=True)
-journey = ['index', 'entity-model', 'operational-model', 'opa', 'federation',
+journey = ['index', 'entity-model', 'service-transactions', 'operational-model', 'opa', 'federation',
            'architecture', 'entity-migration', 'pilot-plan']
 
 with sync_playwright() as p:
@@ -27,7 +27,9 @@ with sync_playwright() as p:
     expect(page).to_have_url(base + '/design/index.html')
     expect(page.locator('#example')).to_contain_text('explicitly excludes the US')
     expect(page.locator('#example')).to_contain_text('Identity is a separate question')
-    assert page.locator('main h2').first.inner_text() == 'Start with one person and one relationship'
+    assert page.locator('main h2').first.inner_text() == 'Executive summary: govern data by relationship'
+    assert page.locator('#example h2').inner_text() == 'Start with one person and one relationship'
+    expect(page.locator('#executive-summary')).to_contain_text('without combining their access rights')
     assert not page.locator('.engineer-prompt').get_attribute('open')
     page.screenshot(path=str(out / 'overview-desktop.png'), full_page=True)
 
@@ -73,6 +75,20 @@ with sync_playwright() as p:
             expect(page).to_have_url(base + '/design/entity-model.html')
             page.goto(base + '/design/index.html')
         page.screenshot(path=str(out / ('overview-' + str(width) + '.png')), full_page=True)
+        page.goto(base + '/design/service-transactions.html', wait_until='domcontentloaded')
+        expect(page.locator('#executive-summary')).to_be_visible()
+        expect(page.locator('#relationship-risk')).to_contain_text('explicitly excluded')
+        expect(page.locator('#enterprise-mdm')).to_contain_text('proposed integration work')
+        expect(page.locator('#responsibilities')).to_contain_text('Start with the services already running')
+        expect(page.locator('#routing')).to_contain_text('A route does not grant access')
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), ('services', width)
+        reference = page.locator('details.legacy-example')
+        assert not reference.get_attribute('open')
+        reference.locator(':scope > summary').click()
+        expect(reference.get_by_role('heading', name='API outline')).to_be_visible()
+        reference.locator(':scope > summary').click()
+        page.screenshot(path=str(out / ('services-' + str(width) + '.png')), full_page=True)
+    page.goto(base + '/design/index.html')
     page.locator('.engineer-prompt > summary').click()
     expect(page.locator('.copy-prompt')).to_be_visible()
     assert not errors, errors

@@ -338,7 +338,7 @@ names={'entity-migration':'Moving the India entity','work-isolation':'Work isola
 names.update({slug:name for slug,name,_ in reading_path})
 navigation_groups=[('Start here',[slug for slug,_,_ in reading_path]),
                    ('Explore browser models',['control-plane','policy-lab','operations']),
-                   ('Technical reference',['placement','sovereignty-integration','transactions','service-transactions','gateways','platform','replication-options','lifecycle','decisions','apis','observability','audit','work-isolation','performance-scale']),
+                   ('Technical reference',['placement','sovereignty-integration','transactions','gateways','platform','replication-options','lifecycle','decisions','apis','observability','audit','work-isolation','performance-scale']),
                    ('Evidence and context',['engineering','references','project-context'])]
 assert len({slug for _,slugs in navigation_groups for slug in slugs})==len(pages)
 for group,slugs in navigation_groups:
