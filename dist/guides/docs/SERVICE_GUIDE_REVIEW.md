@@ -22,7 +22,7 @@ model; it does not implement independent regional peers or automatic routing.
 
 `python3 scripts/build.py`, `python3 scripts/verify.py`,
 `python3 design/tests/check_links.py` and `node design/tests/check.js` passed:
-52 generated HTML pages, 1,526 local links/assets/fragments, all 28 component
+52 generated HTML pages, 1,528 local links/assets/fragments, all 28 component
 pages, 17 complete ADRs, navigation/menu/print/copy controls and the existing
 CockroachDB-only, loopback deployment contracts.
 
