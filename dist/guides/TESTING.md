@@ -8,6 +8,8 @@ component pages for obsolete acceptance claims, exercises the mobile menu and
 captures 375/768/1440px layouts. CI includes it after the live lab walkthrough.
 The service explanation also checks responsive rendering and keeps its routing
 and integration proposal visible before the expandable technical reference.
+The executive summary leads the overview while retaining the worked example;
+the service page checks include relationship risk, MDM scope and pilot labels.
 See [the executed existing-service guide review](docs/SERVICE_GUIDE_REVIEW.md)
 for the 12 October 2026 documentation, browser and complete container rerun.
 Offline and browser checks share `design/tests/status_claims.py`: known obsolete

@@ -20,6 +20,14 @@ model; it does not implement independent regional peers or automatic routing.
 
 ## Executed checks
 
+Executive-summary follow-up: the overview and service page now explain sovereign
+data risk, each relationship's permitted footprint, controls and evidence, the
+enterprise MDM connection and the remaining assurance boundary. Rebuilt source
+checks passed with 1,531 local links/assets/fragments. The updated real-gateway
+Chromium journey passed at all three viewport sizes with the executive summary
+first and the original worked example retained. This follow-up changes explanatory
+content; it does not implement new policy, routing or MDM services.
+
 `python3 scripts/build.py`, `python3 scripts/verify.py`,
 `python3 design/tests/check_links.py` and `node design/tests/check.js` passed:
 52 generated HTML pages, 1,528 local links/assets/fragments, all 28 component

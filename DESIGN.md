@@ -1,6 +1,10 @@
 # Start with the reader guide
 
 The supporting microsite explains the banking example before its technical contracts.
+An executive summary explains sovereign data risk and the intended relationship-based
+controls: independent ownership, approved placement, scoped permissions and evidence.
+The service page describes why each relationship has its own permitted footprint and
+how this supports an enterprise MDM integration without combining access rights.
 Open `http://localhost:8080/design/index.html` after `./lab up`, then follow:
 people and relationships → business and sovereignty services → what can be shared → permission → movement → lab
 architecture → India migration → pilot evidence. A glossary explains the terms;

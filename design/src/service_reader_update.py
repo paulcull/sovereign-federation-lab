@@ -1,4 +1,65 @@
 """Explain reuse and routing before the retained engineering contracts."""
+executive_summary = reader_section('executive-summary', 'Executive summary: govern data by relationship',
+    '<p>A bank needs to recognise and serve the same customer across businesses without '
+    'exposing every relationship everywhere. Sovereign data risk arises when information '
+    'is stored, processed or disclosed in a location, to an entity or for a purpose '
+    'that the applicable rules do not permit. A single unrestricted customer profile '
+    'cannot represent those different obligations.</p>'
+    '<p><strong>We will manage the approved data footprint for each relationship.</strong> '
+    'The responsible legal entity retains its authoritative record. Bank-approved policy '
+    'determines which recipients may use which fields and in which locations, with explicit '
+    'exclusions overriding grants. A shared customer identity connects the relationships '
+    'without combining their access rights.</p>'
+    '<p>Existing business services retain the interactions and business rules. The sovereignty '
+    'layer governs placement, current write authority and approved copies through bounded '
+    'integration. The intended outcome is useful customer servicing with less unnecessary '
+    'data exposure and inspectable evidence of permitted movement. The synthetic lab '
+    'demonstrates a bounded subset; bank approval and regional deployment remain pilot gates.</p>')
+overview['body'] = executive_summary + overview['body']
+
+relationship_risk = reader_section('relationship-risk', 'Why the relationship determines the data boundary',
+    '<p>One person may have a Singapore personal banking relationship and a separate UK '
+    'business relationship. Each has its own owner, servicing purpose, consent and product '
+    'restrictions. Permission for one does not authorise the other. A shared contact can '
+    'appear in several relationships; all applicable restrictions must still hold for '
+    'each use.</p>'
+    '<p>The relationship identifies the responsible business and the policy to apply. '
+    'A separate entity-to-store directory resolves the actual storage location; that '
+    'location must satisfy the applicable rules. Relationship ownership, customer address '
+    'or a country label alone does not establish lawful placement.</p>' + table([
+        'How we manage the risk', 'Control and evidence'], [
+        ['Define the permitted footprint', 'Identify the relationship owner, approved recipients, purpose, fields and permitted countries from trusted business facts and bank-approved policy.'],
+        ['Prevent an unauthorised crossing', 'Resolve the recipient’s physical store and intersect its location with all applicable rules. Enforce exclusions at source before sending payload; the recipient checks again.'],
+        ['Guard every interaction', 'Route writes to the current owner. Read only an authorised view with suitable freshness. Check processing location as well as storage; a local copy or route is not permission.'],
+        ['Control change', 'Recheck current policy when consent or classification changes. Denied reads, pending live-copy removal and retained history are separate states. Move authority through validated, fenced cutover.'],
+        ['Keep evidence', 'Commit mandatory business audit with the transaction and track destination receipts and cleanup. Operational logs support diagnosis without exporting customer payloads or sensitive identifiers.'],
+    ]) + '<p><strong>Example:</strong> Singapore owns a relationship; a named UK recipient '
+    'may receive selected servicing fields; the US is explicitly excluded. A different '
+    'relationship for that customer has its own permissions. Eligible minimal party '
+    'identity may reach an approved US recipient under separate grants, but no excluded '
+    'relationship, contact or holding accompanies it.</p>')
+
+mdm_context = reader_section('enterprise-mdm', 'How this supports enterprise customer MDM',
+    '<p>Enterprise customer master data management (MDM) can link identities and improve '
+    'data quality across existing services. The proposed integration uses those governed '
+    'identity links to recognise a customer while keeping relationship records and access '
+    'independent. Any enterprise customer view must be assembled from the information '
+    'approved for that caller, purpose and processing location; identity matching does '
+    'not authorise a global copy of every customer attribute.</p>'
+    '<p>The lab uses supplied global party identifiers and synthetic relationship links. '
+    'MDM matching, stewardship and merge/split governance are proposed integration work.</p>')
+
+assurance_boundary = reader_section('risk-assurance', 'What this approach can establish',
+    '<p>The lab provides inspectable evidence for exclusions, approved projections, guarded '
+    'reads, isolated migration fencing, live-row cleanup and durable business audit. '
+    'Managing sovereign risk also requires approved legal and control rules and verification '
+    'of real processing, storage, transport, operator access, backups and retention. The '
+    'four stores here run on one host; their country labels do not prove physical residency. '
+    'Live cleanup does not certify erasure from history, audit or backups.</p>'
+    '<p>Independent authenticated peers, distributed authority and migration of normalized '
+    'business tables remain pilot work. '
+    '<a href="pilot-plan.html">Follow the pilot gates</a>.</p>')
+
 service_roles = table(['Responsibility', 'Business services', 'Sovereignty services'], [
     ['Purpose', 'Own banking interactions, business rules and operational records.',
      'Govern approved data location, write authority and policy-scoped copies.'],
@@ -29,6 +90,7 @@ services['title'] = 'Keep business services. Add governed federation.'
 services['summary'] = ('Reuse existing banking services. A loosely coupled sovereignty layer '
                        'governs location and movement; business services retain the interactions.')
 services['body'] = (
+    executive_summary + relationship_risk + mdm_context + assurance_boundary +
     reader_section('responsibilities', 'Two responsibilities, working together',
         '<p>Start with the services already running in the bank. A contact service still '
         'updates contact information; a holdings service still applies its product rules. '
@@ -97,6 +159,10 @@ services['body'] = (
         'or <a href="/guides/docs/SERVICE_GUIDE_REVIEW.md">inspect this guide’s executed checks</a>.</p>') +
     '<details class="legacy-example"><summary>Technical reference: local transactions and API contracts</summary>' +
     technical_contracts + '</details>')
+overview['body'] = overview['body'].replace(
+    '</section>', '<p><a href="service-transactions.html#relationship-risk">How relationship-based '
+    'placement manages the risk</a> · <a href="service-transactions.html#enterprise-mdm">The '
+    'enterprise MDM connection</a></p></section>', 1)
 services['prompt'] = ('Extend existing banking services through bounded adapters; preserve their '
     'business APIs and ownership. Treat independent sovereignty peers and authenticated routing '
     'as pilot work. Integrate writers of governed shared data with a compatible atomic outbox '
