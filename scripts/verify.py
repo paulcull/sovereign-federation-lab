@@ -70,7 +70,7 @@ assert json.loads((OUT/'lab-config.json').read_text())['mode']=='simulation'
 assert 'localhost\'||location.hostname' not in (OUT/'app.js').read_text()
 assert json.loads((ROOT/'shared/catalog.json').read_text())==json.loads((OUT/'catalog.json').read_text())
 assert json.loads((ROOT/'shared/operational.json').read_text())==json.loads((OUT/'operational.json').read_text())
-adrs=json.loads((ROOT/'docs/adrs.json').read_text());assert len(adrs)==16 and len({a['id'] for a in adrs})==16
+adrs=json.loads((ROOT/'docs/adrs.json').read_text());assert len(adrs)==17 and len({a['id'] for a in adrs})==17
 for a in adrs:
     for key in ('status','context','decision','alternatives','consequences','evidence','gate'):assert a[key]
     for ref in a['evidence'].split('; '):assert (ROOT/ref).exists(),ref
@@ -78,4 +78,4 @@ assert len(json.loads((OUT/'design/design-index.json').read_text()))==28
 assert (OUT/'design/development-lab.html').exists() and (OUT/'design/adr-register.html').exists()
 if errors:
     print('\n'.join(errors));raise SystemExit(1)
-print(f'PASS {len(docs)} HTML pages; {links} local links/assets/fragments; Python syntax; 16 ADRs; canonical fixtures; four-store Cockroach-only deployment contracts. {len(external)} external references inventoried, not uptime-verified.')
+print(f'PASS {len(docs)} HTML pages; {links} local links/assets/fragments; Python syntax; {len(adrs)} ADRs; canonical fixtures; four-store Cockroach-only deployment contracts. {len(external)} external references inventoried, not uptime-verified.')

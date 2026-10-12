@@ -11,6 +11,11 @@ OBSOLETE_CLAIMS = (
 CURRENT_SCOPE = {
     'operations': ('isolated India migration', 'normalized-table migration', 'automatic regional failover'),
     'observability': ('API-generated logs', 'matching trace IDs', 'debug exporter', 'regional telemetry isolation'),
+    'service-transactions': ('Proposed pilot design', 'Business services', 'Sovereignty services',
+                             'A route does not grant access', 'current authoritative owner',
+                             'current permission and placement', 'freshness', 'old writer rejects',
+                             'Every writer', 'mandatory audit', 'no offline authority lease',
+                             'normalized business tables', 'no nearest-store fallback'),
 }
 
 

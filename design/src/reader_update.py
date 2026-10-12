@@ -4,6 +4,7 @@ import re
 reading_path = [
     ('index', 'Start here', 'The problem and a simple example'),
     ('entity-model', 'People, relationships & stores', 'Who owns the data and where it lives'),
+    ('service-transactions', 'Business & sovereignty services', 'Keep existing services; govern location, reads and writes'),
     ('operational-model', 'What can be shared?', 'Minimal identity versus relationship details'),
     ('opa', 'How permission works', 'Why an exclusion wins over a grant'),
     ('federation', 'How data moves', 'Local success and remote delivery are different'),
@@ -43,6 +44,9 @@ status_key = reader_section('status', 'What is working, and what is proposed?', 
 glossary = reader_section('glossary', 'Words used in this guide', table(['Term', 'Plain meaning'], [
     ['Legal entity', 'A bank business with its own authority and access rules. Sharing a database does not merge those rules.'],
     ['Store', 'A database location where data is held. The entity-to-store mapping is separate from the entity identity.'],
+    ['Business services', 'Existing banking services that own interactions, business rules and operational records.'],
+    ['Sovereignty services', 'The supporting layer that governs approved placement, authority and policy-scoped movement.'],
+    ['Routing', 'Selecting the current owner for a write or an approved source for a read. A route does not grant access.'],
     ['Party', 'A person or organisation. Minimal identity can be shared separately from its business relationships.'],
     ['Relationship', 'A particular business relationship owned by a legal entity, such as personal banking or a business account.'],
     ['Projection', 'The approved subset copied for a particular recipient; it is not a new owner record.'],
@@ -234,6 +238,8 @@ explanations = {
 }
 for slug, explanation in explanations.items():
     by_slug[slug]['body'] = explanation + by_slug[slug]['body']
+
+exec((ROOT/'src/service_reader_update.py').read_text())
 
 # The decision page distinguishes the original planner from the working migration slice.
 by_slug['decisions']['body'] = by_slug['decisions']['body'].replace(

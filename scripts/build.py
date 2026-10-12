@@ -32,15 +32,18 @@ for src in (ROOT/'design/dist').rglob('*'):
     else:shutil.copy2(src,dest)
 adrs=json.loads((ROOT/'docs/adrs.json').read_text());cards=[]
 for a in adrs:
-    name='ADR-'+a['id'];body=f'<p class="eyebrow">RETROSPECTIVE ARCHITECTURE DECISION · 11 OCTOBER 2026</p><h1>{name}: {html.escape(a["title"])}</h1>'
-    md=f'# {name}: {a["title"]}\n\nRecorded: 11 October 2026. Retrospective project decision; not a bank governance approval.\n'
+    recorded=a.get('recorded','11 October 2026')
+    kind=a.get('kind','Retrospective project decision')
+    label=a.get('kind','Retrospective architecture decision')
+    name='ADR-'+a['id'];body=f'<p class="eyebrow">{html.escape(label.upper())} · {html.escape(recorded.upper())}</p><h1>{name}: {html.escape(a["title"])}</h1>'
+    md=f'# {name}: {a["title"]}\n\nRecorded: {recorded}. {kind}; not a bank governance approval.\n'
     for key in ['status','context','decision','alternatives','consequences','evidence','gate']:
         value=a[key];body+='<section><h2>'+key.title()+'</h2><p>'+html.escape(value)+'</p></section>';md+='\n## '+key.title()+'\n\n'+value+'\n'
     body+='<p><a href="/design/adr-register.html">← All decisions</a> · <a href="/guides/docs/adr/'+name+'.md">Markdown source</a></p>'
     (ROOT/'docs/adr'/f'{name}.md').write_text(md);(OUT/'design'/f'{name}.html').write_text(page(name,body))
     cards.append('<a class="card" href="/design/'+name+'.html"><small>'+name+' · '+html.escape(a['status'])+'</small><h2>'+html.escape(a['title'])+'</h2><p>'+html.escape(a['decision'])+'</p></a>')
-(OUT/'design/adr-register.html').write_text(page('ADR register','<p class="eyebrow">DECISIONS WITH CONSEQUENCES</p><h1>How this architecture took shape.</h1><p class="lead">Sixteen retrospective decisions, their alternatives, current implementation and acceptance gates. These are project design records, not formal bank approvals.</p><div class="cards">'+''.join(cards)+'</div>'))
-(ROOT/'docs/adr/README.md').write_text('# Architecture decision register\n\nRetrospective decisions recorded on 11 October 2026.\n\n'+''.join(f'- [ADR-{a["id"]}: {a["title"]}](ADR-{a["id"]}.md) — {a["status"]}\n' for a in adrs))
+(OUT/'design/adr-register.html').write_text(page('ADR register','<p class="eyebrow">DECISIONS WITH CONSEQUENCES</p><h1>How this architecture took shape.</h1><p class="lead">'+str(len(adrs))+' decisions and proposals, their alternatives, current implementation and acceptance gates. These are project design records, not formal bank approvals.</p><div class="cards">'+''.join(cards)+'</div>'))
+(ROOT/'docs/adr/README.md').write_text('# Architecture decision register\n\nRetrospective decisions recorded on 11 October 2026; subsequent proposals carry their own dates and status.\n\n'+''.join(f'- [ADR-{a["id"]}: {a["title"]}](ADR-{a["id"]}.md) — {a["status"]}\n' for a in adrs))
 for name in ['README.md','DESIGN.md','OPERATIONAL.md','MIGRATION.md','WORK_ISOLATION.md','TESTING.md']:
     target=OUT/'guides'/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_text(portable((ROOT/name).read_text()))
 for folder in ['docs','scale']:
@@ -64,4 +67,4 @@ for source, destination in [('MIGRATION.md','migration/migration-guide.md'),
 shutil.copy2(ROOT/'web/lab.css',OUT/'lab.css')
 for src,dest in [('web/portal.html','index.html'),('web/development.html','design/development-lab.html')]:
     (OUT/dest).write_text(page('Sovereign Federation Lab', (ROOT/src).read_text()))
-print('Built portable lab: monitor, 28 component pages, 16 ADRs, register, deployment guide and portal.')
+print(f'Built portable lab: monitor, 28 component pages, {len(adrs)} ADRs, register, deployment guide and portal.')
