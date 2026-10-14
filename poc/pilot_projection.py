@@ -41,23 +41,26 @@ def apply_projection(connection, message):
     versions = tuple(message[k] for k in ('data_version', 'policy_generation', 'decision_revision'))
     if prior and any(old > new for old, new in zip(prior, versions)):
         raise ValueError('Stale business manifest fenced')
-    for table in reversed(core.ORDER):
-        connection.execute(f'DELETE FROM projection.{table} WHERE owner_entity_id=%s '
-                           'AND scope_id=%s AND destination_entity_id=%s', key)
-    for table in core.ORDER:
-        for resource in (r for r in message['rows'] if r['table'] == table):
-            columns = ['owner_entity_id', 'scope_id', 'destination_entity_id'] + list(resource['row'])
-            connection.execute(f"INSERT INTO projection.{table} ({','.join(columns)}) "
-                               f"VALUES ({','.join(['%s'] * len(columns))})",
-                               list(key) + list(resource['row'].values()))
-    connection.execute('UPSERT INTO sovereignty.manifest VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
-                       key + versions + (message['placement_version'], Jsonb(message['row_counts'])))
-    write_fields(connection,key,message['rows'])
-    connection.execute('INSERT INTO sovereignty.inbox VALUES (%s,%s)', (message['event_id'], time.time()))
     status = 'replicated' if message['rows'] else 'purged'
     event = dict(id=str(uuid.uuid4()), time=time.time(), record_id=message['scope_id'],
                  owner_entity_id=message['owner_entity_id'], destination_entity_id=message['destination_entity_id'],
                  status=status, dataset='party_relationship_graph', source_receipt=False)
-    connection.execute('INSERT INTO sovereignty.audit VALUES (%s,%s,%s)',
-                       (event['id'], event['time'], Jsonb(event)))
+    # Ordered local statements, one transactional flush; no network policy/peer
+    # operation enters this SQL block. Exit raises on any failure before receipt.
+    with connection.pipeline():
+        for table in reversed(core.ORDER):
+            connection.execute(f'DELETE FROM projection.{table} WHERE owner_entity_id=%s '
+                               'AND scope_id=%s AND destination_entity_id=%s', key)
+        for table in core.ORDER:
+            for resource in (r for r in message['rows'] if r['table'] == table):
+                columns = ['owner_entity_id', 'scope_id', 'destination_entity_id'] + list(resource['row'])
+                connection.execute(f"INSERT INTO projection.{table} ({','.join(columns)}) "
+                                   f"VALUES ({','.join(['%s'] * len(columns))})",
+                                   list(key) + list(resource['row'].values()))
+        connection.execute('UPSERT INTO sovereignty.manifest VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
+                           key + versions + (message['placement_version'], Jsonb(message['row_counts'])))
+        write_fields(connection,key,message['rows'])
+        connection.execute('INSERT INTO sovereignty.inbox VALUES (%s,%s)', (message['event_id'], time.time()))
+        connection.execute('INSERT INTO sovereignty.audit VALUES (%s,%s,%s)',
+                           (event['id'], event['time'], Jsonb(event)))
     return status
