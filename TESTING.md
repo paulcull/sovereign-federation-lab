@@ -1,5 +1,21 @@
 # Unified lab verification — edition 09
 
+## Customer MDM integration pilot
+
+The optional profile has real SQL/OPA and mTLS system/experience API gates:
+`./lab pilot-test`, `./lab pilot-faults`, and
+`python3 poc/tests/pilot_browser.py`. See [the pilot runbook](docs/PILOT.md) and
+[executed pilot evidence](docs/PILOT_ACCEPTANCE.md).
+These gates check owner-qualified source references, exact eligible identity
+fields, scoped relationship views, processing-country exclusions, stale/replay
+and freshness handling, actual peer/source/recipient OPA/Collector loss and
+process restart. The preserved complete suite runs with `LAB_PILOT=1 ./lab test`.
+The CI workflow executes the original lab and browser gates before adding the
+pilot, then runs pilot acceptance, real outages and the live operator console.
+No bank identity, physical residency, scale, HA, distributed lease or
+normalized-table migration is inferred from a successful single-host run.
+
+
 The microsite reader journey has a read-only real-gateway Chromium check:
 `python3 design/tests/reader_browser.py`, using the Playwright setup described in
 [container acceptance](docs/CONTAINER_ACCEPTANCE.md). It follows the portal entry,

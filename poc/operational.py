@@ -54,8 +54,10 @@ class OperationalRuntime:
     def enqueue(self,c,s):
         for dest in self.candidates(s):
             c.execute('INSERT INTO sovereignty.outbox (id,scope_id,destination_entity_id,created_at) VALUES (%s,%s,%s,%s)',(str(uuid.uuid4()),s['id'],dest,time.time()))
-    def audit(self,c,s,dest,status,reason):
+    def audit(self,c,s,dest,status,reason,actor_id=None,request_id=None):
         d=dict(id=str(uuid.uuid4()),time=time.time(),record_id=s['id'],name=s['name'],owner_entity_id=s['owner_entity_id'],destination_entity_id=dest,source_store=s['home_store_id'],destination_store=self.entities[dest]['store_id'],status=status,reason=reason,dataset='party_relationship_graph',generation=s['policy_generation'],data_version=s['data_version'],decision_revision=s['decision_revision'],placement_version=self.entities[dest]['placement_version'])
+        if actor_id is not None:d['actor_id']=actor_id
+        if request_id is not None:d['request_id']=request_id
         c.execute('INSERT INTO sovereignty.audit VALUES (%s,%s,%s)',(d['id'],d['time'],Jsonb(d)))
     def opa_input(self,m,s,dest,resources=None):
         e=self.entities[dest]
@@ -86,11 +88,14 @@ class OperationalRuntime:
             # FK-dependent inserts are emitted in the declared source table order above.
             self.write_controls(c,updated,result['affected_scope_ids'])
             for scope in updated['scopes']:
-                if scope['id'] in result['affected_scope_ids']:self.enqueue(c,scope);self.audit(c,scope,scope['owner_entity_id'],'business_commit',body['command']+' · local transaction + sovereignty hook')
+                if scope['id'] in result['affected_scope_ids']:self.enqueue(c,scope);self.audit(c,scope,scope['owner_entity_id'],'business_commit',body['command']+' · local transaction + sovereignty hook',actor_id=body.get('pilot_actor'),request_id=body['request_id'])
             result.update(request_id=body['request_id'],scope_id=sid,time=time.time(),scope_versions={s['id']:s['data_version'] for s in updated['scopes'] if s['id'] in result['affected_scope_ids']},idempotent_replay=False)
             c.execute('INSERT INTO sovereignty.command_receipt VALUES (%s,%s,%s,%s)',(core.SPEC['owner_entity_id'],body['request_id'],hashed,Jsonb(result)))
             return result
     def deliver(self,m,s,dest,event_id,plan):
+        transport = getattr(self, 'pilot_transport', None)
+        if transport is not None:
+            return transport.deliver(m,s,dest,event_id,plan)
         ds=self.stores[self.entities[dest]['store_id']];key=(s['owner_entity_id'],s['id'],dest)
         # Only approved fields and required policy facts reach destination OPA.
         approved={(r['table'],r['row']['id']):r['row'] for r in plan['rows']}
@@ -114,6 +119,9 @@ class OperationalRuntime:
             c.execute('INSERT INTO sovereignty.audit VALUES (%s,%s,%s)',(str(uuid.uuid4()),time.time(),Jsonb(dict(id=str(uuid.uuid4()),time=time.time(),record_id=s['id'],owner_entity_id=s['owner_entity_id'],destination_entity_id=dest,status=status,dataset='party_relationship_graph',source_receipt=False))))
         return status
     def tick(self):
+        transport = getattr(self, 'pilot_transport', None)
+        if transport is not None:
+            return transport.tick()
         with self.lock:
             try:
                 with self.stores[self.home].connect() as c:
@@ -149,13 +157,24 @@ class OperationalRuntime:
             for sid,store in self.stores.items():
                 try:
                     with store.connect() as c:
+                        # One query per typed table, rather than one per manifest/table.
+                        # The monitor otherwise holds the coordinator lock while issuing
+                        # hundreds of round trips and starves the actual relay.
+                        by_key={}
+                        for t in core.ORDER:
+                            cols=list(core.TABLES[t]['columns'])
+                            cur=c.execute('SELECT owner_entity_id,scope_id,destination_entity_id,'+
+                                ','.join(cols)+f' FROM projection.{t}')
+                            for r in cur.fetchall():
+                                key=(r[0],str(r[1]),r[2])
+                                by_key.setdefault(key,[]).append(dict(table=t,row=clean(dict(zip(cols,r[3:])))))
                         for x in c.execute('SELECT owner_entity_id,scope_id,destination_entity_id,data_version,policy_generation,decision_revision,placement_version,row_counts FROM sovereignty.manifest').fetchall():
                             p=dict(owner_entity_id=x[0],scope_id=str(x[1]),destination_entity_id=x[2],store_id=sid,data_version=x[3],policy_generation=x[4],decision_revision=x[5],placement_version=x[6],row_counts=x[7],rows=[])
                             scope=core.next_scope(model,p['scope_id'])
                             field_set='global_fields' if scope['scope_kind']=='party' else 'export_fields'
-                            for t in core.ORDER:
-                                cols=list(core.TABLES[t]['columns']);cur=c.execute('SELECT '+','.join(cols)+f' FROM projection.{t} WHERE owner_entity_id=%s AND scope_id=%s AND destination_entity_id=%s',x[:3])
-                                p['rows'] += [dict(table=t,row={k:v for k,v in clean(dict(zip(cols,r))).items() if k in core.TABLES[t].get(field_set,[])}) for r in cur.fetchall()]
+                            p['rows']=[dict(table=r['table'],row={k:v for k,v in r['row'].items()
+                                if k in core.TABLES[r['table']].get(field_set,[])})
+                                for r in by_key.get((x[0],str(x[1]),x[2]),[])]
                             projections.append(p)
                 except Exception:unavailable.append(sid)
             return dict(model=model,projections=projections,events=events,queue=queue,transactions=receipts,unavailable_stores=unavailable)

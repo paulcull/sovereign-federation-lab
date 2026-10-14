@@ -40,6 +40,16 @@ still appear in diagnostic stderr, which is outside this Loki pipeline.
 
 ## Search examples
 
+The optional customer MDM pilot exports the API adapter and recipient-peer
+events through the same Collector/Loki pipeline. Query
+`{service_name="sovereign-pilot-api"}` for system and experience calls or
+`{service_name="sovereign-pilot-peer"}` for recipient events. Each process
+generates its own trace context; caller headers/baggage are not trusted or
+propagated. Payload-free local trace evidence remains diagnostic, and mandatory
+MDM/business audit stays in the owner's SQL transaction.
+`./lab pilot-faults` verifies Collector-outage isolation and log recovery.
+
+
 ```logql
 {service_name="sovereign-poc-harness"}
 {service_name="sovereign-poc-harness"} | json | level="ERROR"

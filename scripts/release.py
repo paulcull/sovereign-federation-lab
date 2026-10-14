@@ -8,7 +8,7 @@ import hashlib,json,shutil,subprocess,zipfile
 ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'dist/downloads';OUT.mkdir(parents=True,exist_ok=True)
 def permitted(path):
     parts=Path(path).parts
-    return bool(parts) and parts[0] not in ('.git','.openai','.venv','artifacts') and not path.startswith('dist/downloads/') and '__pycache__' not in parts and not Path(path).name.startswith('.env') and Path(path).suffix not in ('.pyc','.sqlite','.log','.pem','.key')
+    return bool(parts) and not parts[0].startswith('.pilot') and parts[0] not in ('.git','.openai','.venv','artifacts') and not path.startswith('dist/downloads/') and '__pycache__' not in parts and not Path(path).name.startswith('.env') and Path(path).suffix not in ('.pyc','.sqlite','.log','.pem','.key')
 commit=None
 if shutil.which('git'):
     head=subprocess.run(['git','rev-parse','--verify','HEAD'],cwd=ROOT,text=True,capture_output=True)

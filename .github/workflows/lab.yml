@@ -25,12 +25,24 @@ jobs:
         run: python3 poc/tests/browser_acceptance.py 2>&1 | tee artifacts/browser.log
       - name: Microsite reader journey
         run: python3 design/tests/reader_browser.py 2>&1 | tee artifacts/reader-guide.log
+      - name: Wire synthetic customer MDM pilot
+        run: ./lab pilot-up 2>&1 | tee artifacts/pilot-startup.log
+      - name: System and experience API SQL/OPA acceptance
+        run: ./lab pilot-test 2>&1 | tee artifacts/pilot-acceptance.log
+      - name: Real pilot peer, OPA and Collector outages
+        run: ./lab pilot-faults 2>&1 | tee artifacts/pilot-faults.log
+      - name: Live MDM system and experience browser walkthrough
+        run: python3 poc/tests/pilot_browser.py 2>&1 | tee artifacts/pilot-browser.log
       - name: Collect container diagnostics
         if: always()
         run: |
           mkdir -p artifacts
           docker compose ps --all > artifacts/containers.txt
           docker compose logs --no-color > artifacts/containers.log
+          if [ -f .pilot/ready.json ]; then
+            docker compose -f compose.yaml -f compose.pilot.yaml ps --all > artifacts/pilot-containers.txt
+            docker compose -f compose.yaml -f compose.pilot.yaml logs --no-color > artifacts/pilot-containers.log
+          fi
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
@@ -38,4 +50,5 @@ jobs:
           path: artifacts/
       - name: Stop lab
         if: always()
-        run: ./lab down
+        run: |
+          if [ -f .pilot/ready.json ]; then ./lab pilot-down; else ./lab down; fi
