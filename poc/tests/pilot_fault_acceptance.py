@@ -68,6 +68,25 @@ if phase == 'peer':
     request('GET',path,'uk-servicing',status=503)
     assert query("SELECT count(*) FROM sovereignty.outbox WHERE scope_id=%s AND destination_entity_id='LE-GB-02' AND status IN ('queued','retry')",(state['scope_id'],))[0][0] > 0
     print('PASS actual recipient process loss: owner commit/audit survive, delivery pending, no fabricated projection')
+    # More failed UK groups than a relay batch must not starve a healthy US peer.
+    for _ in range(8):
+        request('PUT','/pilot/system/v1/customers/SYN-FAIR-'+uuid.uuid4().hex.upper(),body=dict(
+            request_id=str(uuid.uuid4()),expected_version=0,display_name='Synthetic Retry Fairness',
+            party_type='PERSON',identity_profile='global_minimum'))
+    assert query("SELECT count(DISTINCT (scope_id,destination_entity_id)) FROM sovereignty.outbox "
+        "WHERE destination_entity_id IN ('LE-GB-02','LE-GB-03') AND status IN ('queued','retry')")[0][0]>=15
+    healthy=request('PUT','/pilot/system/v1/customers/SYN-HEALTHY-'+uuid.uuid4().hex.upper(),body=dict(
+        request_id=str(uuid.uuid4()),expected_version=0,display_name='Synthetic Healthy Peer',
+        party_type='PERSON',identity_profile='global_minimum')).json()
+    end=time.monotonic()+45
+    while True:
+        response=client.get('/pilot/experience/v1/customers/'+healthy['global_party_id'],
+            headers={'Authorization':'Bearer '+CONFIG['principals']['us-reader']['token']})
+        if response.status_code==200:
+            assert response.json()['views'][0]['served_from']=='projection';break
+        assert time.monotonic()<end,'Failed UK groups starved the healthy US peer'
+        time.sleep(.4)
+    print('PASS 15+ unavailable-peer groups do not starve later healthy-peer delivery')
 elif phase == 'recipient-policy':
     request('GET',path,'uk-servicing',status=503)
     update(state)

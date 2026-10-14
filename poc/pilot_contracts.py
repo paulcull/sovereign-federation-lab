@@ -2,7 +2,7 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CustomerInput(BaseModel):
@@ -28,3 +28,9 @@ class BusinessCommand(BaseModel):
     expected_version: int = Field(ge=1, strict=True)
     command: Literal['update_contact', 'withdraw_consent', 'restore_consent']
     value: str | None = Field(default=None, max_length=254)
+
+    @model_validator(mode='after')
+    def contact_value_required(self):
+        if self.command == 'update_contact' and self.value is None:
+            raise ValueError('Contact update requires a value')
+        return self

@@ -48,6 +48,7 @@ case "${1:-help}" in
     export LAB_PILOT=1
     ready
     dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_acceptance.py
+    dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_review_acceptance.py
     ;;
   pilot-faults)
     export LAB_PILOT=1

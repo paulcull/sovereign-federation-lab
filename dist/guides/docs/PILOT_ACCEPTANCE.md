@@ -45,9 +45,12 @@ deliberately stop dependencies.
 | Preserved actual outages | Passed with pilot enabled: Collector outage leaves business row/audit/receipt durable; source OPA outage prevents export/read and leaves retryable intents; real dependency restart drains outboxes. |
 | Original live browser | Passed: generated monitor record moves SG to UK, US absent; India snapshot, concurrent changes, validation invalidation, source fencing, UK work during fencing, cutover, stale-write rejection and cleanup. |
 | Source packaging | Passed: archive integrity, MDM source included, private pilot directories and certificate keys excluded; checked both Git release and mounted-source packaging. |
+| Authorization review regressions | Passed against actual APIs, SQL and OPA: resource/table processing exclusions, filtered command/replay metadata, absent/null contact values, source field narrowing without a version bump and recipient field narrowing before storage mutation. Catalogs/rules restored after each probe. |
 
 Assertions live in `poc/tests/pilot_acceptance.py`,
 `poc/tests/pilot_fault_acceptance.py` and `poc/tests/pilot_browser.py`.
+`poc/tests/pilot_review_acceptance.py` is included in `./lab pilot-test` and
+exercises the review findings with temporary real policy changes.
 Actions retains the original lab/fault/browser gates, then exercises this profile.
 Its `lab-evidence` artifact excludes private identities/certificates.
 
@@ -66,6 +69,12 @@ Its `lab-evidence` artifact excludes private identities/certificates.
 - Unbounded Loki search timed out: use the last 120 seconds within the same
   required trace-match deadline.
 - Root-owned artifacts blocked host browser writes: run tools as the invoking UID/GID.
+- Review exposed missing table/resource processing checks, hidden metadata in
+  command/replay receipts, incomplete source/recipient field-list enforcement,
+  missing contact values and retry starvation. Add layered geography checks,
+  scoped response receipts, source read-field fences, recipient import-field
+  checks, command validation and attempt-count retry rotation. Complete receipts
+  remain in SQL; original settlement and supersession cutoffs remain unchanged.
 
 A premature browser attempt overlapped a dependency outage and failed. Final
 acceptance runs these suites sequentially; that failed attempt is not a pass.

@@ -43,10 +43,10 @@ class PilotOwner:
                     s['expired_seen'] = expired; s['decision_revision'] += 1
                     self.runtime.write_controls(c,model,[s['id']]); self.runtime.enqueue(c,s)
             tasks = c.execute("SELECT id,scope_id,destination_entity_id,created_at FROM "
-                "(SELECT id,scope_id,destination_entity_id,created_at,ROW_NUMBER() OVER "
+                "(SELECT id,scope_id,destination_entity_id,created_at,attempts,ROW_NUMBER() OVER "
                 "(PARTITION BY scope_id,destination_entity_id ORDER BY created_at DESC,id DESC) AS priority "
                 "FROM sovereignty.outbox WHERE status IN ('queued','retry')) "
-                "WHERE priority=1 ORDER BY created_at LIMIT 15").fetchall()
+                "WHERE priority=1 ORDER BY attempts,created_at,id LIMIT 15").fetchall()
         for event, sid, destination, cutoff in tasks:
             try:
                 with self.runtime.lock:
@@ -109,13 +109,22 @@ class PilotOwner:
             raise HTTPException(403, 'Processing location excluded')
         entity = principal['entity_id']
         if entity == scope['owner_entity_id']:
-            return {'rows': [{'table': r['table'], 'row': r['row']} for r in core.resources(model, scope)]}
-        try:
-            plan = self.runtime.plan(model, scope, entity)
-        except Exception:
-            raise HTTPException(503, 'Current policy unavailable; fail closed')
+            plan = {'rows': [{'table': r['table'], 'row': r['row']} for r in core.resources(model, scope)]}
+        else:
+            try:
+                plan = self.runtime.plan(model, scope, entity)
+            except Exception:
+                raise HTTPException(503, 'Current policy unavailable; fail closed')
         if not plan['rows']:
             raise HTTPException(403, 'No approved scope for this recipient')
+        facts = {(r['table'],r['row']['id']):r for r in core.resources(model, scope)}
+        for row in plan['rows']:
+            fact = facts[(row['table'],row['row']['id'])]
+            # Storage admission cannot establish the caller's processing permission.
+            # Reject the whole scope to preserve dependency closure without disclosure.
+            for geography in (fact['table_rule'],fact['rule']):
+                if country not in geography['allowed_countries'] or country in geography['denied_countries']:
+                    raise HTTPException(403, 'Processing location excluded')
         return plan
 
     def routing(self, sid, principal, minimum=0):
@@ -220,11 +229,19 @@ def owner_router(owner):
         payload = body.get('payload', {})
         if payload.get('command') not in ('update_contact', 'withdraw_consent', 'restore_consent'):
             raise HTTPException(403, 'Command outside pilot delegation')
+        if payload['command'] == 'update_contact' and payload.get('value') is None:
+            raise HTTPException(422, 'Contact update requires a value')
         # Recheck within the same coordinator lock as the business transaction.
         with owner.runtime.lock:
             model, scope = owner.state(body.get('scope_id'))
             owner.admit(model, scope, principal)
-            return owner.runtime.command(scope['id'], {**payload,'pilot_actor':principal['id']})
+            receipt = owner.runtime.command(scope['id'], {**payload,'pilot_actor':principal['id']})
+            # Full receipt stays in CockroachDB. Never disclose other affected scopes
+            # or owner-only history identifiers, including on an idempotent replay.
+            result = {k:receipt[k] for k in ('request_id','scope_id','command','time',
+                'idempotent_replay','source_transaction','replication')}
+            result['scope_versions'] = {scope['id']:receipt['scope_versions'][scope['id']]}
+            return result
 
     @router.post('/admission')
     def admission(body: dict, authorization: str | None = Header(None)):
@@ -241,7 +258,8 @@ def owner_router(owner):
             plan = owner.runtime.plan(model, scope, destination)
             approved = envelope(owner.runtime, model, scope, destination, 'read-guard', plan)
             return {**current, 'policy': approved['policy'],
-                    'facts': [{**r, 'row': {'id': r['row']['id']}} for r in approved['facts']]}
+                    'facts': [{**r, 'source_fields': sorted(r['row']),
+                               'row': {'id': r['row']['id']}} for r in approved['facts']]}
         if body.get('operation') != 'import':
             raise HTTPException(422, 'Invalid admission operation')
         with owner.runtime.stores[owner.runtime.home].connect() as c:

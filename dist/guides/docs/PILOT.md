@@ -130,6 +130,13 @@ party identity but no excluded relationship. `uk-from-us` deliberately represent
 a UK entity using a US processing location and is rejected for US-excluded scopes.
 These locations are trusted **synthetic identity claims**, not geolocation or bank IdP assurance.
 
+Processing geography is checked against scope, table and resource rules as well
+as the storage decision. A scope is rejected when any approved row cannot be
+processed at the caller's location. Command responses and replays include only
+the requested scope's version and safe status; complete affected-scope/history
+metadata remains in the owner SQL receipt. Contact updates require an explicit
+value; omitted/null values cannot activate the original demo's fallback.
+
 ## Movement, races and failures
 
 Only the source-approved rows and recipient-specific policy facts cross the
@@ -137,13 +144,19 @@ peer interface. No other recipient grant list, owner display name for a minimal
 party, withheld resource, raw source reference or denial explanation is sent.
 The recipient verifies current source intent and envelope digest, then its own
 OPA before committing graph replacement, manifest, inbox and audit together.
+Incoming fields must satisfy the recipient's approved field list before storage.
+Reads also enforce the current source-approved field list, including when source
+and recipient policy catalogs temporarily differ without a scope-version change.
 Older data/authority manifests are fenced; duplicate intent delivery is idempotent.
 
 HTTP delivery runs outside the owner coordination lock and outside the business
 transaction. Pending intents for one scope/recipient coalesce to the current
 authorised state; each business audit and command receipt remains durable, and
 restrictions committed beyond the selected cutoff remain queued. This is not
-a promise to deliver every intermediate business event. Peer loss leaves durable queued/retry work while valid owner writes
+a promise to deliver every intermediate business event. Retry selection rotates
+by attempt count without changing creation-time cutoffs, so failed-peer groups
+cannot indefinitely hold later healthy-peer work behind the batch limit.
+Peer loss leaves durable queued/retry work while valid owner writes
 and audit remain available. Restricted reads can fail while an old physical copy
 still exists. Source policy changes cannot recall already in-flight bytes; current
 read guards and versioned replacement/purge protect visibility and convergence.
@@ -154,6 +167,11 @@ Reads still use synchronous source authority and can affect coordination latency
 then restarts the owner/API/peers and checks durable identity, receipts, projections
 and safe log recovery. The existing India migration remains an isolated fixture;
 these MDM/normalized tables do not yet migrate to Mumbai.
+
+`./lab pilot-test` also runs `poc/tests/pilot_review_acceptance.py`, which exercises
+resource/table processing exclusions, filtered receipts, missing contact values
+and temporary real source/recipient OPA field narrowing. It restores modified
+catalogs/rules in `finally` blocks. Run it sequentially on synthetic data.
 
 ## Credentials, logs and remaining pilot gates
 

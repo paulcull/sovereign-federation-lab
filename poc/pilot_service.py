@@ -193,7 +193,9 @@ elif ROLE == 'peer':
                     json={'input': dict(customer=message['policy'], destination_entity=entity,
                          destination_store=STORE_INFO[CONFIG['store_id']], now=__import__('time').time(), resources=facts)})
                 response.raise_for_status(); decisions = response.json().get('result')
-            if not isinstance(decisions, list) or len(decisions) != len(facts) or not all(d.get('allow') is True for d in decisions):
+            if not isinstance(decisions, list) or len(decisions) != len(facts) or not all(
+                d.get('allow') is True and set(r['row']) <= set(d.get('fields',[]))
+                for d,r in zip(decisions,rows)):
                 raise HTTPException(403, 'Recipient policy admission denied')
         with psycopg.connect(os.environ['PILOT_DSN'], connect_timeout=2) as c:
             status = apply_projection(c, message)
@@ -228,7 +230,9 @@ elif ROLE == 'peer':
             if len(rows) > 50:
                 raise HTTPException(422, 'Pilot graph requires a bounded query')
         guard = {(r['table'], r['row']['id']): r for r in current['facts']}
-        if any((r['table'],r['row']['id']) not in guard for r in rows):
+        if any((r['table'],r['row']['id']) not in guard or
+               not set(r['row']) <= set(guard[(r['table'],r['row']['id'])].get('source_fields',[]))
+               for r in rows):
             raise HTTPException(409, 'Stored graph requires current-policy reconciliation')
         facts = [guard[(r['table'],r['row']['id'])] for r in rows]
         with httpx.Client(timeout=2, trust_env=False) as local:
