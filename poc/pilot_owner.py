@@ -47,8 +47,14 @@ class PilotOwner:
                 "(PARTITION BY scope_id,destination_entity_id ORDER BY created_at DESC,id DESC) AS priority "
                 "FROM sovereignty.outbox WHERE status IN ('queued','retry')) "
                 "WHERE priority=1 ORDER BY attempts,created_at,id LIMIT 15").fetchall()
+        unavailable = set()
         for event, sid, destination, cutoff in tasks:
             try:
+                binding = self.runtime.entities[destination]['store_id']
+                if binding in unavailable:
+                    # One failed transport probe per store/batch. Keep every intent
+                    # durable and rotate deferred processing attempts as retries.
+                    raise HTTPException(503,'Recipient unavailable in this batch')
                 with self.runtime.lock:
                     with self.runtime.stores[self.runtime.home].connect() as c:
                         model = self.runtime.load(c)
@@ -66,7 +72,12 @@ class PilotOwner:
                             with self.runtime.stores[self.runtime.home].connect() as c:
                                 self.runtime.write_scope(c,s)
                 if status is None:
-                    status=self.deliver(model,s,destination,event,plan)
+                    try:
+                        status=self.deliver(model,s,destination,event,plan)
+                    except HTTPException as failure:
+                        if failure.status_code == 503:
+                            unavailable.add(binding)
+                        raise
                 with self.runtime.lock, self.runtime.stores[self.runtime.home].connect() as c:
                     c.execute('UPDATE sovereignty.outbox SET status=%s,reason=%s,attempts=attempts+1 WHERE id=%s',
                               (status,'Pilot peer acknowledged' if status!='blocked' else 'Source policy blocked',event))

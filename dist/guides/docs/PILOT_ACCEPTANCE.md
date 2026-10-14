@@ -75,6 +75,10 @@ Its `lab-evidence` artifact excludes private identities/certificates.
   scoped response receipts, source read-field fences, recipient import-field
   checks, command validation and attempt-count retry rotation. Complete receipts
   remain in SQL; original settlement and supersession cutoffs remain unchanged.
+- The added 15-plus-group peer-loss probe exposed first-contact global metadata
+  rewrites and repeated transport timeouts. Scope-only contact/expiry writes and
+  one failed transport probe per store/batch remove those delays while preserving
+  durable pending intents and the test's 45-second healthy-peer deadline.
 
 A premature browser attempt overlapped a dependency outage and failed. Final
 acceptance runs these suites sequentially; that failed attempt is not a pass.

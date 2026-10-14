@@ -156,6 +156,10 @@ restrictions committed beyond the selected cutoff remain queued. This is not
 a promise to deliver every intermediate business event. Retry selection rotates
 by attempt count without changing creation-time cutoffs, so failed-peer groups
 cannot indefinitely hold later healthy-peer work behind the batch limit.
+Each store gets at most one failed transport probe per batch; deferred intents
+remain retries. The attempt counter counts source processing attempts, including
+deferral, rather than claiming that each attempt sent a network request. Contact
+and expiry metadata writes touch only their scope, leaving unrelated rules/bindings intact.
 Peer loss leaves durable queued/retry work while valid owner writes
 and audit remain available. Restricted reads can fail while an old physical copy
 still exists. Source policy changes cannot recall already in-flight bytes; current
