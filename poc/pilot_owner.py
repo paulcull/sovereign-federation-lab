@@ -41,7 +41,7 @@ class PilotOwner:
                 expired = sorted(f"{e}:{g['expires_at']}" for e,g in s['policy']['grants'].items() if g['expires_at'] <= time.time())
                 if expired != s['expired_seen']:
                     s['expired_seen'] = expired; s['decision_revision'] += 1
-                    self.runtime.write_controls(c,model,[s['id']]); self.runtime.enqueue(c,s)
+                    self.runtime.write_scope(c,s); self.runtime.enqueue(c,s)
             tasks = c.execute("SELECT id,scope_id,destination_entity_id,created_at FROM "
                 "(SELECT id,scope_id,destination_entity_id,created_at,attempts,ROW_NUMBER() OVER "
                 "(PARTITION BY scope_id,destination_entity_id ORDER BY created_at DESC,id DESC) AS priority "
@@ -64,7 +64,7 @@ class PilotOwner:
                         if plan['rows'] and destination not in s['contacted']:
                             s['contacted'].append(destination)
                             with self.runtime.stores[self.runtime.home].connect() as c:
-                                self.runtime.write_controls(c,model,[s['id']])
+                                self.runtime.write_scope(c,s)
                 if status is None:
                     status=self.deliver(model,s,destination,event,plan)
                 with self.runtime.lock, self.runtime.stores[self.runtime.home].connect() as c:

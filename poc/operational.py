@@ -37,9 +37,13 @@ class OperationalRuntime:
         for t,r in m['table_rules'].items():c.execute('UPSERT INTO sovereignty.table_rule VALUES (%s,%s,%s)',(m['owner_entity_id'],t,Jsonb(r)))
         for scope in m['scopes']:
             if affected is not None and scope['id'] not in affected:continue
-            c.execute('UPSERT INTO sovereignty.scope VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(scope['id'],scope['owner_entity_id'],scope['relationship_id'],scope['data_version'],scope['policy_generation'],scope['decision_revision'],Jsonb(scope),scope['root_type'],scope['root_id'],scope['primary_party_id']))
+            self.write_scope(c,scope)
         for r in m['rules']:c.execute('UPSERT INTO sovereignty.resource_rule VALUES (%s,%s,%s,%s)',(m['owner_entity_id'],r['resource_type'],r['resource_id'],Jsonb(r)))
         for b in m['bindings']:c.execute('UPSERT INTO sovereignty.binding VALUES (%s,%s,%s,%s)',(m['owner_entity_id'],b['scope_id'],b['resource_type'],b['resource_id']))
+    def write_scope(self,c,scope):
+        # Contact receipts and expiry only change this scope. Rewriting global rules
+        # and every binding here makes a failed first delivery block healthy peers.
+        c.execute('UPSERT INTO sovereignty.scope VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(scope['id'],scope['owner_entity_id'],scope['relationship_id'],scope['data_version'],scope['policy_generation'],scope['decision_revision'],Jsonb(scope),scope['root_type'],scope['root_id'],scope['primary_party_id']))
     def load(self,c):
         m={**copy.deepcopy(core.SPEC),'scopes':[],'rows':{},'rules':[],'bindings':[]}
         for table in core.ORDER:
@@ -128,7 +132,7 @@ class OperationalRuntime:
                     m=self.load(c)
                     for s in m['scopes']:
                         expired=sorted(f"{e}:{g['expires_at']}" for e,g in s['policy']['grants'].items() if g['expires_at']<=time.time())
-                        if expired!=s['expired_seen']:s['expired_seen']=expired;s['decision_revision']+=1;self.write_controls(c,m,[s['id']]);self.enqueue(c,s)
+                        if expired!=s['expired_seen']:s['expired_seen']=expired;s['decision_revision']+=1;self.write_scope(c,s);self.enqueue(c,s)
                     tasks=c.execute("SELECT id,scope_id,destination_entity_id FROM sovereignty.outbox WHERE status IN ('queued','retry') ORDER BY created_at LIMIT 15").fetchall()
             except Exception:return
             for event,sid,dest in tasks:
@@ -140,7 +144,7 @@ class OperationalRuntime:
                         if self.paused[self.entities[dest]['store_id']]:raise RuntimeError('Store ingress paused; business reconciliation pending')
                         if plan['rows'] and dest not in s['contacted']:
                             s['contacted'].append(dest)
-                            with self.stores[self.home].connect() as c:self.write_controls(c,m,[s['id']])
+                            with self.stores[self.home].connect() as c:self.write_scope(c,s)
                         status=self.deliver(m,s,dest,event,plan);reason=f"{len(plan['rows'])} approved business rows · graph v{s['data_version']}"
                     with self.stores[self.home].connect() as c:
                         c.execute('UPDATE sovereignty.outbox SET status=%s,reason=%s,attempts=attempts+1 WHERE id=%s',(status,reason,event));self.audit(c,s,dest,status,reason)
