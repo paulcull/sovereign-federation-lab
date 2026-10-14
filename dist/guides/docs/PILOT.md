@@ -147,6 +147,10 @@ OPA before committing graph replacement, manifest, inbox and audit together.
 Incoming fields must satisfy the recipient's approved field list before storage.
 Reads also enforce the current source-approved field list, including when source
 and recipient policy catalogs temporarily differ without a scope-version change.
+`sovereignty.field_manifest` records each imported row's exact field names in the
+same transaction as its projection, inbox, manifest and audit. Reads preserve
+present-null values and omit absent fields. Legacy copies without that metadata
+are conservatively treated as the full registered field set until re-imported.
 Older data/authority manifests are fenced; duplicate intent delivery is idempotent.
 
 HTTP delivery runs outside the owner coordination lock and outside the business

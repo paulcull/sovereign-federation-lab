@@ -5,6 +5,7 @@ from pathlib import Path
 from psycopg.types.json import Jsonb
 from fastapi import HTTPException
 import operational_core as core
+from projection_fields import write_fields
 
 def clean(value):
     if isinstance(value,(uuid.UUID,Decimal)):return str(value)
@@ -46,13 +47,22 @@ class OperationalRuntime:
         c.execute('UPSERT INTO sovereignty.scope VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(scope['id'],scope['owner_entity_id'],scope['relationship_id'],scope['data_version'],scope['policy_generation'],scope['decision_revision'],Jsonb(scope),scope['root_type'],scope['root_id'],scope['primary_party_id']))
     def load(self,c):
         m={**copy.deepcopy(core.SPEC),'scopes':[],'rows':{},'rules':[],'bindings':[]}
+        # Pipeline fresh SQL reads in the same transaction. No policy/data cache:
+        # every admission still observes current authoritative facts.
+        with c.pipeline():
+            rows={table:c.execute('SELECT '+','.join(core.TABLES[table]['columns'])+
+                ' FROM business.'+table+' WHERE owner_entity_id=%s',(m['owner_entity_id'],)) for table in core.ORDER}
+            scopes=c.execute('SELECT doc FROM sovereignty.scope')
+            tables=c.execute('SELECT resource_type,rule FROM sovereignty.table_rule')
+            rules=c.execute('SELECT rule FROM sovereignty.resource_rule')
+            bindings=c.execute('SELECT scope_id,resource_type,resource_id FROM sovereignty.binding')
         for table in core.ORDER:
-            cur=c.execute('SELECT '+','.join(core.TABLES[table]['columns'])+' FROM business.'+table+' WHERE owner_entity_id=%s',(m['owner_entity_id'],))
+            cur=rows[table]
             cols=[d.name for d in cur.description];m['rows'][table]=[clean(dict(zip(cols,r))) for r in cur.fetchall()]
-        m['scopes']=[r[0] for r in c.execute('SELECT doc FROM sovereignty.scope')]
-        m['table_rules']={r[0]:r[1] for r in c.execute('SELECT resource_type,rule FROM sovereignty.table_rule')}
-        m['rules']=[r[0] for r in c.execute('SELECT rule FROM sovereignty.resource_rule')]
-        m['bindings']=[dict(scope_id=str(r[0]),resource_type=r[1],resource_id=str(r[2])) for r in c.execute('SELECT scope_id,resource_type,resource_id FROM sovereignty.binding')]
+        m['scopes']=[r[0] for r in scopes.fetchall()]
+        m['table_rules']={r[0]:r[1] for r in tables.fetchall()}
+        m['rules']=[r[0] for r in rules.fetchall()]
+        m['bindings']=[dict(scope_id=str(r[0]),resource_type=r[1],resource_id=str(r[2])) for r in bindings.fetchall()]
         return m
     def candidates(self,s):return sorted(set(s['policy']['allowed_entities'])|set(s['policy']['denied_entities'])|set(s['policy']['grants'])|set(s['contacted']))
     def enqueue(self,c,s):
@@ -117,6 +127,7 @@ class OperationalRuntime:
                     cols=['owner_entity_id','scope_id','destination_entity_id']+list(r['row'])
                     c.execute(f"INSERT INTO projection.{table} ({','.join(cols)}) VALUES ({','.join(['%s']*len(cols))})",list(key)+list(r['row'].values()))
             c.execute('UPSERT INTO sovereignty.manifest VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',key+(s['data_version'],s['policy_generation'],s['decision_revision'],self.entities[dest]['placement_version'],Jsonb({k:v for k,v in plan['row_counts'].items() if v})))
+            write_fields(c,key,plan['rows'])
             c.execute('INSERT INTO sovereignty.inbox VALUES (%s,%s)',(event_id,time.time()))
             status='replicated' if plan['rows'] else 'purged'
             # Recipient receipt is scoped; no omitted row IDs or denial explanations are exported.
@@ -165,14 +176,17 @@ class OperationalRuntime:
                         # The monitor otherwise holds the coordinator lock while issuing
                         # hundreds of round trips and starves the actual relay.
                         by_key={}
+                        with c.pipeline():
+                            table_rows={t:c.execute('SELECT owner_entity_id,scope_id,destination_entity_id,'+
+                                ','.join(core.TABLES[t]['columns'])+f' FROM projection.{t}') for t in core.ORDER}
+                            manifests=c.execute('SELECT owner_entity_id,scope_id,destination_entity_id,data_version,policy_generation,decision_revision,placement_version,row_counts FROM sovereignty.manifest')
                         for t in core.ORDER:
                             cols=list(core.TABLES[t]['columns'])
-                            cur=c.execute('SELECT owner_entity_id,scope_id,destination_entity_id,'+
-                                ','.join(cols)+f' FROM projection.{t}')
+                            cur=table_rows[t]
                             for r in cur.fetchall():
                                 key=(r[0],str(r[1]),r[2])
                                 by_key.setdefault(key,[]).append(dict(table=t,row=clean(dict(zip(cols,r[3:])))))
-                        for x in c.execute('SELECT owner_entity_id,scope_id,destination_entity_id,data_version,policy_generation,decision_revision,placement_version,row_counts FROM sovereignty.manifest').fetchall():
+                        for x in manifests.fetchall():
                             p=dict(owner_entity_id=x[0],scope_id=str(x[1]),destination_entity_id=x[2],store_id=sid,data_version=x[3],policy_generation=x[4],decision_revision=x[5],placement_version=x[6],row_counts=x[7],rows=[])
                             scope=core.next_scope(model,p['scope_id'])
                             field_set='global_fields' if scope['scope_kind']=='party' else 'export_fields'

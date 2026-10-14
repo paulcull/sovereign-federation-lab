@@ -5,6 +5,7 @@ import uuid
 from psycopg.types.json import Jsonb
 
 import operational_core as core
+from projection_fields import write_fields
 
 
 def envelope(runtime, model, scope, destination, event_id, plan):
@@ -51,6 +52,7 @@ def apply_projection(connection, message):
                                list(key) + list(resource['row'].values()))
     connection.execute('UPSERT INTO sovereignty.manifest VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
                        key + versions + (message['placement_version'], Jsonb(message['row_counts'])))
+    write_fields(connection,key,message['rows'])
     connection.execute('INSERT INTO sovereignty.inbox VALUES (%s,%s)', (message['event_id'], time.time()))
     status = 'replicated' if message['rows'] else 'purged'
     event = dict(id=str(uuid.uuid4()), time=time.time(), record_id=message['scope_id'],

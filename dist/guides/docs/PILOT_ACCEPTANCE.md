@@ -79,6 +79,17 @@ Its `lab-evidence` artifact excludes private identities/certificates.
   rewrites and repeated transport timeouts. Scope-only contact/expiry writes and
   one failed transport probe per store/batch remove those delays while preserving
   durable pending intents and the test's 45-second healthy-peer deadline.
+- Repeated runs grew the workspace to 85 scopes and exposed another settlement
+  delay. Fresh model/projection reads now use psycopg pipeline mode within their
+  existing transactions, retaining current policy facts without a decision cache.
+  The complete lab and browser gates passed again on that accumulated dataset.
+- A second review found that implicit CI shells could mask failed commands piped
+  through `tee`. All job steps now explicitly use Bash with `pipefail`; earlier
+  workflow success alone is not acceptance evidence. The explicit shell rejects
+  a deliberately failing pipeline, and the final PR run must be checked separately.
+- Narrowed imports previously reconstructed omitted SQL fields as null keys.
+  Persist exact imported field sets atomically and render from them, preserving
+  genuine nulls and retaining the source fence for old/wider projections.
 
 A premature browser attempt overlapped a dependency outage and failed. Final
 acceptance runs these suites sequentially; that failed attempt is not a pass.

@@ -111,12 +111,25 @@ try:
     call('GET',path,'uk-servicing',status=409)
     owner=call('GET',path+'?freshness=owner','uk-servicing')
     assert all('display_name' not in row['row'] for row in owner['rows'] if row['table']=='party')
+    update=call('POST',path+'/commands','uk-servicing',dict(request_id=str(uuid.uuid4()),
+        expected_version=owner['data_version'],command='update_contact',value='source.review@example.invalid'))
+    wanted=update['scope_versions'][sid]
+    def narrow_ready():
+        response=client.get(path+'?minimum_data_version='+str(wanted),headers={
+            'Authorization':'Bearer '+config['principals']['uk-servicing']['token']})
+        if response.status_code!=200:return False
+        assert all('display_name' not in row['row'] for row in response.json()['rows'] if row['table']=='party')
+        return True
+    wait(narrow_ready)
+    assert sql('uk','SELECT display_name FROM projection.party WHERE scope_id=%s',(sid,))[0][0] is None
+    assert 'display_name' not in sql('uk',"SELECT fields FROM sovereignty.field_manifest WHERE scope_id=%s AND resource_type='party'",(sid,))[0][0]
 finally:
     set_fields('sg',original)
 wait(ready)
-print('PASS source OPA field narrowing fences old projection without changing scope versions')
+print('PASS source field narrowing fences old projection and permits reconciled narrow reads while policy remains narrowed')
 
 original=fields('uk'); before=sql('uk','SELECT data_version FROM sovereignty.manifest WHERE scope_id=%s AND destination_entity_id=%s',(sid,'LE-GB-02'))[0][0]
+before_value=sql('uk','SELECT value FROM projection.contact_info WHERE scope_id=%s AND destination_entity_id=%s',(sid,'LE-GB-02'))[0][0]
 try:
     set_fields('uk',[field for field in original if field!='display_name'])
     current=call('GET',path+'?freshness=owner','uk-servicing')
@@ -125,7 +138,7 @@ try:
     call('POST',path+'/commands','uk-servicing',body)
     wait(lambda:bool(sql('sg',"SELECT id FROM sovereignty.outbox WHERE scope_id=%s AND destination_entity_id='LE-GB-02' AND status='retry' AND attempts>0",(sid,))))
     assert sql('uk','SELECT data_version FROM sovereignty.manifest WHERE scope_id=%s AND destination_entity_id=%s',(sid,'LE-GB-02'))[0][0]==before
-    assert sql('uk','SELECT value FROM projection.contact_info WHERE scope_id=%s AND destination_entity_id=%s',(sid,'LE-GB-02'))[0][0]=='review@example.invalid'
+    assert sql('uk','SELECT value FROM projection.contact_info WHERE scope_id=%s AND destination_entity_id=%s',(sid,'LE-GB-02'))[0][0]==before_value
 finally:
     set_fields('uk',original)
 wait(lambda:sql('uk','SELECT value FROM projection.contact_info WHERE scope_id=%s AND destination_entity_id=%s',(sid,'LE-GB-02'))[0][0]=='recipient.review@example.invalid')

@@ -217,6 +217,9 @@ elif ROLE == 'peer':
             if tuple(receipt[1:]) != tuple(current[k] for k in ('policy_generation', 'decision_revision', 'placement_version')) or receipt[0] < body.get('minimum_data_version', 0):
                 raise HTTPException(409, 'Current authorised data version not ready')
             kind = 'party' if current.get('scope_kind') == 'party' else 'relationship'
+            imported = {(r[0],str(r[1])):set(r[2]) for r in c.execute(
+                'SELECT resource_type,resource_id,fields FROM sovereignty.field_manifest '
+                'WHERE owner_entity_id=%s AND scope_id=%s AND destination_entity_id=%s',key)}
             rows = []
             for table in core.ORDER:
                 if kind == 'party' and table != 'party':
@@ -226,7 +229,12 @@ elif ROLE == 'peer':
                     continue
                 records = c.execute('SELECT ' + ','.join(columns) + f' FROM projection.{table} '
                     'WHERE owner_entity_id=%s AND scope_id=%s AND destination_entity_id=%s LIMIT 51', key).fetchall()
-                rows.extend(dict(table=table, row=clean(dict(zip(columns, record)))) for record in records)
+                for record in records:
+                    row=clean(dict(zip(columns,record)))
+                    # Older lab projections have no field ledger: treat them as
+                    # the full registered set so source narrowing still fences them.
+                    present=imported.get((table,row['id']),set(columns))
+                    rows.append(dict(table=table,row={k:v for k,v in row.items() if k in present}))
             if len(rows) > 50:
                 raise HTTPException(422, 'Pilot graph requires a bounded query')
         guard = {(r['table'], r['row']['id']): r for r in current['facts']}
