@@ -42,6 +42,9 @@ deliberately stop dependencies.
 | Preserved complete lab | Passed with pilot enabled: SQL placement/exclusions, normalized graphs, India snapshot/catch-up/validation/fencing/cutover/stale writes/live cleanup, restart authority, gateway, Collector span receipt and Grafana/Loki. Original 45-second settlement gate retained. |
 | Live MDM browser | Passed: creates a customer and relationship, reads UK contact, executes routed update, reads fresh version, verifies exact US minimum and relationship denial; no page errors/overflow at 375/768/1440 px. |
 | Microsite reader browser | Passed: nine-page journey, 28 components, evidence links and mobile navigation/layout; no page errors. |
+| Preserved actual outages | Passed with pilot enabled: Collector outage leaves business row/audit/receipt durable; source OPA outage prevents export/read and leaves retryable intents; real dependency restart drains outboxes. |
+| Original live browser | Passed: generated monitor record moves SG to UK, US absent; India snapshot, concurrent changes, validation invalidation, source fencing, UK work during fencing, cutover, stale-write rejection and cleanup. |
+| Source packaging | Passed: archive integrity, MDM source included, private pilot directories and certificate keys excluded; checked both Git release and mounted-source packaging. |
 
 Assertions live in `poc/tests/pilot_acceptance.py`,
 `poc/tests/pilot_fault_acceptance.py` and `poc/tests/pilot_browser.py`.
