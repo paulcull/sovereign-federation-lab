@@ -1,5 +1,7 @@
 .git
 .openai
+.pilot
+.pilot*
 .env
 .env.*
 .venv

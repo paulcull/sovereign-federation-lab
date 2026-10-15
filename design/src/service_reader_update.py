@@ -46,8 +46,9 @@ mdm_context = reader_section('enterprise-mdm', 'How this supports enterprise cus
     'independent. Any enterprise customer view must be assembled from the information '
     'approved for that caller, purpose and processing location; identity matching does '
     'not authorise a global copy of every customer attribute.</p>'
-    '<p>The lab uses supplied global party identifiers and synthetic relationship links. '
-    'MDM matching, stewardship and merge/split governance are proposed integration work.</p>')
+    '<p>The optional customer MDM pilot creates stable global party identifiers and maps '
+    'exact source references to the existing party master. Fuzzy MDM matching, stewardship '
+    'and merge/split governance are proposed integration work.</p>')
 
 assurance_boundary = reader_section('risk-assurance', 'What this approach can establish',
     '<p>The lab provides inspectable evidence for exclusions, approved projections, guarded '
@@ -56,8 +57,9 @@ assurance_boundary = reader_section('risk-assurance', 'What this approach can es
     'of real processing, storage, transport, operator access, backups and retention. The '
     'four stores here run on one host; their country labels do not prove physical residency. '
     'Live cleanup does not certify erasure from history, audit or backups.</p>'
-    '<p>Independent authenticated peers, distributed authority and migration of normalized '
-    'business tables remain pilot work. '
+    '<p>The optional synthetic profile implements separate authenticated recipient peers. '
+    'Regional deployment, distributed authority and migration of normalized '
+    'business tables remain bank pilot work. '
     '<a href="pilot-plan.html">Follow the pilot gates</a>.</p>')
 
 service_roles = table(['Responsibility', 'Business services', 'Sovereignty services'], [
@@ -76,8 +78,8 @@ service_intro = reader_section('services', 'Keep the banking services you alread
     'contact and holdings services may already exist. Reuse their APIs, business rules and '
     'data ownership; add the integration needed for the data they share.</p>'
     '<p>These are responsibility boundaries. In this lab, business modules and sovereignty '
-    'coordination share one FastAPI harness, with separate OPA processes. Independent regional '
-    'peers and automatic routing are a proposed pilot design.</p>'
+    'coordination share one FastAPI harness, with separate OPA processes. Independent '
+    'regional deployment remains a proposed pilot design. The optional synthetic pilot now wires a separate system/experience API adapter and authenticated recipient peers; its owner stays in the existing coordinator.</p>'
     '<p><a href="service-transactions.html">Follow an update through both responsibilities</a>, '
     'including read and write routing.</p>')
 overview['body'] = overview['body'].replace(
@@ -153,8 +155,8 @@ services['body'] = (
         'but can return an older ordinary data version. They consult owner authority; there is '
         'no offline authority lease or automatic owner-read fallback.</p><p>The isolated India '
         'migration proves source fencing and stale-write rejection for its separate fixture. '
-        'Migration of normalized business tables, independent peer deployment, authenticated '
-        'routing, an API freshness contract and distributed authority remain pilot work. '
+        'The optional customer MDM integration pilot adds exact source references, typed system/experience APIs, explicit freshness and independently deployed mTLS recipient processes on the same host. Migration of normalized business tables, bank-authenticated regional '
+        'routing and distributed authority remain pilot work. '
         '<a href="/design/ADR-0017.html">Read the proposed integration and routing decision</a> '
         'or <a href="/guides/docs/SERVICE_GUIDE_REVIEW.md">inspect this guide’s executed checks</a>.</p>') +
     '<details class="legacy-example"><summary>Technical reference: local transactions and API contracts</summary>' +
@@ -174,7 +176,8 @@ services['prompt'] = ('Extend existing banking services through bounded adapters
 arch['body'] = reader_section('service-boundaries', 'Responsibility is separate from deployment',
     '<p>Business services own banking interactions. Sovereignty services govern approved '
     'location, authority and movement. The single harness makes these responsibilities testable '
-    'in the lab; it is not evidence of independently deployed regional peers.</p>'
+    'in the original lab. The optional customer MDM profile adds independent peer processes '
+    'on the same host; regional deployment remains a bank pilot gate.</p>'
     '<p>Reuse existing business services and integrate participating data through adapters. '
     '<a href="service-transactions.html#routing">Read and write routing</a> distinguishes '
     'the current writer from an approved local read view.</p>') + arch['body']
@@ -193,5 +196,10 @@ gateway_page['body'] = reader_section('read-write-routing', 'Select the service,
     'reads can use an authorised recipient view with suitable freshness. Business services '
     'continue to execute their APIs and rules. The handler revalidates authority and permissions; '
     'a cached route never makes an old writer valid after cutover.</p>'
-    '<p>The loopback lab gateway proxies one harness. It does not implement distributed '
-    'read/write routing. <a href="service-transactions.html#routing">Follow the routing explanation</a>.</p>') + gateway_page['body']
+    '<p>The original loopback gateway proxies one harness. The optional customer MDM gateway '
+    'adds authenticated APIs, owner-routed writes and approved peer reads. It still has one '
+    'coordinator and no distributed owner promotion. '
+    '<a href="service-transactions.html#routing">Follow the routing explanation</a>.</p>') + gateway_page['body']
+
+wired_pilot = reader_section('wired-pilot', 'Run the customer MDM integration pilot', '<p>The optional profile now wires a base customer MDM over CockroachDB, system and experience APIs, source OPA and separate mTLS recipient peers. Source references remain owner-qualified; customer views expose only approved scopes. This is a single-host synthetic integration pilot, not bank deployment approval.</p><pre>./lab pilot-up\n./lab pilot-test\n./lab pilot-faults</pre><p>Open <code>http://localhost:8081/</code> for the operator console and <code>http://localhost:8081/pilot/api-docs</code> for the typed contract. <a href="/guides/docs/PILOT.md">Read setup, identities, API behaviour and remaining pilot gates</a>.</p>')
+services['body'] = services['body'].replace('</section>', '</section>' + wired_pilot, 1)

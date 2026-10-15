@@ -329,4 +329,13 @@ CREATE TABLE IF NOT EXISTS sovereignty.inbox (event_id UUID PRIMARY KEY, receive
 
 CREATE TABLE IF NOT EXISTS sovereignty.manifest (owner_entity_id STRING NOT NULL, scope_id UUID NOT NULL, destination_entity_id STRING NOT NULL, data_version INT NOT NULL, policy_generation INT NOT NULL, decision_revision INT NOT NULL, placement_version INT NOT NULL, row_counts JSONB NOT NULL, PRIMARY KEY(owner_entity_id,scope_id,destination_entity_id));
 
+CREATE TABLE IF NOT EXISTS sovereignty.field_manifest (
+  owner_entity_id STRING NOT NULL, scope_id UUID NOT NULL,
+  destination_entity_id STRING NOT NULL, resource_type STRING NOT NULL,
+  resource_id UUID NOT NULL, fields JSONB NOT NULL,
+  PRIMARY KEY(owner_entity_id,scope_id,destination_entity_id,resource_type,resource_id),
+  FOREIGN KEY(owner_entity_id,scope_id,destination_entity_id)
+    REFERENCES sovereignty.manifest(owner_entity_id,scope_id,destination_entity_id)
+);
+
 CREATE TABLE IF NOT EXISTS sovereignty.table_rule (owner_entity_id STRING NOT NULL, resource_type STRING NOT NULL, rule JSONB NOT NULL, PRIMARY KEY(owner_entity_id,resource_type));

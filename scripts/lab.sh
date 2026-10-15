@@ -5,6 +5,7 @@ cd "$ROOT"
 dc() {
   local files=(-f "$ROOT/compose.yaml")
   if [ -n "${LAB_BUILD_CA:-}" ]; then files+=(-f "$ROOT/infra/compose.build-ca.yaml"); fi
+  if [ "${LAB_PILOT:-0}" = 1 ]; then files+=(-f "$ROOT/compose.pilot.yaml"); fi
   docker compose --project-directory "$ROOT" "${files[@]}" "$@"
 }
 doctor() {
@@ -35,6 +36,52 @@ faults() (
   dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/logging_integration.py
 )
 case "${1:-help}" in
+  pilot-up)
+    python3 "$ROOT/scripts/pilot_setup.py"
+    export LAB_PILOT=1
+    doctor; build
+    dc up --build -d --wait --wait-timeout 240
+    ready
+    echo 'Synthetic pilot: http://localhost:8081 (PILOT_PORT overrides). Get a test credential with ./lab pilot-token crm-sg or uk-servicing.'
+    ;;
+  pilot-test)
+    export LAB_PILOT=1
+    ready
+    dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_acceptance.py
+    dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_review_acceptance.py
+    ;;
+  pilot-faults)
+    export LAB_PILOT=1
+    (
+      trap 'dc start pilot-peer-uk opa-sg opa-uk otel-collector >/dev/null' EXIT
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py setup
+      dc stop pilot-peer-uk
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py peer
+      dc start pilot-peer-uk
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py recovered
+      dc stop opa-uk
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py recipient-policy
+      dc start opa-uk
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py recovered
+      dc stop opa-sg
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py source-policy
+      dc start opa-sg
+      dc stop otel-collector
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py telemetry
+      dc start otel-collector
+      dc restart monitor pilot-api pilot-peer-uk pilot-peer-us
+      dc up -d --wait --wait-timeout 240 monitor pilot-api pilot-peer-uk pilot-peer-us pilot-gateway
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py restart
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py logs
+    )
+    ;;
+  pilot-token)
+    python3 "$ROOT/scripts/pilot_setup.py" token "${2:-}"
+    ;;
+  pilot-down)
+    export LAB_PILOT=1
+    dc down --remove-orphans
+    ;;
   doctor) doctor ;;
   build) doctor; build ;;
   up)
@@ -109,6 +156,11 @@ Sovereign Federation Lab — CockroachDB only
   ./lab telemetry    Verify API → Collector → Loki and Grafana provisioning
   ./lab faults       Stop real OPA/Collector; verify fail-closed exports and SQL audit isolation
   ./lab test         Synthetic-data integration, migration, restart and OTel checks
+  ./lab pilot-up     Wire synthetic customer MDM, system/experience APIs and mTLS peers
+  ./lab pilot-test   Actual SQL/OPA/API pilot acceptance
+  ./lab pilot-faults Stop real peers/OPA/Collector and verify recovery and persistence
+  ./lab pilot-token crm-sg|uk-servicing|us-reader   Print one local test credential
+  ./lab pilot-down   Stop the pilot and lab; preserve volumes
   ./lab generate --count 5 --scenario sg-uk-no-us
   ./lab business --command open_holding --count 2
   ./lab migrate [--reset]       Complete the isolated India movement

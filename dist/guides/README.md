@@ -34,10 +34,27 @@ Copy `.env.example` to `.env` to change LAB_PORT or COMPOSE_PROJECT_NAME. Only t
 
 ## Navigate the work
 
+An additive [customer MDM integration pilot](docs/PILOT.md) now wires authenticated
+system and experience APIs, exact source references, guarded customer views and
+separate mTLS recipient peers to the real stores and OPA:
+
+```bash
+./lab pilot-up
+./lab pilot-test
+./lab pilot-faults
+# Operator console: http://localhost:8081/
+# OpenAPI: http://localhost:8081/pilot/api-docs
+./lab pilot-token crm-sg
+```
+
+This optional profile needs host Python 3/OpenSSL for private synthetic identities.
+It is a single-host integration pilot; bank identity, regional infrastructure,
+matching/stewardship, normalized-table migration and pilot approval remain separate.
+
 | Material | Entry point |
 |---|---|
 | Run and troubleshoot containers | [Development guide](docs/DEVELOPMENT.md) |
-| Sixteen architectural decisions | [ADR register](docs/adr/README.md) |
+| Architectural decisions and pilot contracts | [ADR register](docs/adr/README.md) |
 | Verification status and gates | [Testing evidence](TESTING.md) |
 | Core architecture | [Design](DESIGN.md) |
 | Party/relationship/holding integration | [Operational data model](OPERATIONAL.md) |
@@ -46,7 +63,7 @@ Copy `.env.example` to `.env` to change LAB_PORT or COMPOSE_PROJECT_NAME. Only t
 | 50M parties / 100M relationships and pilot backlog | [Scale assessment](scale/SCALE_AND_PILOT.md) |
 | Origin and review findings | [Provenance](docs/source-provenance.json), [documentation audit](docs/DOCUMENTATION_AUDIT.md) |
 
-The portal links the monitor, migration workspace, 28 component design pages, 16 ADR pages, capacity model and run guide. Design pages retain engineering prompts and label implemented lab features versus production targets.
+The portal links the monitor, migration workspace, 28 component design pages, 18 ADR pages, capacity model and run guide. Design pages retain engineering prompts and label implemented lab features versus production targets.
 
 ## Implementation boundary
 

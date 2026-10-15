@@ -21,7 +21,7 @@ def check_url(source,url,web=True):
     if parsed.scheme in ('http','https','mailto','data','blob'):external.add(url);return
     if url.startswith('//'):external.add(url);return
     if not url or url.startswith(('javascript:','tel:')):return
-    if web and parsed.path in ('/api-docs','/openapi.json'):return
+    if web and parsed.path in ('/api-docs','/openapi.json','/pilot/api-docs'):return
     if web and parsed.path in release and '--release' not in sys.argv:return
     target=((OUT if web else ROOT)/parsed.path.lstrip('/')) if parsed.path.startswith('/') else source.parent/parsed.path
     if not parsed.path:target=source
@@ -70,7 +70,12 @@ assert json.loads((OUT/'lab-config.json').read_text())['mode']=='simulation'
 assert 'localhost\'||location.hostname' not in (OUT/'app.js').read_text()
 assert json.loads((ROOT/'shared/catalog.json').read_text())==json.loads((OUT/'catalog.json').read_text())
 assert json.loads((ROOT/'shared/operational.json').read_text())==json.loads((OUT/'operational.json').read_text())
-adrs=json.loads((ROOT/'docs/adrs.json').read_text());assert len(adrs)==17 and len({a['id'] for a in adrs})==17
+adrs=json.loads((ROOT/'docs/adrs.json').read_text());assert len(adrs)==18 and len({a['id'] for a in adrs})==18
+pilot=json.loads((ROOT/'compose.pilot.yaml').read_text())['services']
+assert {name for name,value in pilot.items() if value.get('ports')}=={'pilot-gateway'}
+assert pilot['pilot-gateway']['ports'][0].startswith('127.0.0.1:')
+assert all('ports' not in pilot[name] for name in ('pilot-api','pilot-authority','pilot-peer-sg','pilot-peer-uk','pilot-peer-us'))
+assert '.pilot' in (ROOT/'.dockerignore').read_text() and '.pilot/' in (ROOT/'.gitignore').read_text()
 for a in adrs:
     for key in ('status','context','decision','alternatives','consequences','evidence','gate'):assert a[key]
     for ref in a['evidence'].split('; '):assert (ROOT/ref).exists(),ref

@@ -2,6 +2,13 @@
 
 The entry point is `./lab`. All deployed services use CockroachDB; SQLite is never a runtime fallback. Run on a developer workstation or private development VM with Docker and Compose v2.
 
+For the additive customer MDM system/experience API profile, use
+`./lab pilot-up`, `./lab pilot-test` and `./lab pilot-faults`; the operator console
+and OpenAPI are on loopback port 8081. See [pilot setup and limits](PILOT.md).
+Host Python 3/OpenSSL are additional prerequisites only for generating the
+pilot's private synthetic credentials and local CA. The original lab's trusted
+operator surface remains separate on port 8080.
+
 ## Prerequisites
 
 - Bash; Docker Engine/Desktop; Compose v2 with `up --wait --wait-timeout`.

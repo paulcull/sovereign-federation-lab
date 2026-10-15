@@ -19,7 +19,10 @@ CURRENT_SCOPE = {
                              'A route does not grant access', 'current authoritative owner',
                              'current permission and placement', 'freshness', 'old writer rejects',
                              'Every writer', 'mandatory audit', 'no offline authority lease',
-                             'normalized business tables', 'no nearest-store fallback'),
+                             'normalized business tables', 'no nearest-store fallback',
+                             'Run the customer MDM integration pilot',
+                             'system and experience APIs', 'single-host synthetic integration pilot',
+                             'not bank deployment approval'),
 }
 
 

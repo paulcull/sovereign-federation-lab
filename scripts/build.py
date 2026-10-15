@@ -65,6 +65,6 @@ for source, destination in [('MIGRATION.md','migration/migration-guide.md'),
     target.write_text(re.sub(r'(!?\[[^\]]*\]\()([^\s)]+)(\))',rebase,text))
 (OUT/'lab-config.json').write_text('{"mode":"simulation","edition":9}\n')
 shutil.copy2(ROOT/'web/lab.css',OUT/'lab.css')
-for src,dest in [('web/portal.html','index.html'),('web/development.html','design/development-lab.html')]:
+for src,dest in [('web/portal.html','index.html'),('web/development.html','design/development-lab.html'),('web/pilot.html','pilot.html')]:
     (OUT/dest).write_text(page('Sovereign Federation Lab', (ROOT/src).read_text()))
 print(f'Built portable lab: monitor, 28 component pages, {len(adrs)} ADRs, register, deployment guide and portal.')

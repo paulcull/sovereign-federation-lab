@@ -186,6 +186,7 @@ async def lifespan(app):
             first=make_record(101,'home-only','LE-GB-01');create(first)
             second={**first,'owner_entity_id':'LE-GB-02','tier':'Business'};create(second)
     OPERATIONAL.initialize()
+    if PILOT is not None:PILOT.mdm.initialize()
     if MIGRATION is not None:MIGRATION.initialize()
     STOP.clear();thread=threading.Thread(target=worker,daemon=True);thread.start()
     LOGS.emit('service.started')
@@ -289,6 +290,13 @@ def operational_command(sid:str,body:dict):return OPERATIONAL.command(sid,body)
 def operational_preview(sid:str,entity:str):return OPERATIONAL.preview(sid,entity)
 @app.get('/api/operational/scopes/{sid}/read/{entity}')
 def operational_read(sid:str,entity:str):return OPERATIONAL.read(sid,entity)
+
+PILOT = None
+if os.getenv('PILOT_CONFIG'):
+    from pilot_common import configuration
+    from pilot_owner import PilotOwner, owner_router
+    PILOT = PilotOwner(OPERATIONAL, configuration())
+    app.include_router(owner_router(PILOT))
 
 from migration import MigrationRuntime,make_router
 if os.getenv('MIGRATION_STORAGE','cockroach')!='cockroach':raise RuntimeError('The development service requires CockroachDB; no SQLite fallback is permitted')

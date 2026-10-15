@@ -18,4 +18,5 @@ Retrospective decisions recorded on 11 October 2026; subsequent proposals carry 
 - [ADR-0014: CockroachDB is mandatory for development deployment](ADR-0014.md) — Accepted and enforced at service entry points
 - [ADR-0015: One portable repository and verified documentation navigation](ADR-0015.md) — Accepted; consolidated lab implemented
 - [ADR-0016: A development gateway with explicit production boundary](ADR-0016.md) — Accepted; local HTTP gateway implemented
-- [ADR-0017: Existing business services with governed peer integration and routing](ADR-0017.md) — Proposed pilot design; explanatory contracts only, independent peers and automatic routing not implemented
+- [ADR-0017: Existing business services with governed peer integration and routing](ADR-0017.md) — Accepted bounded synthetic integration; regional production deployment and distributed authority remain pilot work
+- [ADR-0018: A base customer MDM with system and experience APIs](ADR-0018.md) — Implemented synthetic single-host integration; bank pilot approval remains separate

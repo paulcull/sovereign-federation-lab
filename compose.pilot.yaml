@@ -1,0 +1,288 @@
+{
+  "services": {
+    "tools": {
+      "volumes": ["telemetry:/pilot-telemetry:ro"]
+    },
+    "monitor": {
+      "image": "sovereign-federation-pilot:local",
+      "environment": {
+        "PILOT_CONFIG": "/run/pilot/config.json"
+      },
+      "volumes": [
+        "./.pilot/owner:/run/pilot:ro"
+      ]
+    },
+    "pilot-api": {
+      "image": "sovereign-federation-pilot:local",
+      "command": [
+        "uvicorn",
+        "pilot_service:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8443",
+        "--workers",
+        "1",
+        "--no-access-log",
+        "--ssl-certfile",
+        "/run/pilot/tls.crt",
+        "--ssl-keyfile",
+        "/run/pilot/tls.key",
+        "--ssl-ca-certs",
+        "/run/pilot/ca.crt",
+        "--ssl-cert-reqs",
+        "2"
+      ],
+      "restart": "unless-stopped",
+      "environment": {
+        "PILOT_CONFIG": "/run/pilot/config.json",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4318",
+        "OTEL_TRACES_SAMPLER": "always_on",
+        "NO_PROXY": "*",
+        "no_proxy": "*",
+        "TELEMETRY_DIR": "/app/telemetry"
+      },
+      "volumes": [
+        "./.pilot/api:/run/pilot:ro",
+        "telemetry:/app/telemetry"
+      ],
+      "depends_on": {
+        "monitor": {
+          "condition": "service_healthy"
+        },
+        "pilot-authority": {
+          "condition": "service_started"
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "from pilot_common import configuration,tls_client; c=tls_client(configuration()); c.get('https://pilot-api:8443/healthz').raise_for_status()"
+        ],
+        "interval": "5s",
+        "timeout": "12s",
+        "retries": 24,
+        "start_period": "20s"
+      }
+    },
+    "pilot-peer-sg": {
+      "image": "sovereign-federation-pilot:local",
+      "command": [
+        "uvicorn",
+        "pilot_service:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8443",
+        "--workers",
+        "1",
+        "--no-access-log",
+        "--ssl-certfile",
+        "/run/pilot/tls.crt",
+        "--ssl-keyfile",
+        "/run/pilot/tls.key",
+        "--ssl-ca-certs",
+        "/run/pilot/ca.crt",
+        "--ssl-cert-reqs",
+        "2"
+      ],
+      "restart": "unless-stopped",
+      "environment": {
+        "PILOT_CONFIG": "/run/pilot/config.json",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4318",
+        "OTEL_TRACES_SAMPLER": "always_on",
+        "NO_PROXY": "*",
+        "no_proxy": "*",
+        "PILOT_DSN": "postgresql://root@db-sg:26257/defaultdb?sslmode=disable",
+        "PILOT_OPA": "http://opa-sg:8181",
+        "TELEMETRY_DIR": "/app/telemetry"
+      },
+      "volumes": [
+        "./.pilot/peer-sg:/run/pilot:ro",
+        "telemetry:/app/telemetry"
+      ],
+      "depends_on": {
+        "monitor": {
+          "condition": "service_healthy"
+        },
+        "pilot-authority": {
+          "condition": "service_started"
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "from pilot_common import configuration,tls_client; c=tls_client(configuration()); c.get('https://pilot-peer-sg:8443/readyz').raise_for_status()"
+        ],
+        "interval": "5s",
+        "timeout": "12s",
+        "retries": 24,
+        "start_period": "20s"
+      }
+    },
+    "pilot-peer-uk": {
+      "image": "sovereign-federation-pilot:local",
+      "command": [
+        "uvicorn",
+        "pilot_service:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8443",
+        "--workers",
+        "1",
+        "--no-access-log",
+        "--ssl-certfile",
+        "/run/pilot/tls.crt",
+        "--ssl-keyfile",
+        "/run/pilot/tls.key",
+        "--ssl-ca-certs",
+        "/run/pilot/ca.crt",
+        "--ssl-cert-reqs",
+        "2"
+      ],
+      "restart": "unless-stopped",
+      "environment": {
+        "PILOT_CONFIG": "/run/pilot/config.json",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4318",
+        "OTEL_TRACES_SAMPLER": "always_on",
+        "NO_PROXY": "*",
+        "no_proxy": "*",
+        "PILOT_DSN": "postgresql://root@db-uk:26257/defaultdb?sslmode=disable",
+        "PILOT_OPA": "http://opa-uk:8181",
+        "TELEMETRY_DIR": "/app/telemetry"
+      },
+      "volumes": [
+        "./.pilot/peer-uk:/run/pilot:ro",
+        "telemetry:/app/telemetry"
+      ],
+      "depends_on": {
+        "monitor": {
+          "condition": "service_healthy"
+        },
+        "pilot-authority": {
+          "condition": "service_started"
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "from pilot_common import configuration,tls_client; c=tls_client(configuration()); c.get('https://pilot-peer-uk:8443/readyz').raise_for_status()"
+        ],
+        "interval": "5s",
+        "timeout": "12s",
+        "retries": 24,
+        "start_period": "20s"
+      }
+    },
+    "pilot-peer-us": {
+      "image": "sovereign-federation-pilot:local",
+      "command": [
+        "uvicorn",
+        "pilot_service:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8443",
+        "--workers",
+        "1",
+        "--no-access-log",
+        "--ssl-certfile",
+        "/run/pilot/tls.crt",
+        "--ssl-keyfile",
+        "/run/pilot/tls.key",
+        "--ssl-ca-certs",
+        "/run/pilot/ca.crt",
+        "--ssl-cert-reqs",
+        "2"
+      ],
+      "restart": "unless-stopped",
+      "environment": {
+        "PILOT_CONFIG": "/run/pilot/config.json",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4318",
+        "OTEL_TRACES_SAMPLER": "always_on",
+        "NO_PROXY": "*",
+        "no_proxy": "*",
+        "PILOT_DSN": "postgresql://root@db-us:26257/defaultdb?sslmode=disable",
+        "PILOT_OPA": "http://opa-us:8181",
+        "TELEMETRY_DIR": "/app/telemetry"
+      },
+      "volumes": [
+        "./.pilot/peer-us:/run/pilot:ro",
+        "telemetry:/app/telemetry"
+      ],
+      "depends_on": {
+        "monitor": {
+          "condition": "service_healthy"
+        },
+        "pilot-authority": {
+          "condition": "service_started"
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "from pilot_common import configuration,tls_client; c=tls_client(configuration()); c.get('https://pilot-peer-us:8443/readyz').raise_for_status()"
+        ],
+        "interval": "5s",
+        "timeout": "12s",
+        "retries": 24,
+        "start_period": "20s"
+      }
+    },
+    "pilot-authority": {
+      "image": "nginx:1.28.0-alpine",
+      "volumes": [
+        "./infra/nginx.pilot-authority.conf:/etc/nginx/conf.d/default.conf:ro",
+        "./.pilot/authority:/run/pilot:ro"
+      ],
+      "depends_on": {
+        "monitor": {
+          "condition": "service_healthy"
+        }
+      },
+      "restart": "unless-stopped"
+    },
+    "pilot-gateway": {
+      "build": {
+        "context": ".",
+        "dockerfile": "infra/Gateway.Dockerfile"
+      },
+      "ports": [
+        "127.0.0.1:${PILOT_PORT:-8081}:8080"
+      ],
+      "volumes": [
+        "./infra/nginx.pilot.conf:/etc/nginx/conf.d/default.conf:ro",
+        "./.pilot/authority:/run/pilot:ro"
+      ],
+      "depends_on": {
+        "pilot-api": {
+          "condition": "service_healthy"
+        }
+      },
+      "restart": "unless-stopped",
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "wget",
+          "-Y",
+          "off",
+          "-q",
+          "--spider",
+          "http://127.0.0.1:8080/healthz"
+        ],
+        "interval": "5s",
+        "timeout": "3s",
+        "retries": 12
+      }
+    }
+  }
+}

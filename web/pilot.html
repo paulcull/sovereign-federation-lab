@@ -1,0 +1,54 @@
+<p class="eyebrow">LIVE SYNTHETIC INTEGRATION PILOT</p>
+<h1>Customer MDM · system and experience APIs</h1>
+<p class="lead">Create an owner-qualified customer through a system API, then inspect the view permitted to each business entity. Real CockroachDB, OPA and authenticated TLS peers are required.</p>
+<div class="notice">Single-host test environment. Test credentials represent synthetic entity and processing-location claims. This is not bank identity, physical residency or production pilot approval. The existing lab's trusted operator interface remains on port 8080.</div>
+<section><h2>1. Choose a test identity</h2><p>Run <code>./lab pilot-token crm-sg</code>, <code>./lab pilot-token uk-servicing</code> or <code>./lab pilot-token us-reader</code> in your terminal. Paste the credential below. It stays in page memory and is not put in a URL or browser storage.</p>
+<label>Bearer credential <input id="token" type="password" autocomplete="off"></label>
+<button id="connect">Check identity</button><p id="identity" role="status">Not connected</p></section>
+<section><h2>2. System API: establish the customer and relationship</h2><p>The <code>crm-sg</code> identity can write owner data. Use only synthetic examples. A customer ID links identities; each relationship has its own sharing policy.</p>
+<label>Source reference <input id="reference" value="SYN-PILOT-001"></label>
+<label>Display name <input id="name" value="Synthetic Pilot Customer"></label>
+<label>Expected customer version <input id="customer-version" type="number" min="0" value="0"></label>
+<label>Minimal identity sharing <select id="profile"><option value="owner_only">Owner only</option><option value="global_minimum">Explicit SG / UK / US minimum</option><option value="global_minimum_no_us">Explicit minimum, US excluded</option></select></label>
+<button id="upsert">Create / update customer</button><button id="source">Read source customer</button>
+<label>Synthetic email <input id="email" value="pilot@example.invalid"></label>
+<label>Relationship sharing <select id="sharing"><option value="owner_only">Owner only</option><option value="uk_servicing_no_us">UK servicing permitted, US excluded</option></select></label>
+<button id="relationship">Create relationship</button></section>
+<section><h2>3. Experience API: use the permitted view</h2><p>Switch credentials to compare Singapore, UK and US. A customer view omits unauthorised relationships entirely. Owner reads still apply the caller's permitted fields; a projection read can specify the minimum acceptable business version.</p>
+<label>Global party UUID <input id="party"></label>
+<label>Relationship scope UUID <input id="scope"></label>
+<label>Read mode <select id="freshness"><option value="projection">Approved local projection</option><option value="owner">Current approved owner view</option></select></label>
+<label>Minimum data version <input id="minimum" type="number" min="0" value="0"></label>
+<button id="customer">Read customer view</button><button id="view">Read relationship view</button>
+<label>Expected relationship version <input id="scope-version" type="number" min="1" value="1"></label>
+<button id="contact">Update shared contact</button><button id="withdraw">Withdraw email consent</button><button id="restore">Restore email consent</button>
+<button id="retry">Retry last request unchanged</button></section>
+<section><h2>Result and evidence</h2><p id="outcome" role="status">No request yet</p><pre id="result" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+<p><a href="/pilot/api-docs">Executable system and experience API contract</a> · <a href="/design/service-transactions.html">Architecture and relationship-based risk</a></p></section>
+<script type="module">
+const el=id=>document.getElementById(id); let last;
+async function request(path,method='GET',body){
+ last={path,method,body};
+ const response=await fetch(path,{method,headers:{Authorization:'Bearer '+el('token').value.trim(),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+ const data=await response.json(); el('outcome').textContent=`HTTP ${response.status} · Trace ${response.headers.get('X-Trace-ID')||'unavailable'}`;
+ el('result').textContent=JSON.stringify(data,null,2);
+ if(response.ok){
+  if(data.global_party_id)el('party').value=data.global_party_id;
+  if(data.party_scope_id)el('customer-version').value=data.version;
+  if(data.scope_id){el('scope').value=data.scope_id;el('scope-version').value=data.data_version||data.version||el('scope-version').value;}
+  if(data.scope_versions&&data.scope_versions[el('scope').value])el('scope-version').value=data.scope_versions[el('scope').value];
+ }
+ return {response,data};
+}
+function act(id,fn){el(id).onclick=()=>fn().catch(()=>{el('outcome').textContent='Required pilot service unavailable. No simulated fallback.';});}
+const ref=()=>encodeURIComponent(el('reference').value),scope=()=>encodeURIComponent(el('scope').value);
+const readQuery=()=>`?freshness=${el('freshness').value}&minimum_data_version=${Number(el('minimum').value)}`;
+act('connect',async()=>{const {response,data}=await request('/pilot/api/v1/context');if(response.ok)el('identity').textContent=`${data.entity_id} · Processing ${data.processing_country} · ${data.actions.join(', ')}`;});
+act('upsert',()=>request('/pilot/system/v1/customers/'+ref(),'PUT',{request_id:crypto.randomUUID(),expected_version:Number(el('customer-version').value),display_name:el('name').value,party_type:'PERSON',identity_profile:el('profile').value}));
+act('source',()=>request('/pilot/system/v1/customers/'+ref()));
+act('relationship',()=>request('/pilot/system/v1/customers/'+ref()+'/relationships','POST',{request_id:crypto.randomUUID(),expected_version:Number(el('customer-version').value),email:el('email').value,sharing_profile:el('sharing').value}));
+act('customer',()=>request('/pilot/experience/v1/customers/'+encodeURIComponent(el('party').value)+readQuery()));
+act('view',()=>request('/pilot/experience/v1/relationships/'+scope()+readQuery()));
+for(const [id,command] of [['contact','update_contact'],['withdraw','withdraw_consent'],['restore','restore_consent']])act(id,()=>request('/pilot/experience/v1/relationships/'+scope()+'/commands','POST',{request_id:crypto.randomUUID(),expected_version:Number(el('scope-version').value),command,...(command==='update_contact'?{value:el('email').value}:{})}));
+act('retry',()=>last?request(last.path,last.method,last.body):Promise.resolve());
+</script>
