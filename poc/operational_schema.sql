@@ -321,6 +321,9 @@ CREATE TABLE IF NOT EXISTS sovereignty.binding (owner_entity_id STRING NOT NULL,
 
 CREATE TABLE IF NOT EXISTS sovereignty.outbox (id UUID PRIMARY KEY, scope_id UUID NOT NULL, destination_entity_id STRING NOT NULL, status STRING NOT NULL DEFAULT 'queued', attempts INT NOT NULL DEFAULT 0, reason STRING NOT NULL DEFAULT '', created_at FLOAT NOT NULL);
 
+-- Reconciliation checks only this scope/destination's live work, not retained history.
+CREATE INDEX IF NOT EXISTS outbox_pending_scope_destination ON sovereignty.outbox (scope_id,destination_entity_id) WHERE status IN ('queued','retry');
+
 CREATE TABLE IF NOT EXISTS sovereignty.audit (id UUID PRIMARY KEY, ts FLOAT NOT NULL, doc JSONB NOT NULL);
 
 CREATE TABLE IF NOT EXISTS sovereignty.command_receipt (owner_entity_id STRING NOT NULL, request_id UUID NOT NULL, request_hash STRING NOT NULL, result JSONB NOT NULL, PRIMARY KEY(owner_entity_id,request_id));
@@ -328,6 +331,20 @@ CREATE TABLE IF NOT EXISTS sovereignty.command_receipt (owner_entity_id STRING N
 CREATE TABLE IF NOT EXISTS sovereignty.inbox (event_id UUID PRIMARY KEY, received_at FLOAT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS sovereignty.manifest (owner_entity_id STRING NOT NULL, scope_id UUID NOT NULL, destination_entity_id STRING NOT NULL, data_version INT NOT NULL, policy_generation INT NOT NULL, decision_revision INT NOT NULL, placement_version INT NOT NULL, row_counts JSONB NOT NULL, PRIMARY KEY(owner_entity_id,scope_id,destination_entity_id));
+
+CREATE TABLE IF NOT EXISTS sovereignty.import_receipt (
+  event_id UUID PRIMARY KEY REFERENCES sovereignty.inbox(event_id),
+  protocol_version INT NOT NULL,
+  envelope_digest STRING NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sovereignty.manifest_authority (
+  owner_entity_id STRING NOT NULL, scope_id UUID NOT NULL,
+  destination_entity_id STRING NOT NULL, source_placement_version INT NOT NULL,
+  PRIMARY KEY(owner_entity_id,scope_id,destination_entity_id),
+  FOREIGN KEY(owner_entity_id,scope_id,destination_entity_id)
+    REFERENCES sovereignty.manifest(owner_entity_id,scope_id,destination_entity_id)
+);
 
 CREATE TABLE IF NOT EXISTS sovereignty.field_manifest (
   owner_entity_id STRING NOT NULL, scope_id UUID NOT NULL,
@@ -339,3 +356,13 @@ CREATE TABLE IF NOT EXISTS sovereignty.field_manifest (
 );
 
 CREATE TABLE IF NOT EXISTS sovereignty.table_rule (owner_entity_id STRING NOT NULL, resource_type STRING NOT NULL, rule JSONB NOT NULL, PRIMARY KEY(owner_entity_id,resource_type));
+
+-- Point customer views use owner-qualified identities and bounded scope lookup.
+CREATE UNIQUE INDEX IF NOT EXISTS party_owner_global_id ON business.party (owner_entity_id,global_party_id);
+CREATE INDEX IF NOT EXISTS scope_owner_party ON sovereignty.scope (owner_entity_id,primary_party_id,root_type,id);
+
+-- Policy facts can restrict an unbound resource. Index each subject lookup.
+CREATE INDEX IF NOT EXISTS classification_owner_party ON business.classification (owner_entity_id,party_id,id) WHERE party_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS classification_owner_relationship ON business.classification (owner_entity_id,relationship_id,id) WHERE relationship_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS classification_owner_holding ON business.classification (owner_entity_id,holding_id,id) WHERE holding_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS consent_owner_relationship ON business.consent (owner_entity_id,relationship_id,id) WHERE relationship_id IS NOT NULL;

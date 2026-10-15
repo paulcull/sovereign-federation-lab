@@ -20,10 +20,13 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 import operational_core as core
 from observability import ApplicationLogs, RequestTelemetry
 from operational import clean
-from pilot_common import authenticated, configuration, digest, remote, tls_client, uuid_text
+from pilot_common import (authenticated, configuration, digest, live_configuration,
+                          remote, require_command, tls_client, uuid_text)
 from pilot_projection import apply_projection
+from pilot_protocol import validate_envelope, verify_projection_authority
 from pilot_contracts import CustomerInput, RelationshipInput, BusinessCommand
 from pilot_tracing import PilotTraceEvidence
+from servicing_peer import install_servicing_peer
 from seed import ENTITIES, STORE_INFO
 
 CONFIG = configuration()
@@ -85,20 +88,23 @@ def bound(value):
 
 
 def principal(authorization):
-    name, identity = authenticated(authorization, CONFIG['principals'])
+    name, identity = authenticated(authorization, live_configuration(CONFIG)['principals'])
     return name, identity
 
 
 def call_owner(endpoint, name, **body):
-    return remote(HTTP, 'POST', CONFIG['authority_url'] + '/api/pilot/internal/' + endpoint,
-                  CONFIG['authority_token'], dict(principal_id=name, **body))
+    config = live_configuration(CONFIG)
+    return remote(HTTP, 'POST', config['authority_url'] + '/api/pilot/internal/' + endpoint,
+                  config['authority_token'], dict(principal_id=name, **body))
 
 
 if ROLE == 'api':
     @app.get('/pilot/api/v1/context')
     def context(authorization: str | None = Header(None)):
         name, identity = principal(authorization)
-        result = {k: identity[k] for k in ('entity_id', 'processing_country', 'actions')}
+        result = {k: identity[k] for k in ('entity_id', 'processing_country', 'actions',
+                                          'command_grants', 'expires_at')}
+        result['deployment_processing_countries'] = live_configuration(CONFIG)['deployment']['processing_countries']
         return result
 
     @app.get('/pilot/system/v1/customers/{reference}', tags=['System APIs'])
@@ -143,20 +149,22 @@ if ROLE == 'api':
     @app.post('/pilot/experience/v1/relationships/{scope_id}/commands', tags=['Experience APIs'])
     def business_command(scope_id: str, body: BusinessCommand, authorization: str | None = Header(None)):
         name, identity = principal(authorization)
-        if 'command' not in identity['actions']:
-            raise HTTPException(403, 'Command authority required')
+        require_command(identity, body.model_dump(mode='json', exclude_none=True))
         return call_owner('command', name, scope_id=uuid_text(scope_id), payload=body.model_dump(mode='json', exclude_none=True))
 
 elif ROLE == 'peer':
     def importing(authorization):
-        authenticated(authorization, {'owner': {'token': CONFIG['import_token']}})
+        config = live_configuration(CONFIG)
+        authenticated(authorization, {'owner': config['import_credential']})
 
     def admission(body):
-        return remote(HTTP, 'POST', CONFIG['authority_url'] + '/api/pilot/internal/admission',
-                      CONFIG['authority_token'], body)
+        config = live_configuration(CONFIG)
+        return remote(HTTP, 'POST', config['authority_url'] + '/api/pilot/internal/admission',
+                      config['authority_token'], body)
 
     def destination(entity):
-        if entity not in ENTITIES or ENTITIES[entity]['store_id'] != CONFIG['store_id']:
+        config = live_configuration(CONFIG)
+        if entity not in ENTITIES or ENTITIES[entity]['store_id'] != config['store_id']:
             raise HTTPException(403, 'Recipient store binding rejected')
         return ENTITIES[entity]
 
@@ -172,6 +180,7 @@ elif ROLE == 'peer':
     @app.post('/internal/import')
     def import_graph(message: dict, authorization: str | None = Header(None)):
         importing(authorization)
+        validate_envelope(message)
         entity = destination(message.get('destination_entity_id'))
         uuid_text(message.get('event_id')); uuid_text(message.get('scope_id'))
         if message.get('owner_entity_id') != core.SPEC['owner_entity_id'] or message.get('scope_kind') not in ('party', 'relationship'):
@@ -214,6 +223,7 @@ elif ROLE == 'peer':
                 'FROM sovereignty.manifest WHERE owner_entity_id=%s AND scope_id=%s AND destination_entity_id=%s', key).fetchone()
             if not receipt:
                 raise HTTPException(404, 'Projection not ready')
+            verify_projection_authority(c, key, current)
             if tuple(receipt[1:]) != tuple(current[k] for k in ('policy_generation', 'decision_revision', 'placement_version')) or receipt[0] < body.get('minimum_data_version', 0):
                 raise HTTPException(409, 'Current authorised data version not ready')
             kind = 'party' if current.get('scope_kind') == 'party' else 'relationship'
@@ -266,3 +276,4 @@ def authenticated_openapi():
                 operation['security'] = [{'PilotBearer': []}]
     return schema
 app.openapi = authenticated_openapi
+install_servicing_peer(app, CONFIG, HTTP)

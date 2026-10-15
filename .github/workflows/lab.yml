@@ -30,9 +30,9 @@ jobs:
         run: python3 design/tests/reader_browser.py 2>&1 | tee artifacts/reader-guide.log
       - name: Wire synthetic customer MDM pilot
         run: ./lab pilot-up 2>&1 | tee artifacts/pilot-startup.log
-      - name: System and experience API SQL/OPA acceptance
+      - name: System, experience and foundation SQL/OPA acceptance
         run: ./lab pilot-test 2>&1 | tee artifacts/pilot-acceptance.log
-      - name: Real pilot peer, OPA and Collector outages
+      - name: Real pilot outages, recovery and read isolation
         run: ./lab pilot-faults 2>&1 | tee artifacts/pilot-faults.log
       - name: Live MDM system and experience browser walkthrough
         run: python3 poc/tests/pilot_browser.py 2>&1 | tee artifacts/pilot-browser.log

@@ -84,6 +84,43 @@ inside each approved residency boundary, introduce authentication/TLS, harden an
 scan image pins, set quotas and retention, review correlation identifiers, and
 separately prove audit completeness. No Docker socket is mounted for log scraping.
 
+## Production measurements and alert acceptance
+
+The following signals and alerts are release requirements, not dashboards already
+provisioned by this lab. Agree the numerical thresholds with each service owner
+before a regional load/failure run; the small fixture supplies no production SLO.
+
+| Signal | Separate measurements | Required failure drill |
+|---|---|---|
+| Request service | Attempted requests, success/error counts and p50/p95/p99 by bounded operation and cell; rejected/time-out requests remain in the denominator | Pause a peer while issuing unrelated owner traffic; demonstrate bounded impact and recovery |
+| Authority | Dependency availability, revision/fence age and time from accepted restriction to enforced recipient guard | Partition authority; verify scoped fail-closed behaviour and alert before the agreed deadline |
+| Delivery | Oldest pending age, bytes, attempts, quarantines and recipient acknowledgements | Stall one destination, exceed one worker batch, and verify healthy destinations progress |
+| Reconciliation/purge | Checkpoint age, work remaining, deadline and actual physical-row confirmation | Stop/restart reconciliation; read denial must not report physical deletion complete |
+| SQL/audit | Transaction retries, contention, commit failures, audit reconciliation gaps and disk headroom | Exhaust a bounded dependency budget; mandatory audit failure must prevent its business commit |
+| Infrastructure/identity | Certificate expiry, identity revocation failures, policy/schema incompatibility, node health and storage | Rotate keys, introduce incompatible versions and fail a node; exercise the responsible runbook |
+| Diagnostic pipeline | Queue saturation, dropped/export-failed logs and sink capacity | Stop Collector/Loki; business/audit durability remains independent and lost diagnostics are reported |
+
+Keep metric labels bounded: operation, cell, work class and outcome. Customer,
+party, relationship, request-reference and raw URL values do not belong in metric
+labels. Customer-linked audit and protocol receipts require approved regional
+storage and retention even when payload fields have been removed. Hashing such
+identifiers does not establish anonymity or an unrestricted export right.
+
+An alert is accepted only after an injected fault reaches its assigned on-call
+route and the operator executes a reviewed recovery procedure. Record the
+acknowledgement and recovery time, not merely a screenshot of a firing rule.
+Measure recovery headroom while foreground traffic continues; a draining backlog
+after all business traffic stops does not establish a sustainable operating point.
+See the [production release matrix](PRODUCTION_READINESS.md) for required inputs
+and [work isolation](../WORK_ISOLATION.md) for the proposed capacity boundaries.
+
+Retain SQL audit independently from diagnostic logs. Production needs protected
+regional retention and an independent reconciliation of accepted requests,
+committed mutations, delivery/fence receipts and applicable disposal evidence.
+The same database account being able to alter both business and audit tables is
+not tamper-resistant evidence. None of Loki retention, sampled traces or an
+application success counter substitutes for that reconciliation.
+
 ## Verification and cloud development handoff
 
 The authoring checks exercised the pinned Python SDK against a real local OTLP HTTP

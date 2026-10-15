@@ -19,6 +19,16 @@ operator surface remains separate on port 8080.
 
 Images are pinned in Compose/Dockerfiles. Validate bank-approved patches, image digests and licensing before moving beyond a synthetic lab. A pinned tag is not a claim of ongoing vendor support.
 
+Each CockroachDB node has a 64 MiB cache and a 256 MiB SQL memory budget. The
+previous 64 MiB SQL setting could not run the required index backfill: even a
+71-row table needed simultaneous bulk buffers exceeding that limit, so startup
+kept retrying. The larger budget allows the schema change to proceed on existing
+volumes; it does not replace the index or require deleting data. SQL/cache flags
+do not cap total container memory. Retain host headroom for the four nodes,
+application/OPA processes, telemetry, builds and recovery; the 10 GB starting
+allowance is still not a capacity benchmark. See [foundation acceptance](FOUNDATIONS_ACCEPTANCE.md)
+for the observed failure and validation of the fix.
+
 ## HTTPS proxy and private-umask workspaces
 
 On a host that intercepts package-download HTTPS, keep certificate verification enabled:
@@ -68,6 +78,13 @@ SQL stays inside Compose networking; only the gateway is published on loopback.
 | `./lab reset --confirm-synthetic-lab` | Delete this project's DB/telemetry volumes |
 | `./lab build` | Rebuild portal and validate docs without starting services |
 | `./lab release` | Package source ZIP/checksums; Git bundle requires local Git |
+| `./lab pilot-up` | Add the authenticated MDM API and recipient peers; loopback gateway 8081 |
+| `./lab pilot-test` | Real SQL/OPA system, experience and policy-regression acceptance |
+| `./lab pilot-faults` | Actual peer/OPA/Collector outage and restart acceptance; run sequentially |
+| `./lab pilot-isolation` | Pause the UK peer and SG OPA in turn; verify unrelated owner reads complete before each timeout |
+| `./lab pilot-reconcile --batch-size 10` | Queue bounded current-policy deliveries for persisted protocol evidence; no authority bypass |
+| `./lab pilot-identity revoke uk-contact-only` | Revoke a synthetic principal without printing its token; `rotate` reissues it |
+| `./lab pilot-down` | Stop pilot and base lab; preserve their volumes |
 
 Tests assume no concurrent manual fixture edits. They restore operational policy changes, add synthetic records, explicitly reset the isolated migration and restart the API. Use a separate COMPOSE_PROJECT_NAME for independent runs.
 
@@ -99,10 +116,10 @@ flowchart TD
 | `/api/health/live` | Process liveness |
 | `/api/health/ready` | Actual CockroachDB identity and OPA across four stores |
 
-Only the gateway port is published. SQL/admin UI, OPA and Collector remain internal. The gateway proxies to a single harness; it is not a deployed regional authorization gateway. For a remote VM:
+Only gateway ports are published: 8080 for the base lab and optional 8081 for the pilot, both bound to loopback. SQL/admin UI, OPA and Collector remain internal. The base gateway proxies to a trusted operator harness; the pilot gateway exposes authenticated system/experience contracts. Neither is a deployed regional authorization gateway. For a remote VM with the pilot enabled:
 
 ```bash
-ssh -L 8080:127.0.0.1:8080 user@dev-host
+ssh -L 8080:127.0.0.1:8080 -L 8081:127.0.0.1:8081 user@dev-host
 ```
 
 The gateway supplies `mode=live,database=cockroach` through `/lab-config.json`; hosted demonstrations explicitly use simulation. No hostname guessing or silent API/database fallback is used.
@@ -113,7 +130,17 @@ Four named database volumes plus local trace, Loki and Grafana volumes survive r
 
 The migration snapshot/journal capture committed changes. Target batches are version-idempotent. SG authority is fenced before India becomes writable. Its SG control row remains a dependency: source-cell decommissioning and distributed directory availability are pilot work. Pre-fence cancellation requires lawful SG placement; deadline expiry never creates an exception.
 
-Pause controls are logical fault injection, not process termination. The acceptance restart gate restarts the API only. Database/OPA termination and partitions remain additional checks after the basic lab suite passes.
+Browser pause controls are logical fault injection, not process termination.
+`./lab faults` stops actual OPA/Collector processes; `./lab pilot-faults` also stops
+peers and restarts API/owner/peer processes. These tests preserve SQL volumes and
+do not establish database-node failover, regional partitions or backup restoration.
+The India fixture does not migrate the normalized MDM or new service tables.
+
+Never restore an old database directly into an active federation network. A
+production restore needs external quarantine and current authority/placement
+fences before serving, importing or exporting; a quarantine flag stored only in
+the restored database can itself roll back. Recovery objectives and retained
+storage disposal are explicit gates in [production readiness](PRODUCTION_READINESS.md).
 
 ## Troubleshooting
 
@@ -127,15 +154,29 @@ Pause controls are logical fault injection, not process termination. The accepta
 | UI unavailable | Check deployment mode, gateway proxy and `/api/health/ready` |
 | Migration step denied | Check phase, deltas, deadline, pause/conflict and writer epoch |
 | OTel gate fails | Inspect Collector logs/endpoint; lab sampling is always-on |
-| Commit fails under load | Inspect SQLSTATE; SQL retry/pooling are pilot extensions |
+| Commit fails under load | Inspect SQLSTATE and the writer's bounded retry/receipt contract; MDM retries do not imply retry coverage for every base operator |
+| Startup index backfill retries | Check SQL job/error and node memory settings; use the checked-in 256 MiB SQL budget and preserve volumes rather than dropping the required index |
 
-`docker compose logs --no-color > artifacts/containers.log` captures synthetic diagnostics. Do not use real bank data in this unauthenticated, insecure development topology.
+`docker compose logs --no-color > artifacts/containers.log` captures synthetic diagnostics. Do not capture `pilot-token` output or private identity files. Use synthetic data only: the original operator surface is unauthenticated, SQL remains insecure on a trusted network, and the authenticated pilot shares that host.
 
 ## CI and review
 
 The GitHub Actions workflow runs the lab gates and live browser acceptance, collects diagnostics/screenshots and stops containers. The managed development-host run is recorded in [container acceptance](CONTAINER_ACCEPTANCE.md); workflow results must be read from the exact PR commit, not inferred from configuration.
 
 Review the [ADR register](adr/README.md), [documentation audit](DOCUMENTATION_AUDIT.md) and [testing status](../TESTING.md) before pilot planning.
+
+The [production release matrix](PRODUCTION_READINESS.md) separates executable
+repository controls from the identity, regional infrastructure, data governance,
+recovery objectives and measured capacity evidence a bank must supply. Preserve
+the full container gates while evolving the pilot; a static browser model or
+historical SQLite unit test is not integration acceptance.
+
+The pilot also starts an independent servicing-case process and bootstraps its
+schema/roles inside real CockroachDB. Its [integration contract](SERVICE_INTEGRATION.md)
+demonstrates a separate business transaction boundary; service-specific SQL grants
+do not establish authentication while the underlying lab SQL transport remains
+insecure. See [foundation acceptance](FOUNDATIONS_ACCEPTANCE.md) for executed checks
+and the exact remaining blockers.
 
 ## Application logging extension
 

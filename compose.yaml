@@ -9,7 +9,7 @@
         "--listen-addr=0.0.0.0:26257",
         "--http-addr=0.0.0.0:8080",
         "--cache=64MiB",
-        "--max-sql-memory=64MiB",
+        "--max-sql-memory=256MiB",
         "--locality=country=SG"
       ],
       "volumes": [
@@ -57,7 +57,7 @@
         "--listen-addr=0.0.0.0:26257",
         "--http-addr=0.0.0.0:8080",
         "--cache=64MiB",
-        "--max-sql-memory=64MiB",
+        "--max-sql-memory=256MiB",
         "--locality=country=GB"
       ],
       "volumes": [
@@ -105,7 +105,7 @@
         "--listen-addr=0.0.0.0:26257",
         "--http-addr=0.0.0.0:8080",
         "--cache=64MiB",
-        "--max-sql-memory=64MiB",
+        "--max-sql-memory=256MiB",
         "--locality=country=US"
       ],
       "volumes": [
@@ -240,7 +240,7 @@
         "--listen-addr=0.0.0.0:26257",
         "--http-addr=0.0.0.0:8080",
         "--cache=64MiB",
-        "--max-sql-memory=64MiB",
+        "--max-sql-memory=256MiB",
         "--locality=country=IN"
       ],
       "volumes": [

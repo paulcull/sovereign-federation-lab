@@ -6,7 +6,11 @@ recipient-peer processes. It is not approval to use bank data or a production
 regional deployment.
 
 See [executed acceptance evidence](PILOT_ACCEPTANCE.md) for environment, results
-and defects found during container validation.
+and defects found during container validation. The [production release
+matrix](PRODUCTION_READINESS.md) maps controls to remaining evidence and bank inputs;
+it does not treat a passing synthetic suite as production approval. See
+[foundation acceptance](FOUNDATIONS_ACCEPTANCE.md) for the isolation, identity,
+protocol and second-service revision's executed results.
 
 ## Start and test
 
@@ -14,12 +18,16 @@ The original lab still runs with `./lab up`. The additive pilot also requires
 Python 3 and OpenSSL on the host for private test identities; no host pip packages
 are needed for startup. Use Bash/WSL2 and Docker Compose v2. Start with the lab's
 10 GB RAM / 15 GB free disk budget; this is a starting allowance, not a benchmark.
+The four database nodes use a 256 MiB SQL budget each so required schema/index
+backfills have sufficient working memory; see [resource sizing](DEVELOPMENT.md#prerequisites).
 
 ```bash
 ./lab doctor
 ./lab pilot-up
 ./lab pilot-test
 ./lab pilot-faults
+# Independently repeat the actual slow-peer/read-isolation regression:
+./lab pilot-isolation
 # Run the preserved complete lab gates with the pilot profile enabled:
 LAB_PILOT=1 ./lab test
 # Optional browser walkthrough, with Playwright/Chromium installed:
@@ -80,6 +88,10 @@ adds an owner/source-system/reference mapping; it does not create another custom
 master. Source references stay in SG. A new party receives a generated stable
 global party ID. Matching is exact by registered source reference; fuzzy matching,
 cross-source adjudication, survivorship and merge/split stewardship are not implemented.
+Relationship context narrows permitted use but cannot override independent party
+or shared-attribute restrictions. A global UUID still enables correlation; its
+approved geographic footprint is a bank decision. Identity merges must preserve
+separate relationship rights rather than union their grants.
 
 The `crm-sg` identity writes only SG-owned synthetic records through these APIs:
 
@@ -119,20 +131,28 @@ local OPA, the projection receipt and current authority/placement revisions.
 a projection below the requested version. `freshness=owner` requests the owner's
 current **approved field set**, not unrestricted master data. On customer views,
 the minimum applies to each included scope; scopes have independent version clocks.
-Responses are bounded to 32 KiB and recipient graphs to 50 rows; larger queries
+Responses are bounded to 32 KiB and recipient graphs to 50 rows. Point scope reads
+load at most 512 bound resources plus bounded relevant consent/classification
+facts; customer assembly is limited to 50 scopes. These are rejection limits,
+not pagination or a measured capacity guarantee. Larger queries
 require a future paginated contract. No nearest-store fallback or writer promotion
 is implemented. Unknown required authority or policy fails closed.
 
 Clients cannot override entity, processing country, owner, purpose or peer URL
 using headers. `uk-servicing` has LE-GB-02 read/contact/consent delegation;
+`uk-contact-only` can update contact information but cannot change consent;
 `uk-business` has LE-GB-03 read rights; `us-reader` can receive eligible minimal
 party identity but no excluded relationship. `uk-from-us` deliberately represents
 a UK entity using a US processing location and is rejected for US-excluded scopes.
-These locations are trusted **synthetic identity claims**, not geolocation or bank IdP assurance.
+These locations and the configured gateway/API/authority processing path are
+trusted **synthetic operator claims**, not geolocation or bank IdP assurance.
 
 Processing geography is checked against scope, table and resource rules as well
 as the storage decision. A scope is rejected when any approved row cannot be
-processed at the caller's location. Command responses and replays include only
+processed at any registered processing hop or the caller's location. Command
+delegation is separate from read permission: `update_contact` requires a grant for
+`contact_info.value`, while consent commands require a grant for `consent.status`.
+Both API and owner enforce the command grant. Command responses and replays include only
 the requested scope's version and safe status; complete affected-scope/history
 metadata remains in the owner SQL receipt. Contact updates require an explicit
 value; omitted/null values cannot activate the original demo's fallback.
@@ -153,6 +173,29 @@ present-null values and omit absent fields. Legacy copies without that metadata
 are conservatively treated as the full registered field set until re-imported.
 Older data/authority manifests are fenced; duplicate intent delivery is idempotent.
 
+Imports declare protocol version 1 and validate graph size, identities, fields,
+facts and revision types before SQL mutation. The recipient atomically records
+the exact-envelope digest with its inbox/audit/projection changes; the same event
+ID cannot be reused for a changed payload. Source and destination placement
+revisions are both monotonic fences. A legacy projection lacking current source
+placement evidence fails closed until it is reconciled through ordinary source
+and recipient policy admission.
+
+`./lab pilot-up` performs the bounded protocol reconciliation after startup. To
+repeat it explicitly for persisted synthetic volumes:
+
+```bash
+./lab pilot-reconcile --batch-size 10
+```
+
+This pages owner scope keys, records audit with new delivery intents and retains
+existing pending work. It does not manufacture recipient receipts, bypass current
+policy or establish that every queued delivery has completed. Inspect subsequent
+normal delivery and guarded reads. This migration of protocol evidence does not
+move ownership or normalized business tables to Mumbai.
+See [authority and recovery](AUTHORITY_RECOVERY.md) for consumed-intent renewal,
+restriction milestones and external restore-quarantine requirements.
+
 HTTP delivery runs outside the owner coordination lock and outside the business
 transaction. Pending intents for one scope/recipient coalesce to the current
 authorised state; each business audit and command receipt remains durable, and
@@ -169,7 +212,19 @@ and audit remain available. Restricted reads can fail while an old physical copy
 still exists. Source policy changes cannot recall already in-flight bytes; current
 read guards and versioned replacement/purge protect visibility and convergence.
 There is one source relay/coordinator, not a distributed authority lease protocol.
-Reads still use synchronous source authority and can affect coordination latency.
+Experience reads load bounded scope snapshots, release the owner coordination
+lock before source OPA and recipient HTTP, and revalidate current source policy,
+versions, returned fields and graph content before returning. Customer assembly
+also revalidates its included scopes. A slow recipient must not hold the owner
+writer lock; authority remains synchronous and source loss can still make a
+regional projection unavailable. This is not a promise of partition availability
+or instantaneous worldwide revocation.
+
+Point reads, admission and relay materialisation use scope/binding lookups rather
+than loading every owner business row. Broad base-operator commands, the full
+monitor and source-wide outbox selection still have broader work. Expiry handling
+scans scope documents. Shared-resource fanout and a production scheduler with
+separate authority/foreground/bulk budgets remain unimplemented capacity work.
 
 `./lab pilot-faults` stops actual peer, source/recipient OPA and Collector processes,
 then restarts the owner/API/peers and checks durable identity, receipts, projections
@@ -181,13 +236,79 @@ resource/table processing exclusions, filtered receipts, missing contact values
 and temporary real source/recipient OPA field narrowing. It restores modified
 catalogs/rules in `finally` blocks. Run it sequentially on synthetic data.
 
+The foundation gates extend `pilot-test` with real SQL/OPA scoped-query,
+identity/delegation, import-protocol and independent-service acceptance.
+`./lab pilot-isolation` pauses the actual UK peer, starts its experience read,
+and requires an unrelated SG owner read to complete below two seconds and before
+the failed peer's timeout. It then pauses SG OPA during a delegated command,
+requires an owner read below 1.5 seconds, and verifies the denied command wrote no
+receipt. `pilot-faults` includes these regressions. These thresholds detect the
+demonstrated lock coupling in this fixture; they are not production latency SLOs.
+
+## Independent servicing service
+
+`./lab pilot-up` also starts a separate servicing-case process with its own
+CockroachDB schema and service transaction adapter. Open
+**http://localhost:8081/service/api-docs** for its contract. The service owns case
+interactions; it calls the MDM experience API to validate permitted immutable
+party/relationship references and does not import the MDM coordinator or model.
+The shared physical SG database host remains a lab convenience, not a shared
+business transaction across services.
+
+The adapter commits a case mutation, its version, current-state outbox intent,
+uncoalesced transition record, mandatory audit and actor-bound replay receipt in
+one local transaction. Create, close and reopen use explicit versions and bounded
+SQL serialization retries. An explicit UK refresh passes through the UK peer:
+source policy approves a four-field case projection, recipient OPA rechecks it,
+and the peer commits projection/inbox/audit together before acknowledging the
+applied version. US case access remains excluded.
+
+Use `POST /service/experience/v1/cases/{case_id}/refresh` to materialise the current
+approved summary. `GET /service/experience/v1/cases/{case_id}` checks current MDM
+and case authority and returns 409 when a refresh is required; it never refreshes
+implicitly. There is no second asynchronous background publisher, offline read
+lease or delivery of every transition. Separate retained transition records
+preserve business history. A denied case read does not remove its old UK copy;
+case live-copy cleanup remains a separate unimplemented gate. See
+[service integration](SERVICE_INTEGRATION.md) for identities,
+endpoints, SQL-role checks and adoption limits. Every writer of an adopting
+service still needs the adapter contract or credentials that prevent bypass.
+
 ## Credentials, logs and remaining pilot gates
 
 Private identities/certificates live in ignored `.pilot/`, with separate per-role
 mounts. They are excluded from Docker contexts and source release archives.
-Certificates expire after 14 days; the CA after 30. Stop the pilot and deliberately
-move the private identity directory outside the checkout before reissuing; revocation/rotation,
-IdP federation and managed workload identity need a bank deployment contract.
+Configuration schema v2 gives principal, workload and importer credentials
+`not_before`, `expires_at` and `revoked` controls. Requests and outgoing workload
+calls reload the private configuration so local token revocation/rotation takes
+effect without a process restart. Credential expiry cannot exceed the relevant
+TLS certificate expiry. Certificates expire after 14 days; the CA after 30.
+
+```bash
+# These commands update private configuration and do not print credentials.
+./lab pilot-identity revoke uk-contact-only
+./lab pilot-identity rotate uk-contact-only
+./lab pilot-identity revoke-workload peer-uk
+./lab pilot-identity rotate-workload peer-uk
+# The independent case export has a separate workload credential:
+./lab pilot-identity rotate-workload case-export-uk
+# Explicitly print a selected new token only when needed by the trusted operator:
+./lab pilot-token uk-contact-only
+```
+
+Token rotation is a synthetic operator control. TLS certificate rotation still
+requires deliberate replacement and process restart; there is no external IdP,
+issuer/JWKS validation or managed workload issuance. For certificate reissue,
+stop the pilot and move the private identity directory outside the checkout
+before fresh setup. Existing supported private layouts upgrade without silently
+replacing tokens/certificates; unknown layouts fail for operator review.
+The registered synthetic topology fixes API/owner/authority/servicing processing
+to SG and peer processing to its SG/GB/US store. Hot changes to role, store,
+processing deployment or dependency endpoint fail closed; rotating a credential
+is not permission to relocate a workload. These registrations remain operator
+configuration rather than attested physical geography.
+`PILOT_ENVIRONMENT=production` and a non-synthetic configuration refuse startup;
+there is no bank production profile concealed behind that setting.
 The trusted operator can access infrastructure and private keys; this is not a
 hostile multi-tenant host.
 
@@ -203,4 +324,6 @@ signed policy readiness and authority/fencing failure contracts; normalized-tabl
 migration; matching/stewardship governance; pagination/indexing and measured load;
 retention, restore and operator-access drills; operational/security sign-off.
 No HA, 100M-record performance, physical residency compliance or backup-erasure
-claim follows from this single-host integration pilot.
+claim follows from this single-host integration pilot. The required responsible
+disciplines, evidence and measurable acceptance are recorded in the
+[production release matrix](PRODUCTION_READINESS.md).

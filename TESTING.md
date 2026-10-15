@@ -144,3 +144,18 @@ For a canonical Singapore/UK-only customer UUID, inspect `fe_replicas`, `fe_fenc
 ## Application logging extension
 
 See [observability setup and evidence](docs/OBSERVABILITY.md). `./lab telemetry` verifies API → OTel Collector → Loki, trace correlation and Grafana provisioning. `./lab up` and `./lab test` include this gate. Python OTLP tests passed during authoring. The full Docker/Loki/Grafana path subsequently passed; see [container acceptance](docs/CONTAINER_ACCEPTANCE.md). The starting Docker budget with this extension is 10 GB RAM and 15 GB disk, not measured.
+
+## Production foundation regressions
+
+`./lab pilot-test` retains the original pilot assertions and adds real CockroachDB
+scoped-query/OPA parity and query-plan checks, import protocol/placement/replay
+and rollback/race checks, live credential/delegation checks, and independent
+servicing-service transaction/UK projection conformance. The isolated credential
+helper tests use synthetic certificates; they are not database evidence.
+
+`./lab pilot-isolation` pauses actual UK peer and SG OPA processes, requires an
+authorized owner read to finish before the stalled operation times out, and
+checks recovery. It is included in `./lab pilot-faults`. Run these mutable suites
+sequentially. See [foundation acceptance](docs/FOUNDATIONS_ACCEPTANCE.md) for
+executed results and [production gates](docs/PRODUCTION_READINESS.md) for work
+that remains unproven.
