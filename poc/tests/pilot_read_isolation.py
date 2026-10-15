@@ -41,13 +41,27 @@ def ready(path):
 
 phase = sys.argv[1]
 if phase == 'setup':
-    with psycopg.connect(os.getenv('DB_SG', 'postgresql://root@db-sg:26257/defaultdb?sslmode=disable')) as connection:
-        sid = str(connection.execute("SELECT id FROM sovereignty.scope WHERE owner_entity_id='LE-SG-01' "
-            "AND doc->>'name'='Aster · Personal relationship'").fetchone()[0])
+    # Repeated business suites append contact history to the shared Aster seed.
+    # Its owner graph can correctly exceed the 32 KiB response bound. Create an
+    # independent real fixture so this concurrency gate never relies on that
+    # growing graph or deletes retained business history to make a test pass.
+    reference = 'SYN-ISOLATION-' + uuid.uuid4().hex.upper()
+    with httpx.Client(base_url=BASE, timeout=25, trust_env=False, headers={
+            'Authorization': 'Bearer ' + CONFIG['principals']['crm-sg']['token']}) as client:
+        customer = client.put('/pilot/system/v1/customers/' + reference, json=dict(
+            request_id=str(uuid.uuid4()), expected_version=0,
+            display_name='Synthetic Read Isolation', party_type='PERSON',
+            identity_profile='global_minimum'))
+        assert customer.status_code == 200, customer.status_code
+        relationship = client.post('/pilot/system/v1/customers/' + reference + '/relationships', json=dict(
+            request_id=str(uuid.uuid4()), expected_version=customer.json()['version'],
+            email='isolation@example.invalid', sharing_profile='uk_servicing_no_us'))
+        assert relationship.status_code == 200, relationship.status_code
+        sid = relationship.json()['scope_id']
     path = '/pilot/experience/v1/relationships/' + sid
     ready(path)
     owner, baseline = get(path+'?freshness=owner', 'sg-owner')
-    assert owner.status_code == 200
+    assert owner.status_code == 200, owner.status_code
     STATE.parent.mkdir(parents=True, exist_ok=True)
     STATE.write_text(json.dumps(dict(path=path, baseline_owner_seconds=baseline,
                                     version=owner.json()['data_version'])))

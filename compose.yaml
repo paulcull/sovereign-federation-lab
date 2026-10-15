@@ -2,7 +2,7 @@
   "name": "sovereign-lab",
   "services": {
     "db-sg": {
-      "image": "cockroachdb/cockroach:v25.4.0",
+      "image": "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e",
       "command": [
         "start-single-node",
         "--insecure",
@@ -36,7 +36,7 @@
       ]
     },
     "opa-sg": {
-      "image": "openpolicyagent/opa:1.9.0",
+      "image": "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5",
       "command": [
         "run",
         "--disable-telemetry",
@@ -50,7 +50,7 @@
       "restart": "unless-stopped"
     },
     "db-uk": {
-      "image": "cockroachdb/cockroach:v25.4.0",
+      "image": "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e",
       "command": [
         "start-single-node",
         "--insecure",
@@ -84,7 +84,7 @@
       ]
     },
     "opa-uk": {
-      "image": "openpolicyagent/opa:1.9.0",
+      "image": "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5",
       "command": [
         "run",
         "--disable-telemetry",
@@ -98,7 +98,7 @@
       "restart": "unless-stopped"
     },
     "db-us": {
-      "image": "cockroachdb/cockroach:v25.4.0",
+      "image": "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e",
       "command": [
         "start-single-node",
         "--insecure",
@@ -132,7 +132,7 @@
       ]
     },
     "opa-us": {
-      "image": "openpolicyagent/opa:1.9.0",
+      "image": "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5",
       "command": [
         "run",
         "--disable-telemetry",
@@ -146,7 +146,7 @@
       "restart": "unless-stopped"
     },
     "otel-collector": {
-      "image": "otel/opentelemetry-collector:0.140.0",
+      "image": "otel/opentelemetry-collector:0.162.0@sha256:310a800ad69ee430e7c541796852a242c9c7db97aaad4daa5ccf843c525fbdb2",
       "command": [
         "--config=/etc/otel.yaml"
       ],
@@ -233,7 +233,7 @@
       }
     },
     "db-in": {
-      "image": "cockroachdb/cockroach:v25.4.0",
+      "image": "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e",
       "command": [
         "start-single-node",
         "--insecure",
@@ -267,7 +267,7 @@
       ]
     },
     "opa-in": {
-      "image": "openpolicyagent/opa:1.9.0",
+      "image": "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5",
       "command": [
         "run",
         "--disable-telemetry",
@@ -337,17 +337,20 @@
       "profiles": [
         "tools"
       ],
-      "image": "node:22.14.0-alpine",
       "working_dir": "/workspace",
       "volumes": [
         ".:/workspace"
       ],
       "entrypoint": [
         "node"
-      ]
+      ],
+      "build": {
+        "context": ".",
+        "dockerfile": "infra/NodeTools.Dockerfile"
+      }
     },
     "loki": {
-      "image": "grafana/loki:3.5.7",
+      "image": "grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193",
       "command": [
         "-config.file=/etc/loki/loki.yaml"
       ],
@@ -358,7 +361,7 @@
       "restart": "unless-stopped"
     },
     "grafana": {
-      "image": "grafana/grafana:12.2.0",
+      "image": "grafana/grafana:12.4.13@sha256:41bbc1b5e04416f81891806076db2a2ff60a5d4da5f78d36a88b033a8c199185",
       "environment": {
         "GF_SERVER_ROOT_URL": "http://localhost:${LAB_PORT:-8080}/grafana/",
         "GF_SERVER_SERVE_FROM_SUB_PATH": "true",

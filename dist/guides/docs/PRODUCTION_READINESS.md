@@ -12,6 +12,11 @@ An implemented check below identifies a testable control, not a result for an
 unexecuted revision. Do not transfer evidence from a previous commit to a changed
 deployment, identity configuration or policy bundle.
 
+The [dependency security audit](DEPENDENCY_SECURITY.md) records current patch
+updates and unresolved vendor CVEs. Its strict image gate remains failed; a
+successful functional container suite does not clear those findings or supply a
+vulnerability risk acceptance.
+
 ## What the concept must protect
 
 A relationship identifies the relevant legal entity, purpose and servicing

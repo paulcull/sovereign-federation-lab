@@ -11,6 +11,13 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v7.0.1
+      - name: Install locked security and browser tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --require-hashes -r requirements-dev.txt
+          bash scripts/install_trivy.sh "$RUNNER_TEMP/sfl-security-bin"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/sfl-security-bin" >> "$GITHUB_PATH"
       - name: Build and start CockroachDB lab
         run: |
           mkdir -p artifacts
@@ -22,7 +29,6 @@ jobs:
         run: ./lab faults 2>&1 | tee artifacts/faults.log
       - name: Install browser acceptance tools
         run: |
-          python3 -m pip install playwright==1.62.0
           python3 -m playwright install --with-deps chromium
       - name: Live Chromium generator and migration walkthrough
         run: python3 poc/tests/browser_acceptance.py 2>&1 | tee artifacts/browser.log
@@ -36,6 +42,12 @@ jobs:
         run: ./lab pilot-faults 2>&1 | tee artifacts/pilot-faults.log
       - name: Live MDM system and experience browser walkthrough
         run: python3 poc/tests/pilot_browser.py 2>&1 | tee artifacts/pilot-browser.log
+      - name: Audit locked dependencies and built container images
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+        run: |
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+          python3 scripts/audit_dependencies.py 2>&1 | tee artifacts/security.log
       - name: Collect container diagnostics
         if: always()
         run: |
