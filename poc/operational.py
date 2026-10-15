@@ -7,6 +7,21 @@ from fastapi import HTTPException
 import operational_core as core
 from projection_fields import write_fields
 
+SCOPE_POLICY_FACT_INDEXES={
+    ('classification','party_id'):'classification_owner_party',
+    ('classification','relationship_id'):'classification_owner_relationship',
+    ('classification','holding_id'):'classification_owner_holding',
+    ('consent','relationship_id'):'consent_owner_relationship',
+}
+
+def scope_policy_fact_query(table,field,multiple=False):
+    """Keep policy-fact access bounded regardless of table size or statistics."""
+    index=SCOPE_POLICY_FACT_INDEXES[(table,field)]
+    predicate='=ANY(%s)' if multiple else '=%s'
+    return ('SELECT '+','.join(core.TABLES[table]['columns'])+' FROM business.'+table+
+            '@{FORCE_INDEX='+index+',NO_FULL_SCAN} WHERE owner_entity_id=%s AND '+field+predicate+
+            ' ORDER BY id LIMIT %s')
+
 def clean(value):
     if isinstance(value,(uuid.UUID,Decimal)):return str(value)
     if isinstance(value,dict):return {k:clean(v) for k,v in value.items()}
@@ -99,15 +114,14 @@ class OperationalRuntime:
             rules=c.execute('SELECT r.rule FROM sovereignty.binding b JOIN sovereignty.resource_rule r '
                 'ON r.owner_entity_id=b.owner_entity_id AND r.resource_type=b.resource_type AND r.resource_id=b.resource_id '
                 'WHERE b.owner_entity_id=%s AND b.scope_id=%s ORDER BY b.resource_type,b.resource_id', (owner,sid))
-            # Independent subject-key predicates use their dedicated indexes;
-            # one OR predicate otherwise degenerates into an owner-wide scan.
-            classifications=[c.execute('SELECT '+','.join(core.TABLES['classification']['columns'])+
-                ' FROM business.classification WHERE owner_entity_id=%s AND '+field+'=ANY(%s) ORDER BY id LIMIT %s',
+            # Explicit subject indexes prevent a small-table or ORDER BY cost
+            # estimate from choosing an owner-wide primary-key scan. Separate
+            # predicates also avoid the same problem with a combined OR.
+            classifications=[c.execute(scope_policy_fact_query('classification',field,multiple=True),
                 (owner,ids[table],max_resources+1))
                 for table,field in (('party','party_id'),('relationship','relationship_id'),('product_holding','holding_id'))
                 if ids[table]]
-            consents=c.execute('SELECT '+','.join(core.TABLES['consent']['columns'])+
-                ' FROM business.consent WHERE owner_entity_id=%s AND relationship_id=%s ORDER BY id LIMIT %s',
+            consents=c.execute(scope_policy_fact_query('consent','relationship_id'),
                 (owner,scope['relationship_id'],max_resources+1))
         for table,cursor in rows.items():
             cols=list(core.TABLES[table]['columns'])

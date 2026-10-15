@@ -29,8 +29,10 @@ On an HTTPS-intercepting build host, use the existing trusted-CA build secret:
 
 ## Execution status
 
-Local container validation ran on 14–15 October 2026 (UTC), using the existing
-synthetic volumes from the wired pilot. Host limits: 4 CPU, 16 GiB RAM and a
+The full local suite below passed for foundation revision `8cd6c5c` on
+14–15 October 2026 (UTC), using the existing synthetic volumes from the wired
+pilot. Subsequent clean-CI and review findings are recorded below; the earlier
+run is not evidence for an untested follow-up. Host limits: 4 CPU, 16 GiB RAM and a
 31.5 GiB filesystem. Docker 28.4.0 / Compose 2.40.3 were available. Repeated image
 builds required reclaiming unused build cache and dangling project images;
 no database or telemetry volume was removed. The documented 15 GiB disk budget
@@ -47,7 +49,7 @@ is initial free space, not a promise that repeated builds consume no extra disk.
 | Offline build/navigation/ADRs | Passed: 55 HTML pages, 1,608 local links/assets/fragments and 19 ADRs; 26 external references inventoried, not uptime-verified |
 | Loopback gateway UI/API documentation | HTTP 200: portal, monitor, Grafana dashboard, pilot console and servicing OpenAPI/Swagger |
 
-The common tested API/peer/servicing image is
+The common API/peer/servicing image for that initial full local run was
 `sha256:145f96facbce9061fc99abf390bf99b09a389e18c40dc30f4dbf5dbde6b8729d`.
 Stores use CockroachDB v25.4.0, policy processes OPA 1.9.0. CI must execute the
 same gates from a clean checkout; consult the PR's exact-commit workflow and
@@ -68,7 +70,39 @@ same gates from a clean checkout; consult the PR's exact-commit workflow and
   subject index, and still rejects a full scan. Production query inputs and
   resource limits were unchanged.
 
-No failing gate was disabled, skipped or replaced with a mock business store.
+- The first clean [CI run](https://github.com/paulcull/sovereign-federation-lab/actions/runs/38688642015)
+  failed the query-plan gate on a fresh three-row classification table. The
+  optimiser selected an owner-wide primary-key scan; populated-volume acceptance
+  had selected the subject index. A forced index alone also allowed a full scan
+  of an empty subject index. Runtime policy-fact queries now use whitelisted
+  `FORCE_INDEX` plus `NO_FULL_SCAN`, with the exact same SQL builder exercised by
+  the regression. Seven actual query shapes must execute with constrained subject
+  spans on populated SG and sparse UK/US. India uses the separate migration
+  fixture and has no operational classification schema; this check makes no
+  claim about that schema in India.
+- Copilot identified a case-content fence bypass when a policy revision increased
+  without increasing the business data version. The recipient now rejects a
+  changed payload hash whenever the business version matches, independently of
+  policy revision. The regression advances both real source and recipient OPA
+  policy revisions, requires the specific conflict response, and checks complete
+  projection, inbox and import-audit rows remain unchanged. Policies and the
+  deliberately altered synthetic source row restore afterward.
+
+The first CI run stopped at its failing gate; later pilot fault/browser stages
+were skipped by the workflow and are not passes for that run. No assertion was
+weakened, no failing gate disabled, and no business store replaced with a mock.
+
+### Review follow-up execution
+
+After both corrections, the shared application image was rebuilt as
+`sha256:2252114e3b1c83ae6326d0ea32e6f3609009387e1d1876e04ec1b31629d6891b`.
+The complete `./lab pilot-test` and `./lab pilot-isolation` passed again on that
+image. This includes actual execution and plans for seven query shapes on each
+of SG/UK/US and the cross-policy-revision content-conflict regression. The final
+isolation rerun measured approximately 0.05/0.06-second owner reads against
+5.06/2.04-second stalled peer/OPA requests. The PR workflow reruns the entire
+original and expanded acceptance sequence from a fresh checkout after this
+follow-up; its exact-commit result is the final CI evidence.
 
 ### Read isolation measurements
 

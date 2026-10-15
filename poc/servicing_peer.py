@@ -59,7 +59,9 @@ def install_servicing_peer(app, config, http):
                         'WHERE owner_entity_id=%s AND case_id=%s AND destination_entity_id=%s FOR UPDATE', key).fetchone()
                     if prior and (prior[0] > metadata[0] or prior[1] > metadata[1]):
                         raise HTTPException(409, 'Older case projection fenced')
-                    if prior and prior[:2] == metadata[:2] and prior[2] != metadata[2]:
+                    # Policy revisions can change admission, but the fixed four-field
+                    # contract cannot change content without a new business version.
+                    if prior and prior[0] == metadata[0] and prior[2] != metadata[2]:
                         raise HTTPException(409, 'Case version reused with different content')
                     connection.execute('UPSERT INTO servicing_projection.case_state VALUES (%s,%s,%s,%s,%s,%s,%s)',
                         key + metadata + (Jsonb(row),))

@@ -7,6 +7,7 @@ blocks restore both. No mocks, SQLite, core policy edits or container restarts.
 import json
 import os
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from pathlib import Path
 import sys
 import uuid
@@ -134,17 +135,47 @@ print('PASS mandatory-audit failure rollback, exact retry, stale-command rejecti
 
 # A privileged bypass can violate a business version contract. The recipient
 # must fence it instead of overwriting a committed row/audit under the same version.
-before_projection = sql('SELECT data_version,payload_hash,row_data FROM servicing_projection.case_state WHERE case_id=%s', (case_id,), region='uk')
-before_imports = sql('SELECT data_version,payload_hash FROM servicing_projection.import_audit WHERE case_id=%s ORDER BY data_version', (case_id,), region='uk')
+def projection_state():
+    return {table: sql(f'SELECT * FROM servicing_projection.{table} WHERE case_id=%s '
+                       'ORDER BY data_version,policy_revision,payload_hash', (case_id,), region='uk')
+            for table in ('case_state', 'inbox', 'import_audit')}
+
+
+before_projection = projection_state()
 sql("UPDATE servicing.case_record SET status='OPEN' WHERE case_id=%s", (case_id,))
 try:
-    call('POST', peer_path + '/refresh', 'case-uk-reader', status=409)
+    assert call('POST', peer_path + '/refresh', 'case-uk-reader', status=409)['detail'] == 'Case version reused with different content'
     call('GET', peer_path, 'case-uk-reader', status=409)
-    assert sql('SELECT data_version,payload_hash,row_data FROM servicing_projection.case_state WHERE case_id=%s', (case_id,), region='uk') == before_projection
-    assert sql('SELECT data_version,payload_hash FROM servicing_projection.import_audit WHERE case_id=%s ORDER BY data_version', (case_id,), region='uk') == before_imports
+    assert projection_state() == before_projection
+    # A policy rollout must not authorize rewriting an existing business version.
+    # Change only the revision in both real OPA packages so their export/import
+    # contracts agree, then exercise the same corrupt source row over HTTP.
+    with ExitStack() as restore:
+        for region, country, action in [('sg', 'SG', 'case.export'), ('uk', 'GB', 'case.import')]:
+            opa = restore.enter_context(httpx.Client(base_url=f'http://opa-{region}:8181', timeout=5, trust_env=False))
+            policies = opa.get('/v1/policies').json()['result']
+            selected = [p for p in policies if p['id'].endswith('servicing.rego')]
+            assert len(selected) == 1
+            policy_path = '/v1/policies/' + quote(selected[0]['id'], safe='/')
+            original = opa.get(policy_path).json()['result']['raw']
+            assert original.count('"revision": 1') == 1
+            restore.callback(lambda opa=opa, path=policy_path, raw=original:
+                             opa.put(path, content=raw).raise_for_status())
+            opa.put(policy_path, content=original.replace('"revision": 1', '"revision": 2')).raise_for_status()
+            decision = opa.post('/v1/data/servicing/decision', json={'input': dict(
+                service_id='servicing-cases', owner_entity_id='LE-SG-01', store_country=country,
+                action=action, principal=dict(entity_id='LE-GB-02', processing_country='GB', actions=[action]))})
+            decision.raise_for_status()
+            result = decision.json()['result']
+            assert result['allow'] is True and result['revision'] == 2
+            assert set(result['fields']) == {'case_id', 'status', 'category', 'data_version'}
+        assert call('POST', peer_path + '/refresh', 'case-uk-reader', status=409)['detail'] == 'Case version reused with different content'
+        call('GET', peer_path, 'case-uk-reader', status=409)
+        assert projection_state() == before_projection
 finally:
     sql("UPDATE servicing.case_record SET status='CLOSED' WHERE case_id=%s", (case_id,))
-print('PASS same-version different-content rejection preserves committed UK projection and import audit')
+assert call('GET', peer_path, 'case-uk-reader')['row'] == latest['row']
+print('PASS same-version different-content rejection across policy revisions preserves UK projection, inbox and audit; source and policies restored')
 
 race_body = {**body, 'case_id': str(uuid.uuid4()), 'request_id': str(uuid.uuid4())}
 call('POST', '/service/system/v1/cases', body=race_body)

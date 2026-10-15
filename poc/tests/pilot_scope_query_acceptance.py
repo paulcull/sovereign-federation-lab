@@ -20,7 +20,7 @@ import psycopg
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'poc'))
 import operational_core as core
-from operational import OperationalRuntime
+from operational import OperationalRuntime, SCOPE_POLICY_FACT_INDEXES, scope_policy_fact_query
 from seed import ENTITIES, STORE_INFO
 
 
@@ -72,6 +72,21 @@ def constrained_uuids(span_lines):
             try:found.add(str(uuid.UUID(bytes(value).decode('ascii'))))
             except (ValueError,UnicodeDecodeError):pass
     return found
+
+def check_fact_plans(connection,checks):
+    for table,field,multiple,values in checks:
+        statement=scope_policy_fact_query(table,field,multiple=multiple)
+        subject_parameter=[uuid.UUID(value) for value in values] if multiple else values[0]
+        parameters=(core.SPEC['owner_entity_id'],subject_parameter,513)
+        explanation='\n'.join(row[0] for row in connection.execute('EXPLAIN (VERBOSE) '+statement,parameters))
+        span_lines=[line for line in explanation.splitlines() if 'spans:' in line or 'constraint:' in line]
+        observed_values=constrained_uuids(span_lines)
+        assert set(values) <= observed_values, explanation
+        assert table+'@'+SCOPE_POLICY_FACT_INDEXES[(table,field)] in explanation, explanation
+        assert 'FULL SCAN' not in explanation, explanation
+        # Execute the exact hinted statement as well as explaining it. A hint
+        # which only prevents planning/execution is not a working scope query.
+        connection.execute(statement,parameters).fetchall()
 
 def main():
     dsn = os.getenv('DB_SG', 'postgresql://root@db-sg:26257/defaultdb?sslmode=disable')
@@ -132,42 +147,32 @@ def main():
                 explanation = '\n'.join(row[0] for row in connection.execute('EXPLAIN ' + statement, parameters))
                 assert 'FULL SCAN' not in explanation, explanation
                 assert 'spans:' in explanation or 'constraint:' in explanation, explanation
-            # Referenced facts must use a subject-qualified span too. A LIMIT
-            # above an owner-only scan is not a bounded point query.
+            # The scalar consent path must use its subject-qualified span too.
+            # A LIMIT above an owner-only scan is not a bounded point query.
             relationship=next(scope for scope in selected if scope['scope_kind']=='relationship')
-            holding=next(row for row in full['rows']['product_holding']
-                         if row['relationship_id']==relationship['relationship_id'])
-            for table,field,value in (
-                ('classification','party_id',party['primary_party_id']),
-                ('classification','relationship_id',relationship['relationship_id']),
-                ('classification','holding_id',holding['id']),
-                ('consent','relationship_id',relationship['relationship_id'])):
-                statement=('SELECT '+','.join(core.TABLES[table]['columns'])+' FROM business.'+table+
-                           ' WHERE owner_entity_id=%s AND '+field+'=%s ORDER BY id LIMIT 513')
-                explanation='\n'.join(row[0] for row in connection.execute('EXPLAIN '+statement,
-                    (core.SPEC['owner_entity_id'],value)))
-                span_lines=[line for line in explanation.splitlines() if 'spans:' in line or 'constraint:' in line]
-                assert any(value in line for line in span_lines), explanation
-                assert 'FULL SCAN' not in explanation, explanation
-            # Exercise the loader's exact array predicate with two distinct
-            # subjects. A scalar equality can choose an index when ANY + ORDER
-            # BY + LIMIT would incorrectly fall back to an owner-wide scan.
+            checks=[('consent','relationship_id',False,[relationship['relationship_id']])]
+            # Exercise the loader's exact array predicates with one and two
+            # subjects, including its UUID[] adaptation and ORDER BY + LIMIT.
+            # The shared builder keeps these EXPLAINs identical to runtime SQL.
+            # Run on both the fresh CI seed and accumulated acceptance data;
+            # do not add rows or alter statistics to influence index selection.
             for subject_table,field in (('party','party_id'),('relationship','relationship_id'),
-                                        ('product_holding','holding_id')):
-                values=sorted({row['id'] for row in full['rows'][subject_table]})[:2]
-                assert len(values)==2, 'Expected two real synthetic subjects for the plan regression'
-                statement=('SELECT '+','.join(core.TABLES['classification']['columns'])+
-                    ' FROM business.classification WHERE owner_entity_id=%s AND '+field+
-                    '=ANY(%s) ORDER BY id LIMIT %s')
-                explanation='\n'.join(row[0] for row in connection.execute('EXPLAIN (VERBOSE) '+statement,
-                    (core.SPEC['owner_entity_id'],[uuid.UUID(value) for value in values],513)))
-                span_lines=[line for line in explanation.splitlines() if 'spans:' in line or 'constraint:' in line]
-                observed_values=constrained_uuids(span_lines)
-                assert set(values) <= observed_values, explanation
-                assert 'classification@classification_owner_'+field.removesuffix('_id') in explanation, explanation
-                assert 'FULL SCAN' not in explanation, explanation
+                                       ('product_holding','holding_id')):
+                subjects=sorted({row['id'] for row in full['rows'][subject_table]})[:2]
+                assert len(subjects)==2, 'Expected two real synthetic subjects for the plan regression'
+                checks.extend(('classification',field,True,subjects[:count]) for count in (1,2))
+            check_fact_plans(connection,checks)
+        # Sparse/empty peer business tables exercise the small-table optimiser
+        # choices that a populated owner alone misses. These remain real tables;
+        # the test never changes fixtures or statistics to obtain a desired plan.
+        for store in ('UK','US'):
+            peer_dsn=os.getenv('DB_'+store,'postgresql://root@db-'+store.lower()+':26257/defaultdb?sslmode=disable')
+            with psycopg.connect(peer_dsn,connect_timeout=2) as connection:
+                assert 'CockroachDB' in connection.execute('SELECT version()').fetchone()[0]
+                check_fact_plans(connection,checks)
     print('PASS bounded CockroachDB scope/binding/business queries, unbound policy facts, '
-          f'explicit oversize rejection and {comparisons} full/scoped actual OPA plan comparisons')
+          f'explicit oversize rejection, {comparisons} full/scoped actual OPA plan comparisons, '
+          'and exact subject spans/execution on SG/UK/US')
 
 
 if __name__ == '__main__':
