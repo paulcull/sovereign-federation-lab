@@ -17,7 +17,7 @@ doctor() {
   echo 'Docker/Compose and configuration checks passed. Allow 10 GB Docker memory and 15 GB free disk (unmeasured starting budget).'
 }
 build() {
-  dc build tools
+  dc build tools node-tools
   dc run --rm --no-deps --user "$(id -u):$(id -g)" tools scripts/build.py
   dc run --rm --no-deps --user "$(id -u):$(id -g)" tools scripts/verify.py
 }

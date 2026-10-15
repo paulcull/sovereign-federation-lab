@@ -98,6 +98,8 @@ and Yarn dependency trees. This removes the affected package-manager code from
 the final container filesystem; the JavaScript and browser/OPA parity gates still
 execute normally. The upstream base image's findings remain in the before/after
 inventory, rather than being presented as patched npm packages.
+Normal startup rebuilds both helpers so an existing custom Node image cannot
+silently survive a future Dockerfile security update.
 
 FastAPI 0.141.1 supports the patched Starlette release while preserving the
 lab's explicit OpenTelemetry 1.36 logging integration. Later FastAPI releases
