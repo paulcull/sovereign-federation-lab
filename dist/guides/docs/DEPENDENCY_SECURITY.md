@@ -153,7 +153,7 @@ requests failed closed after 5.04/2.03 seconds. These are regression samples,
 not a load benchmark.
 Twelve audit-orchestration regressions pass, including stale-success evidence,
 missing/malformed inventories, interrupted scans and ambient filtering. Offline
-verification passes 55 HTML pages, 1,611 local links and 19 ADRs.
+verification passes 55 HTML pages, 1,612 local links and 19 ADRs.
 
 The first local fault run reached a legitimate 422 for the shared Aster owner
 view: repeated earlier suites had accumulated enough contact history to exceed
