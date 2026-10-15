@@ -25,6 +25,8 @@ SHA-256. Other platforms should install that version using their normal trusted
 package mechanism. Keep certificate verification enabled; the existing
 `LAB_BUILD_CA` build-secret overlay supports approved HTTPS-intercepting hosts.
 `TRIVY_CACHE_DIR` can select a reusable cache. Run one audit at a time per cache.
+Invocations sharing an output directory serialize under a Unix/WSL2 file lock
+through final publication, including when separate scanner caches are used.
 
 CI executes this audit after the complete base/pilot container and browser
 acceptance. Its `lab-evidence` artifact includes `security/summary.json`, the full
@@ -153,8 +155,9 @@ system/experience APIs and the microsite reader journey. A repeated isolation
 run passed with owner reads of 0.04/0.03 seconds while the real paused peer/OPA
 requests failed closed after 5.04/2.03 seconds. These are regression samples,
 not a load benchmark.
-Twelve audit-orchestration regressions pass, including stale-success evidence,
-missing/malformed inventories, interrupted scans and ambient filtering. Offline
+Seventeen audit-orchestration regressions pass, including real overlapping
+processes, stale-success evidence, malformed inventories and vulnerability
+fields, interrupted scans and ambient filtering. Offline
 verification passes 55 HTML pages, 1,612 local links and 19 ADRs.
 
 The first local fault run reached a legitimate 422 for the shared Aster owner

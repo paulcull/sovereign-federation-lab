@@ -9,9 +9,14 @@ database repositories, CA and registry authentication variables are inherited;
 all non-Trivy variables (including proxy/CA and Docker authentication) remain.
 The scanner receives an explicit full-severity/status/package reporting policy
 and does not load trivy.yaml or an ignore file.
+
+Unix/WSL2 hosts serialize complete invocations with an advisory file lock in the
+output directory. Its stable lock file is never removed: removing it could let
+waiters lock different inodes and publish evidence concurrently.
 """
 import argparse
 from collections import Counter
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -119,6 +124,10 @@ def audit(args, output, reports, summary):
                 or data.get('Metadata', {}).get('ImageID') != image['image_id']
                 or not isinstance(data.get('Results'), list)):
             raise AuditFailure('Invalid or mismatched container image report')
+        if any(not isinstance(result, dict)
+               or ('Vulnerabilities' in result and not isinstance(result['Vulnerabilities'], list))
+               for result in data['Results']):
+            raise AuditFailure('Container image report has malformed vulnerability evidence')
         if not any(isinstance(result, dict) and isinstance(result.get('Packages'), list)
                    and any(isinstance(package, dict)
                            and isinstance(package.get('Name'), str) and package['Name']
@@ -126,6 +135,13 @@ def audit(args, output, reports, summary):
                            for package in result['Packages']) for result in data['Results']):
             raise AuditFailure('Container image scan has no recognised package inventory')
         vulnerabilities = [v for r in data['Results'] for v in r.get('Vulnerabilities', [])]
+        if any(not isinstance(vulnerability, dict)
+               or not isinstance(vulnerability.get('VulnerabilityID'), str)
+               or not vulnerability['VulnerabilityID']
+               or vulnerability.get('Severity') not in ('UNKNOWN', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL')
+               or ('FixedVersion' in vulnerability and not isinstance(vulnerability['FixedVersion'], str))
+               for vulnerability in vulnerabilities):
+            raise AuditFailure('Container image report has malformed vulnerability fields')
         fixable = [v for v in vulnerabilities if v.get('FixedVersion')
                    and v['Severity'] in {'HIGH', 'CRITICAL'}]
         image.update(report=str(report.relative_to(output)), counts=dict(Counter(v['Severity'] for v in vulnerabilities)),
@@ -138,14 +154,8 @@ def audit(args, output, reports, summary):
     return failed
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--pip-audit', default='pip-audit')
-    parser.add_argument('--trivy', default='trivy')
-    parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/security')
-    args = parser.parse_args(argv)
-    output = args.output.resolve()
-    output.mkdir(parents=True, exist_ok=True)
+def run_locked_audit(args, output):
+    """Caller holds the output lock through initial and final publication."""
     summary = {'run_id': uuid.uuid4().hex,
                'scanned_at': datetime.now(timezone.utc).isoformat(),
                'gate': 'Python: all known findings; images: fixable HIGH/CRITICAL; scan errors fail',
@@ -177,6 +187,25 @@ def main(argv=None):
         save_summary(output, summary)
     print(f"{'PASS' if summary['passed'] else 'FAIL'} dependency gate; evidence retained in {output}")
     return exit_code
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--pip-audit', default='pip-audit')
+    parser.add_argument('--trivy', default='trivy')
+    parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/security')
+    args = parser.parse_args(argv)
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    # Lock before even the initial summary write. A waiting invocation must not
+    # overwrite the active run, and an older success cannot replace its failure.
+    # The OS releases this advisory lock on process death as well as normal exit.
+    with (output / '.audit.lock').open('a+b') as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        try:
+            return run_locked_audit(args, output)
+        finally:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
 
 
 if __name__ == '__main__':

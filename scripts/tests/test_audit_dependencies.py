@@ -3,6 +3,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import multiprocessing
 from pathlib import Path
 import subprocess
 import tempfile
@@ -15,6 +16,21 @@ SPEC = importlib.util.spec_from_file_location(
     'audit_dependencies', Path(__file__).resolve().parents[1] / 'audit_dependencies.py')
 AUDIT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(AUDIT)
+
+
+def overlapping_invocation(output, label, started, entered, release, results):
+    """Separate process, real file lock; only the scanner body is substituted."""
+    def scan(args, output, reports, summary):
+        summary['commit'] = label
+        entered.set()
+        if not release.wait(10):
+            raise RuntimeError('Test did not release the simulated scanner')
+        return label == 'newer-failure'
+
+    with patch.object(AUDIT, 'audit', side_effect=scan), contextlib.redirect_stdout(io.StringIO()):
+        started.set()
+        code = AUDIT.main(['--output', output])
+    results.put((label, code))
 
 
 class AuditTests(unittest.TestCase):
@@ -32,6 +48,8 @@ class AuditTests(unittest.TestCase):
         self.wrong_image = False
         self.empty_results = False
         self.no_packages = False
+        self.omitted_vulnerabilities = False
+        self.non_dict_result = False
         self.interrupt = False
         self.missing_tool = False
         self.initial_evidence_observed = False
@@ -82,6 +100,10 @@ class AuditTests(unittest.TestCase):
             data['Results'] = []
         if self.no_packages:
             del data['Results'][0]['Packages']
+        if self.omitted_vulnerabilities:
+            del data['Results'][0]['Vulnerabilities']
+        if self.non_dict_result:
+            data['Results'].append('invalid result')
         report.write_text('{' if self.bad_image else json.dumps(data))
         return SimpleNamespace(returncode=0)
 
@@ -194,6 +216,96 @@ class AuditTests(unittest.TestCase):
                 self.assertFalse(summary['completed'])
                 self.assertTrue(summary['errors'])
                 setattr(self, attribute, False)
+
+    def test_present_malformed_vulnerabilities_cannot_mean_no_findings(self):
+        for vulnerabilities in ({}, '', None):
+            with self.subTest(vulnerabilities=vulnerabilities):
+                self.vulnerabilities = vulnerabilities
+                code, summary = self.invoke()
+                self.assertNotEqual(code, 0)
+                self.assertFalse(summary['passed'])
+                self.assertFalse(summary['completed'])
+                self.assertIn('malformed vulnerability evidence', summary['errors'][0])
+
+    def test_every_image_result_must_be_an_object(self):
+        self.non_dict_result = True
+        code, summary = self.invoke()
+        self.assertNotEqual(code, 0)
+        self.assertFalse(summary['passed'])
+        self.assertFalse(summary['completed'])
+        self.assertIn('malformed vulnerability evidence', summary['errors'][0])
+
+    def test_malformed_vulnerability_fields_cannot_bypass_severity_gate(self):
+        for vulnerability in [None, {},
+                {'VulnerabilityID': 'CVE-test', 'Severity': None, 'FixedVersion': '2'},
+                {'VulnerabilityID': 'CVE-test', 'Severity': 'high', 'FixedVersion': '2'},
+                {'VulnerabilityID': '', 'Severity': 'HIGH', 'FixedVersion': '2'},
+                {'VulnerabilityID': 'CVE-test', 'Severity': 'HIGH', 'FixedVersion': False}]:
+            with self.subTest(vulnerability=vulnerability):
+                self.vulnerabilities = [vulnerability]
+                code, summary = self.invoke()
+                self.assertNotEqual(code, 0)
+                self.assertFalse(summary['passed'])
+                self.assertFalse(summary['completed'])
+                self.assertIn('malformed vulnerability fields', summary['errors'][0])
+
+    def test_omitted_vulnerabilities_is_valid_for_clean_package_inventory(self):
+        self.omitted_vulnerabilities = True
+        code, summary = self.invoke()
+        self.assertEqual(code, 0)
+        self.assertTrue(summary['passed'])
+        self.assertTrue(summary['completed'])
+        self.assertTrue(all(image['counts'] == {} for image in summary['images']))
+
+    def test_overlapping_invocations_serialize_through_final_publication(self):
+        context = multiprocessing.get_context('spawn')
+        results = context.Queue()
+        started = [context.Event(), context.Event()]
+        entered = [context.Event(), context.Event()]
+        release = [context.Event(), context.Event()]
+        labels = ['older-success', 'newer-failure']
+        processes = [context.Process(target=overlapping_invocation,
+            args=(str(self.output), labels[index], started[index], entered[index], release[index], results))
+            for index in range(2)]
+        try:
+            processes[0].start()
+            self.assertTrue(entered[0].wait(10))
+            original = json.loads((self.output / 'summary.json').read_text())
+            self.assertFalse(original['passed'])
+            processes[1].start()
+            self.assertTrue(started[1].wait(10))
+            self.assertFalse(entered[1].wait(.5), 'Second audit entered before the first released its lock')
+            # A waiter cannot even publish its initial incomplete summary yet.
+            self.assertEqual(json.loads((self.output / 'summary.json').read_text())['run_id'], original['run_id'])
+            release[0].set()
+            self.assertTrue(entered[1].wait(10))
+            processes[0].join(10)
+            self.assertEqual(processes[0].exitcode, 0)
+            current = json.loads((self.output / 'summary.json').read_text())
+            self.assertNotEqual(current['run_id'], original['run_id'])
+            self.assertFalse(current['passed'])
+            release[1].set()
+            processes[1].join(10)
+            self.assertEqual(processes[1].exitcode, 0)
+            self.assertEqual(dict(results.get(timeout=5) for _ in range(2)),
+                             {'older-success': 0, 'newer-failure': 1})
+            final = json.loads((self.output / 'summary.json').read_text())
+            self.assertEqual(final['commit'], 'newer-failure')
+            self.assertFalse(final['passed'])
+            self.assertTrue(final['completed'])
+            self.assertEqual(final['status'], 'failed')
+            self.assertFalse(list(self.output.glob('.summary-*.tmp')))
+        finally:
+            for event in release:
+                event.set()
+            for process in processes:
+                if process.pid is not None:
+                    process.join(10)
+                    if process.is_alive():
+                        process.terminate()
+                        process.join(10)
+            results.close()
+            results.join_thread()
 
     def test_interruption_persists_current_failed_evidence(self):
         self.interrupt = True
