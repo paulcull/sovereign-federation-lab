@@ -1,0 +1,95 @@
+# Production foundation acceptance
+
+This change addresses the challenger review with bounded implementation work in
+the synthetic single-host lab. It does not approve bank data, independent regional
+availability, production identity, distributed writer election or backup erasure.
+
+## Reproduce
+
+```bash
+./lab doctor
+./lab pilot-up
+./lab pilot-test
+./lab pilot-faults
+LAB_PILOT=1 ./lab test
+LAB_PILOT=1 ./lab faults
+python3 poc/tests/pilot_browser.py
+python3 poc/tests/browser_acceptance.py
+python3 design/tests/reader_browser.py
+```
+
+Run mutable and fault suites sequentially. `pilot-faults` includes the new
+`pilot-isolation` gate, which pauses actual UK peer and SG OPA processes and
+restores them with shell traps. The new source service uses its own CockroachDB
+schema and SQL role; the original insecure SQL transport remains a development
+limitation, not effective authentication against a hostile internal client.
+
+On an HTTPS-intercepting build host, use the existing trusted-CA build secret:
+`LAB_BUILD_CA=/etc/ssl/certs/ca-certificates.crt ./lab pilot-up`.
+
+## Execution status
+
+Local container validation ran on 14–15 October 2026 (UTC), using the existing
+synthetic volumes from the wired pilot. Host limits: 4 CPU, 16 GiB RAM and a
+31.5 GiB filesystem. Docker 28.4.0 / Compose 2.40.3 were available. Repeated image
+builds required reclaiming unused build cache and dangling project images;
+no database or telemetry volume was removed. The documented 15 GiB disk budget
+is initial free space, not a promise that repeated builds consume no extra disk.
+
+| Gate | Result |
+|---|---|
+| `./lab doctor`; `./lab pilot-up` | Passed after the startup fixes below; all 20 containers running, upgrade retains existing data |
+| `./lab pilot-test` | Passed: original pilot/review checks, 8 credential unit checks, 16 scoped/full OPA plan comparisons, actual indexed query plans, protocol races, live credential lifecycle and independent servicing SQL/OPA integration |
+| `./lab pilot-faults` | Passed: actual peer/source OPA/recipient OPA/Collector outages, retry fairness, restart persistence, trace/log correlation, paused-dependency isolation and recovery |
+| `LAB_PILOT=1 ./lab test` | Passed: source-side exclusions, minimal party and relationship policies, generator/monitor, complete India migration, SQL authority after restart, Collector span receipt and Loki/Grafana |
+| `LAB_PILOT=1 ./lab faults` | Passed: real source OPA and Collector failures, mandatory business audit/receipt durability, fail-closed reads/exports and recovery |
+| Three Chromium walkthroughs | Passed: MDM create/read/update/exclusion; generator and acknowledged movement; full India migration; reader navigation and 375/768/1440 px layouts, with no page errors |
+| Offline build/navigation/ADRs | Passed: 55 HTML pages, 1,608 local links/assets/fragments and 19 ADRs; 26 external references inventoried, not uptime-verified |
+| Loopback gateway UI/API documentation | HTTP 200: portal, monitor, Grafana dashboard, pilot console and servicing OpenAPI/Swagger |
+
+The common tested API/peer/servicing image is
+`sha256:145f96facbce9061fc99abf390bf99b09a389e18c40dc30f4dbf5dbde6b8729d`.
+Stores use CockroachDB v25.4.0, policy processes OPA 1.9.0. CI must execute the
+same gates from a clean checkout; consult the PR's exact-commit workflow and
+`lab-evidence` artifact rather than assuming a prior commit's result applies.
+
+### Observed failures and corrections
+
+- A populated-volume index upgrade stalled even with only 71 party rows. The
+  CockroachDB BulkAdder requested another 32 MiB while roughly 32 MiB was
+  allocated under `--max-sql-memory=64MiB`. Raising each store to 256 MiB allowed
+  the durable backfill to complete. Required indexes and data were preserved.
+- A newly added SQL comment contained a semicolon, which the existing schema
+  loader split as a statement boundary. Corrected the comment and rebuilt;
+  startup now completes with the complete additive schema.
+- The new multi-subject query-plan assertion initially expected textual UUIDs.
+  CockroachDB renders typed UUID-array spans as quoted bytes. The regression now
+  decodes complete UUID spans, requires both subject keys and the intended
+  subject index, and still rejects a full scan. Production query inputs and
+  resource limits were unchanged.
+
+No failing gate was disabled, skipped or replaced with a mock business store.
+
+### Read isolation measurements
+
+One sequential fault run measured a healthy owner baseline of 0.077 seconds.
+With the actual UK peer paused, its read failed closed after 5.067 seconds while
+an unrelated owner read completed in 0.049 seconds (gate: below 2 seconds and
+before the dependency timeout). With SG OPA paused, the affected command failed
+closed after 2.039 seconds, created no command receipt, and the owner read
+completed in 0.048 seconds (gate: below 1.5 seconds). Both dependencies recovered.
+These are regression samples, not p99, throughput or regional availability
+claims.
+
+## Scope and remaining gates
+
+- [Foundation requirements and production release gates](PRODUCTION_READINESS.md)
+- [Independent business service integration](SERVICE_INTEGRATION.md)
+- [Authority, partition and recovery contract](AUTHORITY_RECOVERY.md)
+- [Startup, identities and API contracts](PILOT.md)
+
+The earlier challenger probe showed a stalled UK read delaying an owner read to
+5.10 seconds, versus a 0.53-second baseline. Both UK and US projections failed
+closed after approximately 15 seconds when the owner was paused. Those were
+single diagnostic samples, not a load benchmark. The new isolation gate requires
+a concurrent owner read to complete before the real stalled dependency returns.

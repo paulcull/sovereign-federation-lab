@@ -63,7 +63,7 @@ matching/stewardship, normalized-table migration and pilot approval remain separ
 | 50M parties / 100M relationships and pilot backlog | [Scale assessment](scale/SCALE_AND_PILOT.md) |
 | Origin and review findings | [Provenance](docs/source-provenance.json), [documentation audit](docs/DOCUMENTATION_AUDIT.md) |
 
-The portal links the monitor, migration workspace, 28 component design pages, 18 ADR pages, capacity model and run guide. Design pages retain engineering prompts and label implemented lab features versus production targets.
+The portal links the monitor, migration workspace, 28 component design pages, 19 ADR pages, capacity model and run guide. Design pages retain engineering prompts and label implemented lab features versus production targets.
 
 ## Implementation boundary
 
@@ -101,3 +101,17 @@ cd sovereign-federation-lab
 This import preserves the complete source of Sites Git commit `e8d5011f2a8407055db963c9c94ab8fc17c82bbb`, with the repository-location note updated. Subsequent commits add the logging stack described above. The existing GitHub starter commit is retained. Sites Git metadata and source provenance describe the original publication; they are historical provenance, not GitHub credentials. The downloadable Git bundle retains that original initial lab commit.
 
 `./scripts/publish-github.sh OWNER/NEW-REPOSITORY` is an optional export helper for creating another private repository from an authenticated workstation; it intentionally refuses an existing repository. It is not required to use this repository.
+
+## Production foundation work
+
+The synthetic pilot also includes an independent servicing service with its own
+CockroachDB schema and a reusable local transaction adapter. Its system API is at
+`http://localhost:8081/service/api-docs`; approved UK case views use the same
+loopback gateway. Run `./lab pilot-test` for API, policy, identity, protocol and
+transaction conformance, and `./lab pilot-isolation` for actual stalled-peer and
+stalled-policy isolation. These are single-host engineering gates.
+
+See [service integration](docs/SERVICE_INTEGRATION.md),
+[executed foundation evidence](docs/FOUNDATIONS_ACCEPTANCE.md),
+[authority and recovery](docs/AUTHORITY_RECOVERY.md), and the
+[production release matrix](docs/PRODUCTION_READINESS.md).
