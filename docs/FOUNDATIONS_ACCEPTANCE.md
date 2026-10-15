@@ -92,7 +92,7 @@ The first CI run stopped at its failing gate; later pilot fault/browser stages
 were skipped by the workflow and are not passes for that run. No assertion was
 weakened, no failing gate disabled, and no business store replaced with a mock.
 
-### Review follow-up execution
+### First review follow-up execution
 
 After both corrections, the shared application image was rebuilt as
 `sha256:2252114e3b1c83ae6326d0ea32e6f3609009387e1d1876e04ec1b31629d6891b`.
@@ -103,6 +103,29 @@ isolation rerun measured approximately 0.05/0.06-second owner reads against
 5.06/2.04-second stalled peer/OPA requests. The PR workflow reruns the entire
 original and expanded acceptance sequence from a fresh checkout after this
 follow-up; its exact-commit result is the final CI evidence.
+
+### Reconciliation review follow-up
+
+The complete clean [CI run at `e0131f1`](https://github.com/paulcull/sovereign-federation-lab/actions/runs/38689983709)
+passed every gate and uploaded `lab-evidence`. Copilot confirmed the case-content
+finding resolved, then identified a separate performance warning: each
+reconciliation pending-intent lookup could scan retained outbox history.
+
+The follow-up adds the partial `outbox_pending_scope_destination` index for
+`queued`/`retry` intents. Runtime and regression share the exact pending SELECT
+and enclosing INSERT, using `FORCE_INDEX`, `NO_FULL_SCAN` and `LIMIT 1`. Real
+CockroachDB plans must constrain both scope and destination. A single synthetic
+row tests queued/retry/completed states and an absent destination; it is rolled
+back and verified absent afterward, without changing statistics or inflating
+fixtures.
+
+Normal `./lab pilot-up` applied the index to the existing volumes, started all
+20 containers and reconciled 144 scopes (338 fresh intents queued). The complete
+`./lab pilot-test` passed on the rebuilt image
+`sha256:c4ee60df347ce7910830b8ddbefb46d7f66433cc93d1137436ad8f212f42f6ac`,
+including the exact lookup/insert plans and rollback check. The final PR commit
+must also pass the complete clean CI sequence; use its run and artifact rather
+than transferring the earlier green result to this change.
 
 ### Read isolation measurements
 

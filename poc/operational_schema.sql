@@ -321,6 +321,9 @@ CREATE TABLE IF NOT EXISTS sovereignty.binding (owner_entity_id STRING NOT NULL,
 
 CREATE TABLE IF NOT EXISTS sovereignty.outbox (id UUID PRIMARY KEY, scope_id UUID NOT NULL, destination_entity_id STRING NOT NULL, status STRING NOT NULL DEFAULT 'queued', attempts INT NOT NULL DEFAULT 0, reason STRING NOT NULL DEFAULT '', created_at FLOAT NOT NULL);
 
+-- Reconciliation checks only this scope/destination's live work, not retained history.
+CREATE INDEX IF NOT EXISTS outbox_pending_scope_destination ON sovereignty.outbox (scope_id,destination_entity_id) WHERE status IN ('queued','retry');
+
 CREATE TABLE IF NOT EXISTS sovereignty.audit (id UUID PRIMARY KEY, ts FLOAT NOT NULL, doc JSONB NOT NULL);
 
 CREATE TABLE IF NOT EXISTS sovereignty.command_receipt (owner_entity_id STRING NOT NULL, request_id UUID NOT NULL, request_hash STRING NOT NULL, result JSONB NOT NULL, PRIMARY KEY(owner_entity_id,request_id));

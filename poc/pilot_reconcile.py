@@ -17,6 +17,14 @@ import operational_core as core
 from seed import ENTITIES
 
 
+PENDING_LOOKUP_SQL = (
+    'SELECT 1 FROM sovereignty.outbox@{FORCE_INDEX=outbox_pending_scope_destination,NO_FULL_SCAN} '
+    "WHERE scope_id=%s AND destination_entity_id=%s AND status IN ('queued','retry') LIMIT 1")
+ENQUEUE_INTENT_SQL = (
+    'INSERT INTO sovereignty.outbox (id,scope_id,destination_entity_id,created_at) '
+    'SELECT %s,%s,%s,%s WHERE NOT EXISTS (' + PENDING_LOOKUP_SQL + ') RETURNING id')
+
+
 def enqueue_page(connection, after=None, limit=10, through=None):
     """One bounded SQL transaction; caller commits queue and audit together.
 
@@ -41,11 +49,7 @@ def enqueue_page(connection, after=None, limit=10, through=None):
                 raise ValueError('Unknown reconciliation destination')
             for destination in destinations:
                 event, now = str(uuid.uuid4()), time.time()
-                cursor = connection.execute(
-                    'INSERT INTO sovereignty.outbox (id,scope_id,destination_entity_id,created_at) '
-                    'SELECT %s,%s,%s,%s WHERE NOT EXISTS '
-                    "(SELECT 1 FROM sovereignty.outbox WHERE scope_id=%s AND destination_entity_id=%s AND status IN ('queued','retry')) "
-                    'RETURNING id', (event, sid, destination, now, sid, destination))
+                cursor = connection.execute(ENQUEUE_INTENT_SQL, (event, sid, destination, now, sid, destination))
                 pending.append((cursor, str(sid), destination, now))
     queued = 0
     with connection.pipeline():
