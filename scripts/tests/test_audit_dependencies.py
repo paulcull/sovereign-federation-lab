@@ -132,7 +132,9 @@ class AuditTests(unittest.TestCase):
         self.policy = json.loads(AUDIT.RISK_POLICY.read_text())
         self.record = self.policy['acceptances'][0]
         self.assertEqual(self.record['cve'], 'CVE-2025-68121')
-        self.assertEqual(len(self.policy['acceptances']), 1)
+        # Isolate one record for classifier/expiry failure-path tests. The
+        # complete shipped register is verified against the observed inventory below.
+        self.policy['acceptances'] = [self.record]
         self.policy_path = self.output / 'risk-acceptances.json'
         self.write_policy()
         self.risk_context = 'synthetic-lab'
@@ -145,6 +147,56 @@ class AuditTests(unittest.TestCase):
 
     def write_policy(self):
         self.policy_path.write_text(json.dumps(self.policy))
+
+    def prepare_full_cockroach_risk(self):
+        self.prepare_risk()
+        self.policy = json.loads(AUDIT.RISK_POLICY.read_text())
+        self.write_policy()
+        snapshot = json.loads((AUDIT.ROOT / 'docs/security/dependency-recheck-2026-10-16.json').read_text())
+        image = next(i for i in snapshot['images'] if self.record['image'] in i['tags'])
+        self.vulnerabilities = image['blocking_findings']
+
+    def test_shipped_register_accepts_exactly_the_observed_cockroach_findings(self):
+        self.prepare_full_cockroach_risk()
+        expected = {(v['VulnerabilityID'], v['PkgName'], v['InstalledVersion'], v['Severity'])
+                    for v in self.vulnerabilities}
+        self.assertEqual(len(self.policy['acceptances']), 34)
+        self.assertEqual({(r['cve'], r['package'], r['installed_version'], r['severity'])
+                          for r in self.policy['acceptances']}, expected)
+        self.assertEqual({r['image'] for r in self.policy['acceptances']}, {self.record['image']})
+        self.assertEqual({r['expires_at'] for r in self.policy['acceptances']}, {'2026-11-15T00:00:00Z'})
+        code, summary = self.invoke()
+        self.assertEqual(code, 0)
+        self.assertTrue(summary['passed'])
+        self.assertEqual(summary['status'], 'passed_with_risk_acceptance')
+        self.assertEqual(summary['accepted_high_critical'], 34)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 0)
+        self.assertEqual(summary['images'][0]['counts'], {'HIGH': 33, 'CRITICAL': 1})
+        raw = json.loads((self.output / summary['images'][0]['report']).read_text())
+        self.assertEqual(raw['Results'][0]['Vulnerabilities'], self.vulnerabilities)
+
+    def test_full_register_cannot_accept_a_new_cockroach_finding(self):
+        self.prepare_full_cockroach_risk()
+        self.vulnerabilities.append({'VulnerabilityID': 'CVE-2099-99999', 'PkgName': 'stdlib',
+            'InstalledVersion': self.record['installed_version'], 'Severity': 'HIGH', 'FixedVersion': 'future'})
+        code, summary = self.invoke()
+        self.assertEqual(code, 1)
+        self.assertFalse(summary['passed'])
+        self.assertEqual(summary['accepted_high_critical'], 34)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 1)
+
+    def test_full_register_cannot_accept_shared_cves_in_other_vendor_images(self):
+        self.prepare_full_cockroach_risk()
+        other = 'grafana/loki:synthetic@sha256:' + '1' * 64
+        self.images.append(other)
+        self.repo_digests[other] = ['grafana/loki@sha256:' + '1' * 64]
+        code, summary = self.invoke()
+        self.assertEqual(code, 1)
+        self.assertFalse(summary['passed'])
+        self.assertEqual(summary['accepted_high_critical'], 34)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 34)
+        other_image = next(i for i in summary['images'] if other in i['tags'])
+        self.assertEqual(other_image['accepted_findings'], [])
 
     def test_exact_lab_risk_is_visible_in_success_and_original_report(self):
         self.prepare_risk()

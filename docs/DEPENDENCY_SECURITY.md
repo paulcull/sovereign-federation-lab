@@ -45,14 +45,16 @@ ignore list: risk decisions are applied after the complete report is validated,
 and accepted findings remain visible. A passing gate would not mean zero vulnerabilities or production
 approval.
 
-## Accepted development risk: CVE-2025-68121
+## Accepted development risk: CockroachDB findings
 
-On 16 October 2026 the user explicitly requested acceptance of the CockroachDB
-CVE. [SFL-RA-0001](security/risk-acceptances.json) records acceptance of the
-identified CRITICAL **CVE-2025-68121 only**, for `stdlib` v1.23.12 in the exact
-pinned CockroachDB 25.4.17 manifest. The risk owner is `paulcull`. It expires at
+On 16 October 2026 the user expanded acceptance from the critical CockroachDB
+CVE to the current CockroachDB blocks. [SFL-RA-0001 through SFL-RA-0034](security/risk-acceptances.json)
+enumerate **34 finding scopes covering 31 CVEs**, including the CRITICAL
+CVE-2025-68121, for the exact pinned CockroachDB 25.4.17 manifest. This includes
+the observed Go, libxml2, OpenSSL and PCRE2 findings. Every record binds an exact
+CVE, package, installed version and severity. The risk owner is `paulcull`. Each expires at
 **00:00 UTC on 15 November 2026**, unless replaced through a separate reviewed
-decision. The vulnerable certificate-validation code remains present.
+decision. The vulnerable code remains present.
 
 Acceptance applies only to trusted, single-host synthetic development with
 loopback gateways and internal SQL/admin ports. It does not approve a bank pilot,
@@ -75,18 +77,23 @@ and the policy's owner, rationale and expiry make the disposition inspectable.
 If accepted findings are the only otherwise blocking results, the exit code is
 zero with `status: passed_with_risk_acceptance`, not a claim of zero CVEs.
 
-Against the 16 October inventory, this accepts **one of 47** finding instances.
-**46 remain blocking**: 33 other CockroachDB findings, five Grafana, four Loki and
-four Collector. No other CVE, Python advisory, skipped package, missing image or
-scan error is accepted. Obtain compatible patched vendor images, rerun complete
+Against the 16 October inventory, this accepts **all 34 currently blocking
+CockroachDB finding instances**. **13 remain blocking**: five Grafana, four Loki
+and four Collector. The records are not a blanket CockroachDB exclusion: unlisted
+CVEs/packages, changed versions or image digests, and other products do not inherit
+acceptance. No Python advisory, skipped package, missing image or scan error is
+accepted. Obtain compatible patched vendor images, rerun complete
 acceptance and retire the record; review it before expiry or any scope/exposure
 change.
 
-Executed validation on 16 October: all 27 audit regressions passed, including
+Executed validation on 16 October: all 30 audit regressions passed, including
 expiry during a scan, malformed policy, strict defaults and changed image/package
-scope. The real audit scanned all 11 current shared lab image identities without
-errors, retained zero Python advisories/skips, accepted the single exact critical
-finding and exited 1 for the 46 unaccepted finding instances. This verifies the
+scope. The additional register tests require exact correspondence to the observed
+CockroachDB inventory, retain a new unlisted CockroachDB finding as blocking and
+reject applying the same CVEs to another product. The real audit scanned all 11
+current shared lab image identities without errors, retained zero Python
+advisories/skips, accepted the 34 registered CockroachDB finding instances and
+exited 1 for the 13 other vendor finding instances. This verifies the
 disposition against real scanner evidence; it is not a passing security gate or
 a new clean-build functional/container result.
 
