@@ -16,6 +16,11 @@ Requirements: Docker Engine/Desktop with Compose v2 supporting `--wait-timeout`;
 
 Open **http://localhost:8080**. API explorer: **http://localhost:8080/api-docs**.
 
+Manage the database estate at **http://localhost:8080/clusters/**: live cluster and
+node status, durable health checks and native synthetic backup/restore rehearsals.
+Its **Environment** view covers supporting infrastructure separately. See
+[cluster control](docs/CLUSTER_CONTROL.md) for the implemented scope and commands.
+
 Search application logs at **http://localhost:8080/grafana/d/sovereign-logs**. The provisioned Grafana dashboard queries Loki through a real OpenTelemetry logs pipeline. Run `./lab telemetry` to verify the complete path. See the [observability guide](docs/OBSERVABILITY.md).
 
 `./lab up` rebuilds documentation, validates local navigation, builds images and waits for actual CockroachDB/OPA readiness. Both service entry points reject SQLite configuration. A live API failure stays visible and never switches to browser simulation. The hosted portal is separately and explicitly configured as a browser demonstration.

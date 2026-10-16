@@ -70,7 +70,7 @@ assert json.loads((OUT/'lab-config.json').read_text())['mode']=='simulation'
 assert 'localhost\'||location.hostname' not in (OUT/'app.js').read_text()
 assert json.loads((ROOT/'shared/catalog.json').read_text())==json.loads((OUT/'catalog.json').read_text())
 assert json.loads((ROOT/'shared/operational.json').read_text())==json.loads((OUT/'operational.json').read_text())
-adrs=json.loads((ROOT/'docs/adrs.json').read_text());assert len(adrs)==19 and len({a['id'] for a in adrs})==19
+adrs=json.loads((ROOT/'docs/adrs.json').read_text());assert len(adrs)==20 and len({a['id'] for a in adrs})==20
 pilot=json.loads((ROOT/'compose.pilot.yaml').read_text())['services']
 assert {name for name,value in pilot.items() if value.get('ports')}=={'pilot-gateway'}
 assert pilot['pilot-gateway']['ports'][0].startswith('127.0.0.1:')

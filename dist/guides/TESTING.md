@@ -1,5 +1,16 @@
 # Unified lab verification — edition 09
 
+## CockroachDB cluster control
+
+`LAB_PILOT=1 ./lab cluster-test` verifies live cluster identities, guarded
+operations, native synthetic BACKUP/RESTORE, exact canary rows, audit and API
+restart persistence. `LAB_PILOT=1 ./lab cluster-faults` pauses the actual India
+database and checks independent UK operations. Run
+`python3 poc/tests/cluster_control_browser.py` for cluster-first navigation,
+separate Environment context, reviewed recovery and responsive layouts.
+See [cluster control scope](docs/CLUSTER_CONTROL.md). Browser transport faults
+check presentation only; database evidence comes from actual CockroachDB.
+
 ## Customer MDM integration pilot
 
 The optional profile has real SQL/OPA and mTLS system/experience API gates:

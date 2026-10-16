@@ -11,6 +11,11 @@ operator surface remains separate on port 8080.
 
 ## Prerequisites
 
+The database-focused control console is at **http://localhost:8080/clusters/**.
+Its cluster health, nodes, recovery rehearsals and durable operation history are
+separate from its **Environment** view of supporting services. See
+[cluster control](CLUSTER_CONTROL.md) for the live operations and remaining scope.
+
 - Bash; Docker Engine/Desktop; Compose v2 with `up --wait --wait-timeout`.
 - Start with 10 GB Docker memory, four CPU cores and 15 GB free disk for the small fixture. This is a practical starting budget, not measured capacity.
 - Port 8080 free; copy `.env.example` to `.env` to change LAB_PORT or COMPOSE_PROJECT_NAME.

@@ -21,3 +21,4 @@ Retrospective decisions recorded on 11 October 2026; subsequent proposals carry 
 - [ADR-0017: Existing business services with governed peer integration and routing](ADR-0017.md) — Accepted bounded synthetic integration; regional production deployment and distributed authority remain pilot work
 - [ADR-0018: A base customer MDM with system and experience APIs](ADR-0018.md) — Implemented synthetic single-host integration; bank pilot approval remains separate
 - [ADR-0019: Bounded integration foundations before regional production](ADR-0019.md) — Implemented synthetic foundations; regional production gates remain open
+- [ADR-0020: Separate cluster operations from environment and business controls](ADR-0020.md) — Accepted for the trusted development lab; production lifecycle automation proposed

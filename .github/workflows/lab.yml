@@ -42,6 +42,11 @@ jobs:
         run: ./lab pilot-faults 2>&1 | tee artifacts/pilot-faults.log
       - name: Live MDM system and experience browser walkthrough
         run: python3 poc/tests/pilot_browser.py 2>&1 | tee artifacts/pilot-browser.log
+      - name: Cluster control native recovery, persistence and database outage
+        run: |
+          LAB_PILOT=1 ./lab cluster-test 2>&1 | tee artifacts/cluster-control.log
+          LAB_PILOT=1 ./lab cluster-faults 2>&1 | tee artifacts/cluster-control-faults.log
+          python3 poc/tests/cluster_control_browser.py 2>&1 | tee artifacts/cluster-control-browser.log
       - name: Audit locked dependencies and built container images
         env:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2

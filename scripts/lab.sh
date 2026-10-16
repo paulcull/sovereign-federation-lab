@@ -117,6 +117,24 @@ case "${1:-help}" in
     export LAB_PILOT=1
     dc down --remove-orphans
     ;;
+  cluster-test)
+    ready
+    dc exec -T monitor python -m unittest discover -s tests -p cluster_control_unit.py
+    dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/cluster_control_acceptance.py
+    dc restart monitor
+    dc up -d --wait --wait-timeout 240 monitor gateway
+    dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/cluster_control_acceptance.py --phase restart
+    ;;
+  cluster-faults)
+    ready
+    (
+      trap 'dc unpause db-in >/dev/null 2>&1 || :' EXIT
+      dc pause db-in
+      dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/cluster_control_acceptance.py --phase paused
+      dc unpause db-in
+      dc exec -T monitor python health_probe.py --wait 45
+    )
+    ;;
   doctor) doctor ;;
   build) doctor; build ;;
   up)
@@ -187,6 +205,8 @@ Sovereign Federation Lab — CockroachDB only
   ./lab doctor       Check Docker/Compose and configuration
   ./lab up           Build docs/images, start and wait for SQL + OPA readiness
   ./lab status       Container and dependency health
+  ./lab cluster-test Real cluster inventory, native canary backup/restore and restart evidence
+  ./lab cluster-faults Pause India SQL and verify independent cluster controls
   ./lab smoke        Gateway, API, SQL identity and policy readiness
   ./lab telemetry    Verify API → Collector → Loki and Grafana provisioning
   ./lab faults       Stop real OPA/Collector; verify fail-closed exports and SQL audit isolation
