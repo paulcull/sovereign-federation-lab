@@ -19,6 +19,12 @@ operator surface remains separate on port 8080.
 
 Images are pinned in Compose/Dockerfiles. Validate bank-approved patches, image digests and licensing before moving beyond a synthetic lab. A pinned tag is not a claim of ongoing vendor support.
 
+Python runtime, scaling and acceptance dependencies are locked with hashes. See
+[dependency security](DEPENDENCY_SECURITY.md) for the CVE scan, update procedure,
+container evidence and unresolved vendor findings. CI audits actual built images
+as well as the Python locks; a successful functional suite does not clear a
+failing security gate.
+
 Each CockroachDB node has a 64 MiB cache and a 256 MiB SQL memory budget. The
 previous 64 MiB SQL setting could not run the required index backfill: even a
 71-row table needed simultaneous bulk buffers exceeding that limit, so startup

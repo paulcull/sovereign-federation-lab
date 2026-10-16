@@ -1,0 +1,1013 @@
+{
+  "observed_date": "2026-10-15",
+  "tools": {
+    "pip-audit": "2.10.1",
+    "trivy": "0.76.0"
+  },
+  "vulnerability_database": {
+    "Version": 2,
+    "NextUpdate": "2026-10-16T07:10:08.755380121Z",
+    "UpdatedAt": "2026-10-15T07:10:08.755380281Z",
+    "DownloadedAt": "2026-10-15T10:56:07.259196059Z"
+  },
+  "counting": "Finding instances per component, not distinct CVEs or affected application paths. Full scan reports are CI artifacts.",
+  "components": [
+    {
+      "component": "application",
+      "before": {
+        "image_id": "sha256:c4ee60df347ce7910830b8ddbefb46d7f66433cc93d1137436ad8f212f42f6ac",
+        "repo_digests": [],
+        "counts": {
+          "LOW": 63,
+          "HIGH": 47,
+          "MEDIUM": 66,
+          "UNKNOWN": 3
+        },
+        "high_critical_with_reported_fixed_version": 3
+      },
+      "after": {
+        "image_id": "sha256:749aea49c4b33f8f442b8680e39d4c292d3bf35ee6bcffc50567cb75d08a4971",
+        "repo_digests": [],
+        "counts": {
+          "LOW": 62,
+          "HIGH": 44,
+          "MEDIUM": 63,
+          "UNKNOWN": 3
+        },
+        "high_critical_with_reported_fixed_version": 0,
+        "remaining_high_critical": [
+          {
+            "VulnerabilityID": "CVE-2026-76642",
+            "PkgName": "bsdutils",
+            "InstalledVersion": "1:2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78408",
+            "PkgName": "bsdutils",
+            "InstalledVersion": "1:2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78409",
+            "PkgName": "bsdutils",
+            "InstalledVersion": "1:2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78410",
+            "PkgName": "bsdutils",
+            "InstalledVersion": "1:2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-54369",
+            "PkgName": "libacl1",
+            "InstalledVersion": "2.3.2-2+b1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-76642",
+            "PkgName": "libblkid1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78408",
+            "PkgName": "libblkid1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78409",
+            "PkgName": "libblkid1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78410",
+            "PkgName": "libblkid1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-76642",
+            "PkgName": "liblastlog2-2",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78408",
+            "PkgName": "liblastlog2-2",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78409",
+            "PkgName": "liblastlog2-2",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78410",
+            "PkgName": "liblastlog2-2",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-76642",
+            "PkgName": "libmount1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78408",
+            "PkgName": "libmount1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78409",
+            "PkgName": "libmount1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78410",
+            "PkgName": "libmount1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2025-69720",
+            "PkgName": "libncursesw6",
+            "InstalledVersion": "6.5+20250216-2",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-76642",
+            "PkgName": "libsmartcols1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78408",
+            "PkgName": "libsmartcols1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78409",
+            "PkgName": "libsmartcols1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78410",
+            "PkgName": "libsmartcols1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-16742",
+            "PkgName": "libsystemd0",
+            "InstalledVersion": "257.13-1~deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2025-69720",
+            "PkgName": "libtinfo6",
+            "InstalledVersion": "6.5+20250216-2",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-16742",
+            "PkgName": "libudev1",
+            "InstalledVersion": "257.13-1~deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-76642",
+            "PkgName": "libuuid1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78408",
+            "PkgName": "libuuid1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78409",
+            "PkgName": "libuuid1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78410",
+            "PkgName": "libuuid1",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-76642",
+            "PkgName": "login",
+            "InstalledVersion": "1:4.16.0-2+really2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78408",
+            "PkgName": "login",
+            "InstalledVersion": "1:4.16.0-2+really2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78409",
+            "PkgName": "login",
+            "InstalledVersion": "1:4.16.0-2+really2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78410",
+            "PkgName": "login",
+            "InstalledVersion": "1:4.16.0-2+really2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-76642",
+            "PkgName": "mount",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78408",
+            "PkgName": "mount",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78409",
+            "PkgName": "mount",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78410",
+            "PkgName": "mount",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2025-69720",
+            "PkgName": "ncurses-base",
+            "InstalledVersion": "6.5+20250216-2",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2025-69720",
+            "PkgName": "ncurses-bin",
+            "InstalledVersion": "6.5+20250216-2",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-9538",
+            "PkgName": "perl-base",
+            "InstalledVersion": "5.40.1-6+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "fix_deferred"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-76642",
+            "PkgName": "util-linux",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78408",
+            "PkgName": "util-linux",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78409",
+            "PkgName": "util-linux",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78410",
+            "PkgName": "util-linux",
+            "InstalledVersion": "2.41.5-0+deb13u1",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          }
+        ]
+      }
+    },
+    {
+      "component": "gateway",
+      "before": {
+        "image_id": "sha256:77f04a41a10e0cc2aa5100e3782342d25f0172d856420b039fcd4c5dfad9ff65",
+        "repo_digests": [],
+        "counts": {
+          "MEDIUM": 64,
+          "LOW": 36,
+          "HIGH": 38,
+          "CRITICAL": 2
+        },
+        "high_critical_with_reported_fixed_version": 40
+      },
+      "after": {
+        "image_id": "sha256:5036103be4034ddec24b0d6116763efd165f0ff1c0c0728ef2953df1c6a6bca1",
+        "repo_digests": [],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "high_critical_with_reported_fixed_version": 0,
+        "remaining_high_critical": []
+      }
+    },
+    {
+      "component": "cockroach",
+      "before": {
+        "image_id": "sha256:ac65f3644ba45d26155a493b180183d5c1bef8d1186b45a79fd07048af813058",
+        "repo_digests": [
+          "cockroachdb/cockroach@sha256:cbc618f33d48a511f2db03e61e9215d17b372e19075b6e97c400b1942fb90146"
+        ],
+        "counts": {
+          "MEDIUM": 269,
+          "HIGH": 68,
+          "LOW": 119,
+          "CRITICAL": 1,
+          "UNKNOWN": 4
+        },
+        "high_critical_with_reported_fixed_version": 64
+      },
+      "after": {
+        "image_id": "sha256:79881e37782c00b08f96945b255ccd127b4e5716b58916e1bd98639413da259f",
+        "repo_digests": [
+          "cockroachdb/cockroach@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e"
+        ],
+        "counts": {
+          "MEDIUM": 164,
+          "LOW": 81,
+          "HIGH": 38,
+          "CRITICAL": 1,
+          "UNKNOWN": 4
+        },
+        "high_critical_with_reported_fixed_version": 34,
+        "remaining_high_critical": [
+          {
+            "VulnerabilityID": "CVE-2026-88647",
+            "PkgName": "gnutls",
+            "InstalledVersion": "3.8.10-8.el9_8",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-53613",
+            "PkgName": "libblkid",
+            "InstalledVersion": "2.37.4-25.el9",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-53613",
+            "PkgName": "libmount",
+            "InstalledVersion": "2.37.4-25.el9",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-53613",
+            "PkgName": "libsmartcols",
+            "InstalledVersion": "2.37.4-25.el9",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-53613",
+            "PkgName": "libuuid",
+            "InstalledVersion": "2.37.4-25.el9",
+            "FixedVersion": null,
+            "Severity": "HIGH",
+            "Status": "affected"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-74860",
+            "PkgName": "libxml2",
+            "InstalledVersion": "2.9.13-14.el9_8.4",
+            "FixedVersion": "2.9.13-14.el9_8.5",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-86140",
+            "PkgName": "libxml2",
+            "InstalledVersion": "2.9.13-14.el9_8.4",
+            "FixedVersion": "2.9.13-14.el9_8.5",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-84782",
+            "PkgName": "openssl-libs",
+            "InstalledVersion": "1:3.5.8-1.el9_8",
+            "FixedVersion": "1:3.5.8-2.el9_8",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-103111",
+            "PkgName": "pcre2",
+            "InstalledVersion": "10.40-6.el9",
+            "FixedVersion": "10.40-7.el9_8",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-86145",
+            "PkgName": "pcre2",
+            "InstalledVersion": "10.40-6.el9",
+            "FixedVersion": "10.40-7.el9_8",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-89161",
+            "PkgName": "pcre2",
+            "InstalledVersion": "10.40-6.el9",
+            "FixedVersion": "10.40-7.el9_8",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-103111",
+            "PkgName": "pcre2-syntax",
+            "InstalledVersion": "10.40-6.el9",
+            "FixedVersion": "10.40-7.el9_8",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-86145",
+            "PkgName": "pcre2-syntax",
+            "InstalledVersion": "10.40-6.el9",
+            "FixedVersion": "10.40-7.el9_8",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-89161",
+            "PkgName": "pcre2-syntax",
+            "InstalledVersion": "10.40-6.el9",
+            "FixedVersion": "10.40-7.el9_8",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2025-68121",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.24.13, 1.25.7, 1.26.0-rc.3",
+            "Severity": "CRITICAL",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2025-61726",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.24.12, 1.25.6",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2025-61729",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.24.11, 1.25.5",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-25679",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.8, 1.26.1",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-27145",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.11, 1.26.4",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-32280",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.9, 1.26.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-32281",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.9, 1.26.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-32283",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.9, 1.26.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-33811",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.10, 1.26.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-33814",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.10, 1.26.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-33818",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.13, 1.26.6, 1.27.0-rc.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-39820",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.10, 1.26.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-39821",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.13, 1.26.6, 1.27.0-rc.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-39822",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.12, 1.26.5, 1.27.0-rc.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-39836",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.10, 1.26.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-42499",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.10, 1.26.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-42504",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.11, 1.26.4",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-56853",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.13, 1.26.6, 1.27.0-rc.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-56858",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.13, 1.26.6, 1.27.0-rc.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-56859",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.13, 1.26.6, 1.27.0-rc.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-56860",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.13, 1.26.6, 1.27.0-rc.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-56862",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.25.13, 1.26.6, 1.27.0-rc.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78667",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.26.9, 1.27.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78669",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.26.9, 1.27.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-97031",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.23.12",
+            "FixedVersion": "1.26.9, 1.27.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          }
+        ]
+      }
+    },
+    {
+      "component": "opa",
+      "before": {
+        "image_id": "sha256:63730fcef635bcc75a8a623142573eeb252ae9d728c791e3a30958fe8e4afd8f",
+        "repo_digests": [
+          "openpolicyagent/opa@sha256:bd7e1216865884be8095726fb80282ece2f6b531883bc86f9f8917f2fc52de61"
+        ],
+        "counts": {
+          "MEDIUM": 68,
+          "LOW": 17,
+          "HIGH": 56,
+          "UNKNOWN": 9,
+          "CRITICAL": 2
+        },
+        "high_critical_with_reported_fixed_version": 58
+      },
+      "after": {
+        "image_id": "sha256:d71e8282b9ce0aae6199af8b9dd27b62c7e48fca997c22c543ff91de6182a153",
+        "repo_digests": [
+          "openpolicyagent/opa@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5"
+        ],
+        "counts": {
+          "UNKNOWN": 1
+        },
+        "high_critical_with_reported_fixed_version": 0,
+        "remaining_high_critical": []
+      }
+    },
+    {
+      "component": "collector",
+      "before": {
+        "image_id": "sha256:914369649dfece629bb9efc25112948090d689bf56ae5eee4ae5d2d7fede9f5b",
+        "repo_digests": [
+          "otel/opentelemetry-collector@sha256:6852803128c97a37fd2bafb989a04a10e3af920737d8eee998eefdfcebc698be"
+        ],
+        "counts": {
+          "HIGH": 55,
+          "MEDIUM": 41,
+          "LOW": 6,
+          "UNKNOWN": 9,
+          "CRITICAL": 2
+        },
+        "high_critical_with_reported_fixed_version": 55
+      },
+      "after": {
+        "image_id": "sha256:2e31a248c3aeb7acb7c3cb1830fa0a9d1674f016c6ab11e957d6c93138fd46e6",
+        "repo_digests": [
+          "otel/opentelemetry-collector@sha256:310a800ad69ee430e7c541796852a242c9c7db97aaad4daa5ccf843c525fbdb2"
+        ],
+        "counts": {
+          "UNKNOWN": 7,
+          "HIGH": 4,
+          "MEDIUM": 7,
+          "LOW": 1
+        },
+        "high_critical_with_reported_fixed_version": 4,
+        "remaining_high_critical": [
+          {
+            "VulnerabilityID": "CVE-2026-78669",
+            "PkgName": "golang.org/x/net",
+            "InstalledVersion": "v0.59.0",
+            "FixedVersion": "0.60.0",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78667",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.26.8",
+            "FixedVersion": "1.26.9, 1.27.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78669",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.26.8",
+            "FixedVersion": "1.26.9, 1.27.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-97031",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.26.8",
+            "FixedVersion": "1.26.9, 1.27.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          }
+        ]
+      }
+    },
+    {
+      "component": "loki",
+      "before": {
+        "image_id": "sha256:4d58e59bc9fc417097c0694571572731e138b1e8bfa8e0b5dbc3cf8d0d1b54aa",
+        "repo_digests": [
+          "grafana/loki@sha256:0eaee7bf39cc83aaef46914fb58f287d4f4c4be6ec96b86c2ed55719a75e49c8"
+        ],
+        "counts": {
+          "UNKNOWN": 10,
+          "HIGH": 50,
+          "MEDIUM": 38,
+          "LOW": 3,
+          "CRITICAL": 2
+        },
+        "high_critical_with_reported_fixed_version": 52
+      },
+      "after": {
+        "image_id": "sha256:ceccdbc45e274f08eb23d6ca6e0b648921d580c592ab47b4304225c0f17a406a",
+        "repo_digests": [
+          "grafana/loki@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193"
+        ],
+        "counts": {
+          "MEDIUM": 9,
+          "LOW": 5,
+          "UNKNOWN": 7,
+          "HIGH": 4
+        },
+        "high_critical_with_reported_fixed_version": 4,
+        "remaining_high_critical": [
+          {
+            "VulnerabilityID": "CVE-2026-78669",
+            "PkgName": "golang.org/x/net",
+            "InstalledVersion": "v0.58.0",
+            "FixedVersion": "0.60.0",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78667",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.26.6",
+            "FixedVersion": "1.26.9, 1.27.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-78669",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.26.6",
+            "FixedVersion": "1.26.9, 1.27.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-97031",
+            "PkgName": "stdlib",
+            "InstalledVersion": "v1.26.6",
+            "FixedVersion": "1.26.9, 1.27.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          }
+        ]
+      }
+    },
+    {
+      "component": "grafana",
+      "before": {
+        "image_id": "sha256:1849e214042195711652c68c2cbcd39d1ee3d01fed02fa1bff53728590fa4dd7",
+        "repo_digests": [
+          "grafana/grafana@sha256:74144189b38447facf737dfd0f3906e42e0776212bf575dc3334c3609183adf7"
+        ],
+        "counts": {
+          "MEDIUM": 160,
+          "LOW": 71,
+          "HIGH": 131,
+          "CRITICAL": 10,
+          "UNKNOWN": 19
+        },
+        "high_critical_with_reported_fixed_version": 141
+      },
+      "after": {
+        "image_id": "sha256:3fdfe88ded312997fbff8b345c3682f2cc4e65a46ee7d17b4317f9bd7b9bf7db",
+        "repo_digests": [
+          "grafana/grafana@sha256:41bbc1b5e04416f81891806076db2a2ff60a5d4da5f78d36a88b033a8c199185"
+        ],
+        "counts": {
+          "MEDIUM": 1,
+          "HIGH": 2,
+          "UNKNOWN": 1
+        },
+        "high_critical_with_reported_fixed_version": 2,
+        "remaining_high_critical": [
+          {
+            "VulnerabilityID": "CVE-2026-21728",
+            "PkgName": "github.com/grafana/tempo",
+            "InstalledVersion": "v1.5.1-0.20260427112133-525d1bab07e0",
+            "FixedVersion": "2.8.4, 2.9.2, 2.10.2",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          },
+          {
+            "VulnerabilityID": "CVE-2026-28377",
+            "PkgName": "github.com/grafana/tempo",
+            "InstalledVersion": "v1.5.1-0.20260427112133-525d1bab07e0",
+            "FixedVersion": "2.10.3",
+            "Severity": "HIGH",
+            "Status": "fixed"
+          }
+        ]
+      }
+    },
+    {
+      "component": "node",
+      "before": {
+        "image_id": "sha256:33544e83793ca080b49f5a30fb7dbe8a678765973de6ea301572a0ef53e76333",
+        "repo_digests": [
+          "node@sha256:9bef0ef1e268f60627da9ba7d7605e8831d5b56ad07487d24d1aa386336d1944"
+        ],
+        "counts": {
+          "MEDIUM": 58,
+          "LOW": 38,
+          "CRITICAL": 5,
+          "HIGH": 57
+        },
+        "high_critical_with_reported_fixed_version": 61
+      },
+      "after": {
+        "image_id": "sha256:8187c61c5376473716b15fad52101af617899d3de1963aed3779af1b401d9525",
+        "repo_digests": [],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "high_critical_with_reported_fixed_version": 0,
+        "remaining_high_critical": []
+      }
+    }
+  ],
+  "evaluated_not_adopted": {
+    "cockroach-26": {
+      "artifact": "registry-1.docker.io/cockroachdb/cockroach:v26.3.2",
+      "counts": {
+        "HIGH": 3,
+        "MEDIUM": 5,
+        "LOW": 1,
+        "UNKNOWN": 4
+      },
+      "reason": "Separate release-line migration required; this scan does not clear the security gate."
+    },
+    "grafana-13": {
+      "artifact": "registry-1.docker.io/grafana/grafana:13.2.4",
+      "counts": {
+        "MEDIUM": 95,
+        "UNKNOWN": 83,
+        "HIGH": 56,
+        "LOW": 13
+      },
+      "reason": "Separate release-line migration required; this scan does not clear the security gate."
+    }
+  }
+}

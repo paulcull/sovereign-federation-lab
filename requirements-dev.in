@@ -1,0 +1,4 @@
+# Security and browser acceptance tooling; compile with uv, see docs/DEPENDENCY_SECURITY.md.
+pip-audit==2.10.1
+playwright==1.64.0
+uv==0.13.1
