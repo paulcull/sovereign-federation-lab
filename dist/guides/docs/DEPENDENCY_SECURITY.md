@@ -163,15 +163,18 @@ database release line requires a separate, supported migration/rollback plan;
 do not infer that an existing volume can be downgraded after an upgrade.
 
 Rebuild and execute `./lab pilot-test`, `./lab pilot-faults`,
-`LAB_PILOT=1 ./lab test`, `LAB_PILOT=1 ./lab faults` and all three browser
-walkthroughs sequentially. Keep mandatory transactional audit independent of
+`LAB_PILOT=1 ./lab test`, `LAB_PILOT=1 ./lab faults`,
+`LAB_PILOT=1 ./lab cluster-test`, `LAB_PILOT=1 ./lab cluster-faults` and all four
+browser walkthroughs (generator/migration, MDM, cluster control and microsite)
+sequentially. Keep mandatory transactional audit independent of
 telemetry failures and check trace/log correlation after SDK or Collector changes.
 Use the exact commit's CI result, not a previous image's acceptance.
 
-## Latest recheck: 16 October 2026
+## Historical PR #6 recheck: 16 October 2026
 
-**PR #6 remains blocked by its security gate.** Its latest clean-build CI passed
-every functional, outage and browser stage and failed only the dependency audit.
+Before PR #6 was merged, its latest clean-build CI passed every functional,
+outage and browser stage and failed only the dependency audit. This section
+records that earlier recheck; the current PR #7 disposition appears above.
 The 15 October CI reported 44 blocking vendor finding instances. A fresh local
 audit on 16 October completed without scan errors and reported **47**:
 
