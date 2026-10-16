@@ -36,12 +36,59 @@ the audit rather than silently reducing coverage.
 
 The gate rejects all known Python advisories and skipped Python packages. It
 also rejects every HIGH or CRITICAL image finding with a reported upstream fixed
-version. Lower-severity and unfixed findings remain in the reports. A fixed Go
+version unless an explicit, active risk record applies in `--risk-context synthetic-lab`.
+Strict mode is the default and applies no acceptances. Lower-severity and unfixed
+findings remain in the reports. A fixed Go
 or OS package version does not imply that a vendor has published a compatible
-image containing it. Those findings still block the gate; this project does not
-invent an exception or describe a failing audit as passed. There is no CVE
-ignore list. A passing gate would not mean zero vulnerabilities or production
+image containing it. Unaccepted findings still block the gate. There is no scanner
+ignore list: risk decisions are applied after the complete report is validated,
+and accepted findings remain visible. A passing gate would not mean zero vulnerabilities or production
 approval.
+
+## Accepted development risk: CVE-2025-68121
+
+On 16 October 2026 the user explicitly requested acceptance of the CockroachDB
+CVE. [SFL-RA-0001](security/risk-acceptances.json) records acceptance of the
+identified CRITICAL **CVE-2025-68121 only**, for `stdlib` v1.23.12 in the exact
+pinned CockroachDB 25.4.17 manifest. The risk owner is `paulcull`. It expires at
+**00:00 UTC on 15 November 2026**, unless replaced through a separate reviewed
+decision. The vulnerable certificate-validation code remains present.
+
+Acceptance applies only to trusted, single-host synthetic development with
+loopback gateways and internal SQL/admin ports. It does not approve a bank pilot,
+production, a public preview or real customer data. The context flag declares
+this operating scope; the audit does not independently inspect runtime exposure
+or data contents. Existing deployment and functional gates remain mandatory.
+
+CI declares this synthetic context explicitly. To reproduce that decision locally,
+append `--risk-context synthetic-lab` to the audit command above. Omit the option
+or use `--risk-context strict` to apply no exceptions. There is no production
+acceptance mode or ambient environment-variable override.
+
+The policy must match the configured image reference **and** its observed registry
+digest, CVE, package, installed version and severity. Changed or new findings and
+images do not inherit acceptance. Missing/malformed records fail closed; expired
+or future records cannot accept findings. Acceptance is checked again before the
+audit completes. The full scanner output and raw finding counts are retained;
+`accepted_findings`, `accepted_high_critical`, `unaccepted_fixable_high_critical`
+and the policy's owner, rationale and expiry make the disposition inspectable.
+If accepted findings are the only otherwise blocking results, the exit code is
+zero with `status: passed_with_risk_acceptance`, not a claim of zero CVEs.
+
+Against the 16 October inventory, this accepts **one of 47** finding instances.
+**46 remain blocking**: 33 other CockroachDB findings, five Grafana, four Loki and
+four Collector. No other CVE, Python advisory, skipped package, missing image or
+scan error is accepted. Obtain compatible patched vendor images, rerun complete
+acceptance and retire the record; review it before expiry or any scope/exposure
+change.
+
+Executed validation on 16 October: all 27 audit regressions passed, including
+expiry during a scan, malformed policy, strict defaults and changed image/package
+scope. The real audit scanned all 11 current shared lab image identities without
+errors, retained zero Python advisories/skips, accepted the single exact critical
+finding and exited 1 for the 46 unaccepted finding instances. This verifies the
+disposition against real scanner evidence; it is not a passing security gate or
+a new clean-build functional/container result.
 
 ## Refresh dependencies
 
@@ -121,7 +168,8 @@ reported fixed version is not a patched vendor image.
 Remediation requires vendor images containing the fixes, followed by the complete
 container and security acceptance. Separately maintained vendor builds or a
 database release-line migration require their own implementation and validation;
-no such changes or vulnerability exceptions are included here. Re-running the
+no such implementation changes were made in that recheck. The subsequent scoped
+acceptance above does not remediate the vulnerable binary. Re-running the
 same pinned images cannot install an embedded dependency fix.
 
 ## Findings and residual exposure: 15 October baseline
@@ -221,4 +269,5 @@ loopback gateways limit exposure in this synthetic lab; they do not establish
 that every flagged dependency is unreachable. Before a bank pilot, obtain patched
 vendor builds or an explicit, reviewed vulnerability disposition with an owner,
 expiry and deployment evidence. This update supplies neither a risk acceptance
-nor approval to process bank data. See [production gates](PRODUCTION_READINESS.md).
+nor approval to process bank data at that baseline. The subsequent development
+risk decision is scoped above. See [production gates](PRODUCTION_READINESS.md).

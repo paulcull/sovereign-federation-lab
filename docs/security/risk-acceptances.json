@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "acceptances": [
+    {
+      "id": "SFL-RA-0001",
+      "context": "synthetic-lab",
+      "image": "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e",
+      "cve": "CVE-2025-68121",
+      "package": "stdlib",
+      "installed_version": "v1.23.12",
+      "severity": "CRITICAL",
+      "owner": "paulcull",
+      "approved_by": "Explicit user instruction in the repository development chat on 2026-10-16: Risk accept the cockroach cve. Scoped to the identified critical CVE only.",
+      "approved_at": "2026-10-16T00:00:00Z",
+      "expires_at": "2026-11-15T00:00:00Z",
+      "rationale": "Permit continued synthetic development on the pinned CockroachDB release while awaiting a compatible vendor image containing the Go TLS fix. This accepts the residual certificate-validation risk; the vulnerability remains present and is not claimed unreachable.",
+      "conditions": "Synthetic data only; trusted single-host lab; development gateways bound to loopback; CockroachDB SQL and admin ports remain internal to Compose. This is not production, bank-pilot, public-preview or real-customer-data approval. The context flag declares this operating scope; the audit does not independently verify runtime exposure or data contents.",
+      "remediation": "Replace with a compatible vendor image containing the fix, execute complete container and dependency acceptance, and retire this record. Review before expiry or any deployment, image, package-version or exposure change. Other CockroachDB CVEs and all other components remain subject to the gate."
+    }
+  ]
+}
