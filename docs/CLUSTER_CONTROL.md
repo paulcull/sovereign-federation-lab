@@ -73,10 +73,25 @@ than replaying a potentially completed mutation. Interrupted recovery blocks new
 rehearsals until an operator inspects native jobs and retained artifacts;
 automatic incident resolution is not implemented.
 
+A 503 can mean the enqueue COMMIT succeeded but its acknowledgement was lost.
+Acceptance is uncertain: retry the same operation with the same request UUID.
+The page retains that UUID per cluster/operation until it receives a receipt;
+retries in that page reuse it, including after reopening the rehearsal dialog.
+
 Latest successful recovery is queried independently of the latest 30 activity
 entries. An unavailable journal displays unknown recovery status, rather than
-claiming that no rehearsal has run. A lost final write is reconciled to
-interrupted after SQL reconnects, retaining known native job receipts.
+claiming that no rehearsal has run. If both post-step and terminal journal writes
+fail after a native receipt is received, the live worker keeps its pending
+result in memory and retries the journal before taking another regional job.
+This never replays native BACKUP/RESTORE. A simultaneous API process loss and
+SQL outage can still lose those unjournaled in-memory receipts; inspect native
+jobs and retained canary artifacts. API restart reconciliation fences uncertain
+work; it cannot reconstruct a receipt that never committed.
+
+Health results retain observed node/locality values, count only live nodes and
+claim completed verification only after every check passes. Aggregate history
+reports unavailable journals as unknown, including when all journals are down.
+Sidebar labels remain available to assistive technology at mobile widths.
 
 Scaling, decommission and upgrades remain unavailable pending a validated
 multi-node adapter. There is no Docker socket mount or browser operation to

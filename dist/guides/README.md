@@ -68,7 +68,7 @@ matching/stewardship, normalized-table migration and pilot approval remain separ
 | 50M parties / 100M relationships and pilot backlog | [Scale assessment](scale/SCALE_AND_PILOT.md) |
 | Origin and review findings | [Provenance](docs/source-provenance.json), [documentation audit](docs/DOCUMENTATION_AUDIT.md) |
 
-The portal links the monitor, migration workspace, 28 component design pages, 19 ADR pages, capacity model and run guide. Design pages retain engineering prompts and label implemented lab features versus production targets.
+The portal links the monitor, migration workspace, 28 component design pages, 20 ADR pages, capacity model and run guide. Design pages retain engineering prompts and label implemented lab features versus production targets.
 
 ## Implementation boundary
 

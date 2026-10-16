@@ -15,6 +15,7 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from typing import Literal
 from urllib.parse import urlsplit
 
@@ -49,6 +50,7 @@ class ClusterControl:
     def __init__(self):
         self.stop = threading.Event()
         self.threads = []
+        self.pending_updates = {}
 
     def target(self, key):
         if key not in TARGETS:
@@ -207,7 +209,7 @@ class ClusterControl:
         except psycopg.errors.SerializationFailure:
             raise
         except Exception:
-            raise HTTPException(503, "Cluster operation journal unavailable; no new operation accepted") from None
+            raise HTTPException(503, "Operation acceptance is uncertain; retry with the same request identifier") from None
 
     def update(self, key, job, state, steps, result=None, error="", step=-1):
         with self.connect(key) as c, c.transaction():
@@ -222,6 +224,9 @@ class ClusterControl:
                 if not initialized:
                     self.initialize(key)
                     initialized = True
+                # Persist any known native receipts before reconciling or taking
+                # another job. Retrying the journal never replays native SQL.
+                self.flush_pending_update(key)
                 # Reconcile a lost final journal write once SQL recovers. Never
                 # leave Running forever or replay an uncertain database mutation.
                 self.interrupt_running(key, "execution_state_uncertain")
@@ -235,6 +240,12 @@ class ClusterControl:
                 # Retain journal state on database failure; never log SQL/DSNs.
                 pass
             self.stop.wait(1)
+
+    def flush_pending_update(self, key):
+        pending = self.pending_updates.get(key)
+        if pending is not None:
+            self.update(key, **pending)
+            del self.pending_updates[key]
 
     def execute(self, key, job, kind, steps):
         source = "sfl_canary_" + job.hex
@@ -250,11 +261,14 @@ class ClusterControl:
                 self.update(key, job, "running", steps, result, step=index)
                 if kind == "health_check":
                     snap = self.snapshot(key)
-                    valid = [snap["sql"], snap["status"] == "healthy", snap.get("locality_matches", False)][index]
-                    if not valid:
+                    result = {"sql": snap["sql"],
+                              "live_nodes": sum(n["status"] == "live" for n in snap["nodes"]),
+                              "locality_matches": snap.get("locality_matches", False), "ha": False}
+                    checks = [snap["sql"], snap["status"] == "healthy", result["locality_matches"]]
+                    if not checks[index] or (index == len(steps) - 1 and not all(checks)):
                         raise RuntimeError("Check failed")
-                    result = {"sql": True, "live_nodes": len(snap["nodes"]), "locality_matches": True,
-                              "ha": False, "summary": "SQL, live nodes, available ranges and country labels verified. Single-node topology has no failover."}
+                    if index == len(steps) - 1:
+                        result["summary"] = "SQL, live nodes, available ranges and country labels verified. Single-node topology has no failover."
                 elif index == 0:
                     snap = self.snapshot(key)
                     if snap["status"] != "healthy" or not snap.get("locality_matches"):
@@ -297,7 +311,14 @@ class ClusterControl:
                 if step["state"] == "running":
                     step["state"] = terminal
             # Leave failed canary artifacts for inspection, never delete on guesswork.
-            self.update(key, job, terminal, steps, result, error=error_code or ("operation_requires_inspection" if terminal == "interrupted" else "operation_failed_inspect_cluster"))
+            pending = {"job": job, "state": terminal, "steps": deepcopy(steps), "result": deepcopy(result),
+                       "error": error_code or ("operation_requires_inspection" if terminal == "interrupted" else "operation_failed_inspect_cluster")}
+            try:
+                self.update(key, **pending)
+            except Exception:
+                # Keep known receipts while this process survives the SQL outage.
+                # A process loss still requires native-job/artifact inspection.
+                self.pending_updates[key] = pending
 
     def environment(self):
         targets = [("Policy · " + t["name"], "http://opa-" + k + ":8181/health") for k, t in TARGETS.items()]

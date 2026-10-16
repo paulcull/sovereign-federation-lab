@@ -21,13 +21,22 @@ outside the executed scope. See [scope and commands](CLUSTER_CONTROL.md).
 - Real SQL metadata fixtures check recovery evidence beyond the recent-activity
   window and reconciliation of an uncertain Running state without replay. These
   are separate from native backup/restore evidence.
-- Five orchestration units cover stop after backup, lost restore response,
+- Nine orchestration units cover stop after backup, lost restore response,
   failed verification with native receipts retained, failed preflight and low
-  disk headroom. Their stubs are not CockroachDB integration evidence.
+  disk headroom; both post-step and terminal journal writes failing after a
+  native receipt, reconnect persistence without replay; lost enqueue COMMIT
+  acknowledgement; and observed health values without premature verification.
+  Their stubs are not CockroachDB integration evidence.
 - Chromium completes fleet search, Overview/Nodes, health execution, recovery
   review, incorrect/correct confirmation, results and separate Environment
   navigation. Fleet and Recovery fit 375/768/1440px viewports. A browser transport
-  fault clears live cards and displays unavailability.
+  fault clears live cards and displays unavailability. A new lost-acknowledgement
+  browser check first commits a real API/SQL health operation, replaces only its
+  HTTP response with a 503, and confirms a retry reuses its UUID and original job.
+  All-journal transport failure shows unknown history instead of an empty success;
+  all four mobile sidebar controls retain accessible names. Transport simulation
+  tests presentation and retry behavior; the separate actual India pause gate
+  supplies database-outage evidence.
 
 ## Failures found and corrected
 
@@ -48,6 +57,22 @@ Review found lost native receipts on interruption, stranded Running jobs after
 SQL loss and readiness inferred from truncated history. Those paths are fixed
 with regressions. The refresh button's accessible name excludes its decoration.
 
+PR review also found that losing both post-step and terminal journal writes could
+discard a known native receipt. A per-region pending update now retries the full
+result before another task without replaying native SQL. This survives a SQL
+reconnect while the process remains alive; simultaneous process loss still needs
+native-job/artifact inspection. Enqueue errors now report uncertain acceptance,
+and page retries retain the request UUID per cluster/operation. Health checks
+record actual node/locality observations and add a verification summary only
+after the final check passes. Unavailable aggregate history and mobile accessible
+names are corrected in source and generated assets.
+
+The final browser retry regression waits for the specific committed job receipt
+before checking success; matching a previous completed card had made an early
+test assertion race the response. It verifies both HTTP 503 acknowledgement loss
+and a browser AbortError after a real commit, retaining every UUID/receipt
+assertion. AbortError's read-only message is handled without mutating it.
+
 ## Evidence and limits
 
 CI executes the original container/pilot gates, cluster recovery/restart/outage
@@ -59,3 +84,14 @@ a changed revision.
 The existing vendor CVE gate remains blocked. Functional acceptance is not
 security approval, business backup coverage, off-host DR, HA or physical residency
 validation.
+
+The merge follow-up passed nine controller units, 30 security-audit regressions,
+native cluster recovery/restart, actual India SQL pause with independent UK work,
+the complete base federation/operational/migration/telemetry suite, MDM/servicing
+SQL/OPA acceptance and all four Chromium walkthroughs. Documentation verification
+passed 57 HTML pages, 1,637 local links and 20 ADRs. Logs remain under ignored
+`artifacts/pr7-followup/` and `artifacts/pr7-security-final-2026-10-16/` locally.
+The real dependency audit completed all 11 image scans without errors, with zero
+Python advisories/skips, 34 accepted CockroachDB finding instances and 13 other
+vendor finding instances still blocking. Their proposed exceptions remain
+inactive pending user approval; this is a completed failed security gate.

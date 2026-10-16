@@ -97,6 +97,37 @@ exited 1 for the 13 other vendor finding instances. This verifies the
 disposition against real scanner evidence; it is not a passing security gate or
 a new clean-build functional/container result.
 
+## Non-Cockroach findings requiring a decision
+
+The PR #7 recheck completed all 11 current image scans without errors and found
+zero Python advisories/skips. The 34 approved CockroachDB finding scopes are
+accepted; **13 HIGH finding instances across eight CVEs remain blocking**:
+
+| Pinned component | Findings | CVEs | Reported package fixes |
+|---|---:|---|---|
+| Grafana 12.4.13 | 5 | CVE-2026-100352, CVE-2026-100353, CVE-2026-100354; CVE-2026-21728, CVE-2026-28377 | kin-openapi 0.149.0 covers the three parser/validation findings; Tempo 2.10.3 covers both Tempo-module findings |
+| Loki 3.7.8 | 4 | CVE-2026-78667, CVE-2026-78669, CVE-2026-97031 | Go 1.26.9 / 1.27.2 and golang.org/x/net 0.60.0; CVE-2026-78669 appears in both dependencies |
+| Collector 0.162.0 | 4 | CVE-2026-78667, CVE-2026-78669, CVE-2026-97031 | Go 1.26.9 / 1.27.2 and golang.org/x/net 0.60.0; CVE-2026-78669 appears in both dependencies |
+
+These package fixes are not present in the pinned vendor binaries. The checked
+next compatible image tags are not published; Collector/Loki latest release
+redirects remain 0.162.0/3.7.8. The previously evaluated Grafana 13.2.4 major-line
+image had 56 HIGH findings, so upgrading to it does not clear the gate. Replacing
+embedded dependencies in place would not create a supported vendor release.
+No compatible official-image remediation was identified among these releases.
+
+The [pending exception requests](security/non-cockroach-exception-requests-2026-10-16.json)
+list exact images, digests, package versions, CVEs and reported fixes. They propose
+the same synthetic-only scope and 15 November expiry as CockroachDB and require
+separate user approval. **They are not active acceptances and are never loaded by
+the audit.** No non-Cockroach exception has been approved or applied. The Grafana
+Tempo findings also need a reviewed applicability assessment; this lab does not
+infer reachability or silently mark embedded client code unaffected.
+
+Use patched vendor builds plus full revalidation, or explicitly decide these
+scoped development exceptions. Separately maintained source builds require their
+own build, dependency and runtime validation; no vendor fork is introduced here.
+
 ## Refresh dependencies
 
 Edit the direct requirements in `poc/requirements.in`, `scale/requirements.in`

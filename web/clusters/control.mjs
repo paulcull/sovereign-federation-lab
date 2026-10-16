@@ -3,7 +3,8 @@ const $ = (s) => document.querySelector(s);
 const main = $('#main');
 const escape = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const e = escape;
-let fleet = null, histories = {}, environment = null, route = {}, filter = 'all', search = '', selectedJob = '', refreshing = false, actionCluster = '', requestId = '';
+let fleet = null, histories = {}, environment = null, route = {}, filter = 'all', search = '', selectedJob = '', refreshing = false, actionCluster = '';
+const requestIds = new Map();
 const labels = {healthy:'Healthy', attention:'Needs attention', partial:'Partial visibility', unreachable:'Unreachable', succeeded:'Succeeded', running:'Running', queued:'Queued', failed:'Failed', interrupted:'Needs inspection', unavailable:'Unavailable'};
 const kinds = {health_check:'Cluster health check', recovery_rehearsal:'Recovery rehearsal'};
 const date = (ts) => ts ? new Date(ts * 1000).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Not run yet';
@@ -22,7 +23,9 @@ async function api(path, options={}) {
     const response = await fetch('/api/cluster-control/' + path, {cache:'no-store', signal:controller.signal, ...options});
     if (!response.ok) {
       let body = {}; try { body = await response.json(); } catch {}
-      throw new Error(typeof body.detail === 'string' ? body.detail : `Cluster API returned ${response.status}`);
+      const error = new Error(typeof body.detail === 'string' ? body.detail : `Cluster API returned ${response.status}`);
+      error.status = response.status;
+      throw error;
     }
     return await response.json();
   } finally { clearTimeout(timer); }
@@ -78,7 +81,7 @@ function operationsPage() {
   const jobs = Object.values(histories).flatMap(h=>h.jobs).sort((a,b)=>b.created_at-a.created_at);
   const unavailable = Object.entries(histories).filter(([,h])=>!h.available).map(([key])=>key.toUpperCase());
   return heading('Operation history', 'Database checks and recovery rehearsals, recorded in each cluster. Environment lifecycle operations are managed separately.') +
-    (unavailable.length?`<div class="callout warning">Operation journals unavailable: ${e(unavailable.join(', '))}. The available history below is incomplete.</div>`:'') + jobsMarkup(jobs);
+    (unavailable.length?`<div class="callout warning">Operation journals unavailable: ${e(unavailable.join(', '))}. The available history below is incomplete.</div>`:'') + jobsMarkup(jobs, unavailable.length===0 || jobs.length>0);
 }
 
 function environmentPage() {
@@ -123,9 +126,16 @@ async function refresh({quiet=false}={}) {
 }
 
 async function run(key, kind) {
-  const id = requestId || crypto.randomUUID(); requestId=id;
-  const result=await api(`clusters/${key}/operations`,{method:'POST',headers:{'Content-Type':'application/json','X-Lab-Control':'1'},body:JSON.stringify({kind,request_id:id,confirmation:kind==='recovery_rehearsal'?key:''})});
-  selectedJob=result.id; requestId='';
+  const intent = key + ':' + kind;
+  const id = requestIds.get(intent) || crypto.randomUUID(); requestIds.set(intent,id);
+  let result;
+  try {
+    result=await api(`clusters/${key}/operations`,{method:'POST',headers:{'Content-Type':'application/json','X-Lab-Control':'1'},body:JSON.stringify({kind,request_id:id,confirmation:kind==='recovery_rehearsal'?key:''})});
+  } catch(error) {
+    if(!error.status || error.status>=500) throw new Error(error.message + ' Acceptance may be uncertain. Retry this operation to reuse the same request identifier.');
+    throw error;
+  }
+  selectedJob=result.id; requestIds.delete(intent);
   navigate(clusterRoute(key,'activity'));
   await refresh({quiet:true});
   $('#announcement').textContent='Operation accepted. Progress is recorded in the selected cluster.';
@@ -138,8 +148,8 @@ document.addEventListener('click', async event=> {
   if(target.dataset.route){navigate(target.dataset.route.includes('=')?target.dataset.route:'page='+target.dataset.route);return;}
   if(target.hasAttribute('data-refresh')){target.disabled=true;await refresh();return;}
   if(target.dataset.filter){filter=target.dataset.filter;render();return;}
-  if(target.dataset.recovery){actionCluster=target.dataset.recovery;requestId=crypto.randomUUID();$('#dialog-cluster').textContent=fleet.clusters.find(c=>c.id===actionCluster).name;$('#confirm-label').textContent=actionCluster.toUpperCase();$('#confirm-cluster').value='';$('#dialog-error').textContent='';$('#operation-dialog').showModal();return;}
-  if(target.dataset.check){target.disabled=true;try{requestId=crypto.randomUUID();await run(target.dataset.check,'health_check');}catch(error){$('#announcement').textContent=error.message;main.insertAdjacentHTML('afterbegin',`<div class="callout warning" role="alert">${e(error.message)}</div>`);target.disabled=false;}}
+  if(target.dataset.recovery){actionCluster=target.dataset.recovery;$('#dialog-cluster').textContent=fleet.clusters.find(c=>c.id===actionCluster).name;$('#confirm-label').textContent=actionCluster.toUpperCase();$('#confirm-cluster').value='';$('#dialog-error').textContent='';$('#operation-dialog').showModal();return;}
+  if(target.dataset.check){target.disabled=true;try{await run(target.dataset.check,'health_check');}catch(error){$('#announcement').textContent=error.message;main.insertAdjacentHTML('afterbegin',`<div class="callout warning" role="alert">${e(error.message)}</div>`);target.disabled=false;}}
 });
 document.addEventListener('input',event=>{if(event.target.id==='cluster-search'){search=event.target.value;$('#cluster-grid').innerHTML=fleetCards();}});
 $('#close-dialog').onclick=$('#cancel-dialog').onclick=()=>$('#operation-dialog').close();
