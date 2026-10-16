@@ -107,7 +107,7 @@
   },
   "validation": {
     "audit_regressions": "passed: 30 tests",
-    "gateway_real_address_change": "passed: real Grafana address moved and restored without restarting gateway",
+    "gateway_real_address_change": "passed: real Grafana receives a different dynamically allocated Docker address without restarting gateway; temporary address reservations removed and original network attachment restored",
     "api_collector_loki_grafana": "passed: actual API span/log/header trace correlation and provisioned dashboard through gateway",
     "mdm_foundations": "passed: real SQL/OPA/system/experience/servicing acceptance",
     "pilot_faults": "passed: actual peer, OPA and Collector outages, restart recovery, trace correlation and independent owner reads",
@@ -135,7 +135,8 @@
     "observed_failures": [
       "Grafana pull failed extracting its last layer with no space left on device; removing superseded images reclaimed about 8 GB and the pull succeeded.",
       "Gateway returned 502 after Grafana address changed; corrected Docker DNS re-resolution and passed real-address-change regression.",
-      "Buildx could not write its activity file in read-only Docker config; used BUILDX_CONFIG=/tmp/sfl-observability-buildx while retaining registry configuration."
+      "Buildx could not write its activity file in read-only Docker config; used BUILDX_CONFIG=/tmp/sfl-observability-buildx while retaining registry configuration.",
+      "The first clean CI startup passed, but the new DNS regression used a static address rejected by GitHub default Docker IPAM. Corrected the fixture to use ordinary dynamic allocation with temporary sleep-only address reservations from the already-audited gateway image; strict different-address/unchanged-gateway assertions remain."
     ],
     "recovery_headroom_snapshot": [
       {
@@ -202,5 +203,14 @@
     "grafana": "http://localhost:8080/grafana/d/sovereign-logs",
     "clusters": "http://localhost:8080/clusters/",
     "mdm": "http://localhost:8081/"
-  }
+  },
+  "ci_history": [
+    {
+      "run_id": 38961640733,
+      "commit": "1ce8a07508ead70bd4e75f7d53a9f020136e781b",
+      "startup": "passed",
+      "gateway_dns": "failed: static address unsupported on default automatic subnet",
+      "later_gates": "not executed; no pass claimed"
+    }
+  ]
 }

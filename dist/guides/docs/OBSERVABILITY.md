@@ -35,7 +35,7 @@ binary. Grafana UI metadata is separate from CockroachDB business and audit data
 The gateway resolves Docker service names again when their addresses change.
 `python3 poc/tests/gateway_dns_acceptance.py` moves the real Grafana container to
 a different address, verifies access through the unchanged gateway process, and
-restores its original address. Run it after startup and separately from mutable
+restores its original network attachment. Run it after startup and separately from mutable
 fault suites. This protects image replacements from stale upstream-address 502s.
 
 A newer version does not establish a security pass. The Collector candidate scan

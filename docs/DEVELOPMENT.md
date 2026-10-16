@@ -101,7 +101,7 @@ Tests assume no concurrent manual fixture edits. They restore operational policy
 
 After an image upgrade, `python3 poc/tests/gateway_dns_acceptance.py` verifies
 that the unchanged gateway process follows a real Grafana address change and
-restores its original address. Run it separately from the mutable fault suites.
+restores its original network attachment. Run it separately from the mutable fault suites.
 See [observability upgrades](OBSERVABILITY.md#pinned-releases-and-upgrades) for
 the Grafana major-version state backup and the current vendor security findings.
 

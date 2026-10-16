@@ -1,15 +1,15 @@
-"""Real Docker DNS regression; restore Grafana's original address in finally.
+"""Real Docker DNS regression; restore Grafana's network attachment in finally.
 
 Run on the Docker host after ./lab up, with no concurrent mutable lab suites.
 The gateway process must serve the same real Grafana after its address changes.
 No alternate server or simulated health response is used.
 """
-import ipaddress
 import json
 import os
 import subprocess
 import time
 import urllib.request
+import uuid
 
 
 def docker(*args):
@@ -50,38 +50,51 @@ version = healthy()
 networks = grafana['NetworkSettings']['Networks']
 assert len(networks) == 1, 'This regression targets the single-network development lab'
 network_name, endpoint = next(iter(networks.items()))
-network = json.loads(docker('network', 'inspect', network_name))[0]
 original = endpoint['IPAddress']
-subnet = next(ipaddress.ip_network(c['Subnet']) for c in network['IPAM']['Config']
-              if ipaddress.ip_network(c['Subnet']).version == 4)
-occupied = {c['IPv4Address'].split('/')[0] for c in network['Containers'].values()}
-occupied.update(c.get('Gateway', '') for c in network['IPAM']['Config'])
-replacement = next(str(subnet.broadcast_address - offset) for offset in range(2, 100)
-                   if str(subnet.broadcast_address - offset) not in occupied
-                   and subnet.broadcast_address - offset > subnet.network_address)
+requested_ip = (endpoint.get('IPAMConfig') or {}).get('IPv4Address')
 aliases = endpoint.get('Aliases') or ['grafana']
+reservations = []
 
 
-def connect(address):
-    args = ['network', 'connect', '--ip', address]
+def connect(address=None):
+    args = ['network', 'connect']
+    if address:
+        args.extend(['--ip', address])
     for alias in aliases:
         args.extend(['--alias', alias])
     docker(*args, network_name, grafana['Id'])
 
 
 try:
-    docker('network', 'disconnect', network_name, grafana['Id'])
-    connect(replacement)
-    assert container('grafana')['NetworkSettings']['Networks'][network_name]['IPAddress'] != original
+    # Default Docker IPAM can reject --ip even though inspect shows a subnet.
+    # Reserve released addresses with short-lived sleep processes using the
+    # already-built gateway image. Grafana itself receives a normal dynamic IP.
+    # These containers serve no HTTP or business/database substitute.
+    for attempt in range(8):
+        docker('network', 'disconnect', network_name, grafana['Id'])
+        holder = docker('run', '--rm', '-d', '--network', network_name,
+                        '--name', 'sfl-dns-reserve-' + uuid.uuid4().hex[:12],
+                        '--entrypoint', '/bin/sh', gateway['Image'], '-c', 'sleep 120')
+        reservations.append(holder)
+        connect()
+        if container('grafana')['NetworkSettings']['Networks'][network_name]['IPAddress'] != original:
+            break
+    else:
+        raise AssertionError('Docker did not allocate a different real Grafana address')
     await_healthy(version)
     current_gateway = container('gateway')
     assert current_gateway['Id'] == gateway['Id']
     assert current_gateway['State']['StartedAt'] == gateway['State']['StartedAt']
     print('PASS gateway follows a different real Grafana address without restarting')
 finally:
+    for holder in reservations:
+        subprocess.run(['docker', 'rm', '-f', holder], check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     current = container('grafana')['NetworkSettings']['Networks']
     if network_name in current:
         docker('network', 'disconnect', network_name, grafana['Id'])
-    connect(original)
+    # Preserve an originally requested static IP; otherwise let Docker restore
+    # the original network/aliases with its normal dynamic address allocation.
+    connect(requested_ip)
     await_healthy(version)
-print('PASS original Grafana address restored and dashboard service healthy')
+print('PASS Grafana network attachment restored, reservations removed and service healthy')
