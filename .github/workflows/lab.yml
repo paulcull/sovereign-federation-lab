@@ -52,7 +52,7 @@ jobs:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
         run: |
           python3 -m unittest discover -s scripts/tests -p 'test_*.py'
-          python3 scripts/audit_dependencies.py 2>&1 | tee artifacts/security.log
+          python3 scripts/audit_dependencies.py --risk-context synthetic-lab 2>&1 | tee artifacts/security.log
       - name: Collect container diagnostics
         if: always()
         run: |

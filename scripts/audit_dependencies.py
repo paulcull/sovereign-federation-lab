@@ -1,8 +1,9 @@
 """Audit locked Python dependencies and actual Compose images, without payloads.
 
 All findings are retained. Python findings, scan errors, skipped Python packages
-and fixable HIGH/CRITICAL image findings fail the gate. Unfixed image findings
-remain visible in summary.json and the complete Trivy reports.
+and unaccepted fixable HIGH/CRITICAL image findings fail the gate. Strict mode
+accepts no risks. The explicit synthetic-lab context can apply exact, unexpired
+repository risk records without filtering scanner output.
 
 Ambient Trivy filters/configuration cannot narrow the audit. Only its cache,
 database repositories, CA and registry authentication variables are inherited;
@@ -20,11 +21,13 @@ import fcntl
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 from datetime import datetime, timezone
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
+RISK_POLICY = ROOT / 'docs/security/risk-acceptances.json'
 TRIVY_ENVIRONMENT = frozenset({
     'TRIVY_CACHE_DIR', 'TRIVY_DB_REPOSITORY', 'TRIVY_JAVA_DB_REPOSITORY',
     'TRIVY_CACERT', 'TRIVY_USERNAME', 'TRIVY_PASSWORD', 'TRIVY_TOKEN',
@@ -34,6 +37,82 @@ TRIVY_ENVIRONMENT = frozenset({
 
 class AuditFailure(Exception):
     """Fixed diagnostic authored here, safe to include in public evidence."""
+
+
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
+def risk_timestamp(value):
+    if not isinstance(value, str):
+        raise AuditFailure('Risk acceptance has an invalid timestamp')
+    try:
+        parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except ValueError:
+        raise AuditFailure('Risk acceptance has an invalid timestamp') from None
+    if parsed.tzinfo is None or parsed.utcoffset().total_seconds() != 0:
+        raise AuditFailure('Risk acceptance timestamps must specify UTC')
+    return parsed
+
+
+def risk_state(record):
+    now = utc_now()
+    if now < risk_timestamp(record['approved_at']):
+        return 'not_yet_active'
+    return 'active' if now < risk_timestamp(record['expires_at']) else 'expired'
+
+
+def load_risk_acceptances(context):
+    if context == 'strict':
+        return []
+    try:
+        policy = json.loads(RISK_POLICY.read_text())
+    except (OSError, ValueError):
+        raise AuditFailure('Risk acceptance policy is missing or malformed') from None
+    if (not isinstance(policy, dict) or set(policy) != {'schema_version', 'acceptances'}
+            or type(policy['schema_version']) is not int or policy['schema_version'] != 1
+            or not isinstance(policy['acceptances'], list)):
+        raise AuditFailure('Risk acceptance policy has an invalid schema')
+    fields = {'id', 'context', 'image', 'cve', 'package', 'installed_version',
+              'severity', 'owner', 'approved_by', 'approved_at', 'expires_at',
+              'rationale', 'conditions', 'remediation'}
+    ids, scopes, records = set(), set(), []
+    for record in policy['acceptances']:
+        if (not isinstance(record, dict) or set(record) != fields
+                or any(not isinstance(value, str) or not value.strip()
+                       for value in record.values())
+                or not re.fullmatch(r'SFL-RA-[0-9]{4}', record['id'])
+                or record['context'] != 'synthetic-lab'
+                or not re.fullmatch(r'[^\s@]+:[^\s@]+@sha256:[0-9a-f]{64}', record['image'])
+                or not re.fullmatch(r'CVE-[0-9]{4}-[0-9]{4,}', record['cve'])
+                or record['severity'] not in {'HIGH', 'CRITICAL'}):
+            raise AuditFailure('Risk acceptance has incomplete or invalid scope')
+        if risk_timestamp(record['expires_at']) <= risk_timestamp(record['approved_at']):
+            raise AuditFailure('Risk acceptance expiry must follow approval')
+        scope = tuple(record[key] for key in ('context', 'image', 'cve', 'package',
+                                              'installed_version', 'severity'))
+        if record['id'] in ids or scope in scopes:
+            raise AuditFailure('Risk acceptance has a duplicate ID or scope')
+        ids.add(record['id'])
+        scopes.add(scope)
+        records.append({**record, 'state': risk_state(record)})
+    return records
+
+
+def accepted_risk(image, vulnerability, records):
+    for record in records:
+        record['state'] = risk_state(record)
+        reference, digest = record['image'].split('@', 1)
+        repository = reference.rsplit(':', 1)[0]
+        if (record['state'] == 'active'
+                and record['image'] in image['tags']
+                and repository + '@' + digest in image['repo_digests']
+                and vulnerability.get('VulnerabilityID') == record['cve']
+                and vulnerability.get('PkgName') == record['package']
+                and vulnerability.get('InstalledVersion') == record['installed_version']
+                and vulnerability.get('Severity') == record['severity']):
+            return record['id']
+    return None
 
 
 def trivy_environment():
@@ -50,8 +129,6 @@ def save_summary(output, summary):
 
 
 def audit(args, output, reports, summary):
-    summary['commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-    summary['working_tree_dirty'] = bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip())
     summary['trivy'] = json.loads(subprocess.check_output(
         [args.trivy, 'version', '--config', '', '--format', 'json'],
         text=True, env=trivy_environment()))
@@ -144,13 +221,34 @@ def audit(args, output, reports, summary):
             raise AuditFailure('Container image report has malformed vulnerability fields')
         fixable = [v for v in vulnerabilities if v.get('FixedVersion')
                    and v['Severity'] in {'HIGH', 'CRITICAL'}]
+        accepted = []
+        for finding in fixable:
+            risk_id = accepted_risk(image, finding, summary['risk_acceptances'])
+            if risk_id:
+                accepted.append({key: finding[key] for key in (
+                    'VulnerabilityID', 'PkgName', 'InstalledVersion', 'Severity', 'FixedVersion')}
+                                | {'risk_acceptance_id': risk_id})
+        blocking = len(fixable) - len(accepted)
         image.update(report=str(report.relative_to(output)), counts=dict(Counter(v['Severity'] for v in vulnerabilities)),
                      fixable_high_critical=len(fixable),
+                     accepted_high_critical=len(accepted),
+                     unaccepted_fixable_high_critical=blocking,
+                     accepted_findings=accepted,
                      unfixed_advisory_ids=sorted({v['VulnerabilityID'] for v in vulnerabilities
                                                  if not v.get('FixedVersion')}))
         summary['images'].append(image)
-        failed |= bool(fixable)
-        print(f"{', '.join(image['tags'])}: {image['counts']}; fixable HIGH/CRITICAL={len(fixable)}", flush=True)
+        failed |= bool(blocking)
+        print(f"{', '.join(image['tags'])}: {image['counts']}; fixable HIGH/CRITICAL={len(fixable)}; "
+              f"accepted={len(accepted)}; blocking={blocking}", flush=True)
+    summary['accepted_high_critical'] = sum(image['accepted_high_critical'] for image in summary['images'])
+    summary['unaccepted_fixable_high_critical'] = sum(
+        image['unaccepted_fixable_high_critical'] for image in summary['images'])
+    used = {finding['risk_acceptance_id'] for image in summary['images']
+            for finding in image['accepted_findings']}
+    for record in summary['risk_acceptances']:
+        record['state'] = risk_state(record)
+        if record['id'] in used and record['state'] != 'active':
+            raise AuditFailure('Risk acceptance expired during audit; rerun without that acceptance')
     return failed
 
 
@@ -158,7 +256,8 @@ def run_locked_audit(args, output):
     """Caller holds the output lock through initial and final publication."""
     summary = {'run_id': uuid.uuid4().hex,
                'scanned_at': datetime.now(timezone.utc).isoformat(),
-               'gate': 'Python: all known findings; images: fixable HIGH/CRITICAL; scan errors fail',
+               'gate': 'Python: all known findings; images: unaccepted fixable HIGH/CRITICAL; scan errors fail',
+               'risk_context': args.risk_context, 'risk_acceptances': [],
                'status': 'incomplete', 'passed': False, 'completed': False,
                'images': [], 'errors': []}
     # Publish failed/incomplete evidence before Git, scanner discovery or network
@@ -168,6 +267,10 @@ def run_locked_audit(args, output):
     try:
         reports = output / ('run-' + summary['run_id'])
         reports.mkdir()
+        summary['commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+        summary['working_tree_dirty'] = bool(subprocess.check_output(
+            ['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip())
+        summary['risk_acceptances'] = load_risk_acceptances(args.risk_context)
         failed = audit(args, output, reports, summary)
         summary['completed'] = not summary['errors']
         exit_code = int(failed or not summary['completed'])
@@ -181,11 +284,15 @@ def run_locked_audit(args, output):
         summary['errors'].append(f'Dependency audit could not complete ({type(error).__name__}); acceptance is blocked.')
     finally:
         summary['passed'] = summary['completed'] and not failed and not summary['errors']
-        summary['status'] = ('passed' if summary['passed'] else
+        summary['status'] = ('passed_with_risk_acceptance'
+                             if summary['passed'] and summary.get('accepted_high_critical') else
+                             'passed' if summary['passed'] else
                              'failed' if summary['completed'] else 'incomplete')
         summary['finished_at'] = datetime.now(timezone.utc).isoformat()
         save_summary(output, summary)
-    print(f"{'PASS' if summary['passed'] else 'FAIL'} dependency gate; evidence retained in {output}")
+    label = 'PASS WITH ACCEPTED RISK' if summary['status'] == 'passed_with_risk_acceptance' else (
+        'PASS' if summary['passed'] else 'FAIL')
+    print(f"{label} dependency gate; evidence retained in {output}")
     return exit_code
 
 
@@ -194,6 +301,8 @@ def main(argv=None):
     parser.add_argument('--pip-audit', default='pip-audit')
     parser.add_argument('--trivy', default='trivy')
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/security')
+    parser.add_argument('--risk-context', choices=('strict', 'synthetic-lab'), default='strict',
+                        help='Explicit synthetic lab risk acceptance; strict applies no exceptions (default).')
     args = parser.parse_args(argv)
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)

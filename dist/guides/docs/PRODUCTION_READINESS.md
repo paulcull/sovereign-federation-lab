@@ -15,7 +15,10 @@ deployment, identity configuration or policy bundle.
 The [dependency security audit](DEPENDENCY_SECURITY.md) records current patch
 updates and unresolved vendor CVEs. Its strict image gate remains failed; a
 successful functional container suite does not clear those findings or supply a
-vulnerability risk acceptance.
+vulnerability risk acceptance. The later [SFL-RA-0001 through SFL-RA-0034 development decisions](security/risk-acceptances.json)
+accept the 34 individually enumerated current CockroachDB blocking findings for the pinned synthetic lab until
+15 November 2026. It provides no bank-pilot or production acceptance. Other vendor
+findings remain blocking; use the [scope and expiry rules](DEPENDENCY_SECURITY.md#accepted-development-risk-cockroachdb-findings).
 
 ## What the concept must protect
 

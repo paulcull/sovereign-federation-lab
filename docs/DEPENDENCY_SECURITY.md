@@ -36,12 +36,66 @@ the audit rather than silently reducing coverage.
 
 The gate rejects all known Python advisories and skipped Python packages. It
 also rejects every HIGH or CRITICAL image finding with a reported upstream fixed
-version. Lower-severity and unfixed findings remain in the reports. A fixed Go
+version unless an explicit, active risk record applies in `--risk-context synthetic-lab`.
+Strict mode is the default and applies no acceptances. Lower-severity and unfixed
+findings remain in the reports. A fixed Go
 or OS package version does not imply that a vendor has published a compatible
-image containing it. Those findings still block the gate; this project does not
-invent an exception or describe a failing audit as passed. There is no CVE
-ignore list. A passing gate would not mean zero vulnerabilities or production
+image containing it. Unaccepted findings still block the gate. There is no scanner
+ignore list: risk decisions are applied after the complete report is validated,
+and accepted findings remain visible. A passing gate would not mean zero vulnerabilities or production
 approval.
+
+## Accepted development risk: CockroachDB findings
+
+On 16 October 2026 the user expanded acceptance from the critical CockroachDB
+CVE to the current CockroachDB blocks. [SFL-RA-0001 through SFL-RA-0034](security/risk-acceptances.json)
+enumerate **34 finding scopes covering 31 CVEs**, including the CRITICAL
+CVE-2025-68121, for the exact pinned CockroachDB 25.4.17 manifest. This includes
+the observed Go, libxml2, OpenSSL and PCRE2 findings. Every record binds an exact
+CVE, package, installed version and severity. The risk owner is `paulcull`. Each expires at
+**00:00 UTC on 15 November 2026**, unless replaced through a separate reviewed
+decision. The vulnerable code remains present.
+
+Acceptance applies only to trusted, single-host synthetic development with
+loopback gateways and internal SQL/admin ports. It does not approve a bank pilot,
+production, a public preview or real customer data. The context flag declares
+this operating scope; the audit does not independently inspect runtime exposure
+or data contents. Existing deployment and functional gates remain mandatory.
+
+CI declares this synthetic context explicitly. To reproduce that decision locally,
+append `--risk-context synthetic-lab` to the audit command above. Omit the option
+or use `--risk-context strict` to apply no exceptions. There is no production
+acceptance mode or ambient environment-variable override.
+
+The policy must match the configured image reference **and** its observed registry
+digest, CVE, package, installed version and severity. Changed or new findings and
+images do not inherit acceptance. Missing/malformed records fail closed; expired
+or future records cannot accept findings. Acceptance is checked again before the
+audit completes. The full scanner output and raw finding counts are retained;
+`accepted_findings`, `accepted_high_critical`, `unaccepted_fixable_high_critical`
+and the policy's owner, rationale and expiry make the disposition inspectable.
+If accepted findings are the only otherwise blocking results, the exit code is
+zero with `status: passed_with_risk_acceptance`, not a claim of zero CVEs.
+
+Against the 16 October inventory, this accepts **all 34 currently blocking
+CockroachDB finding instances**. **13 remain blocking**: five Grafana, four Loki
+and four Collector. The records are not a blanket CockroachDB exclusion: unlisted
+CVEs/packages, changed versions or image digests, and other products do not inherit
+acceptance. No Python advisory, skipped package, missing image or scan error is
+accepted. Obtain compatible patched vendor images, rerun complete
+acceptance and retire the record; review it before expiry or any scope/exposure
+change.
+
+Executed validation on 16 October: all 30 audit regressions passed, including
+expiry during a scan, malformed policy, strict defaults and changed image/package
+scope. The additional register tests require exact correspondence to the observed
+CockroachDB inventory, retain a new unlisted CockroachDB finding as blocking and
+reject applying the same CVEs to another product. The real audit scanned all 11
+current shared lab image identities without errors, retained zero Python
+advisories/skips, accepted the 34 registered CockroachDB finding instances and
+exited 1 for the 13 other vendor finding instances. This verifies the
+disposition against real scanner evidence; it is not a passing security gate or
+a new clean-build functional/container result.
 
 ## Refresh dependencies
 
@@ -83,7 +137,49 @@ walkthroughs sequentially. Keep mandatory transactional audit independent of
 telemetry failures and check trace/log correlation after SDK or Collector changes.
 Use the exact commit's CI result, not a previous image's acceptance.
 
-## Findings and residual exposure
+## Latest recheck: 16 October 2026
+
+**PR #6 remains blocked by its security gate.** Its latest clean-build CI passed
+every functional, outage and browser stage and failed only the dependency audit.
+The 15 October CI reported 44 blocking vendor finding instances. A fresh local
+audit on 16 October completed without scan errors and reported **47**:
+
+| Pinned vendor image | HIGH/CRITICAL findings with a reported fixed version |
+|---|---:|
+| CockroachDB 25.4.17 | 34, including one CRITICAL |
+| Grafana 12.4.13 | 5 |
+| Loki 3.7.8 | 4 |
+| Collector 0.162.0 | 4 |
+
+Python still reports zero advisories and zero skipped packages. All seventeen
+audit regressions passed again. The [dated recheck inventory](security/dependency-recheck-2026-10-16.json)
+retains the image identities, all-severity counts, blocking package/version
+records, scanner metadata and release checks. The local audit ran from the
+descendant PR #7 checkout; its vendor pins, Dockerfiles, Python locks and audit
+script are byte-identical to PR #6. This is not a new clean-build CI result for
+PR #6. Full local reports are under ignored `artifacts/security-recheck-2026-10-16/`.
+
+The three additional Grafana findings are CVE-2026-100352, CVE-2026-100353 and
+CVE-2026-100354 in `github.com/getkin/kin-openapi` 0.147.0; reported fixes require
+0.148.0/0.149.0. The CockroachDB CRITICAL remains CVE-2025-68121 in its embedded Go
+standard library. These are scanner findings, not claims of demonstrated reachability.
+
+The four affected vendor tags still resolve to the same immutable digests as
+the failed CI run. The checked next patch tags return registry HTTP 404; the
+Collector and Loki latest-release redirects still name 0.162.0 and 3.7.8.
+Previously evaluated CockroachDB 26.3.2 and Grafana 13.2.4 also retained blocking
+findings, as recorded in the 15 October inventory. No compatible official-image
+update that clears the gate was identified among these releases. A package's
+reported fixed version is not a patched vendor image.
+
+Remediation requires vendor images containing the fixes, followed by the complete
+container and security acceptance. Separately maintained vendor builds or a
+database release-line migration require their own implementation and validation;
+no such implementation changes were made in that recheck. The subsequent scoped
+acceptance above does not remediate the vulnerable binary. Re-running the
+same pinned images cannot install an embedded dependency fix.
+
+## Findings and residual exposure: 15 October baseline
 
 The 15 October 2026 scan used pip-audit 2.10.1 and Trivy 0.76.0. The initial Python
 resolution included Starlette 0.46.2 through FastAPI 0.115.12. Seven distinct CVEs
@@ -180,4 +276,5 @@ loopback gateways limit exposure in this synthetic lab; they do not establish
 that every flagged dependency is unreachable. Before a bank pilot, obtain patched
 vendor builds or an explicit, reviewed vulnerability disposition with an owner,
 expiry and deployment evidence. This update supplies neither a risk acceptance
-nor approval to process bank data. See [production gates](PRODUCTION_READINESS.md).
+nor approval to process bank data at that baseline. The subsequent development
+risk decision is scoped above. See [production gates](PRODUCTION_READINESS.md).

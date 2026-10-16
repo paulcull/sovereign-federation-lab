@@ -1,5 +1,6 @@
 """Audit orchestration regressions; scanner/CLI stubs never stand in for lab SQL."""
 import contextlib
+from datetime import datetime, timezone
 import importlib.util
 import io
 import json
@@ -54,6 +55,10 @@ class AuditTests(unittest.TestCase):
         self.missing_tool = False
         self.initial_evidence_observed = False
         self.trivy_calls = []
+        self.repo_digests = {}
+        self.risk_context = None
+        self.policy_path = AUDIT.RISK_POLICY
+        self.now = datetime(2026, 10, 16, 12, tzinfo=timezone.utc)
 
     def output_command(self, command, **kwargs):
         if command[:2] == ['git', 'rev-parse']:
@@ -75,7 +80,8 @@ class AuditTests(unittest.TestCase):
         if command[:3] == ['docker', 'image', 'inspect']:
             if self.missing_image:
                 raise subprocess.CalledProcessError(1, command)
-            return json.dumps([{'Id': 'sha256:' + command[-1], 'RepoDigests': []}])
+            return json.dumps([{'Id': 'sha256:' + command[-1],
+                                'RepoDigests': self.repo_digests.get(command[-1], [])}])
         self.fail('Unexpected CLI command')
 
     def run_command(self, command, **kwargs):
@@ -110,12 +116,231 @@ class AuditTests(unittest.TestCase):
     def invoke(self):
         with patch.object(AUDIT.subprocess, 'check_output', side_effect=self.output_command), \
              patch.object(AUDIT.subprocess, 'run', side_effect=self.run_command), \
+             patch.object(AUDIT, 'RISK_POLICY', self.policy_path), \
+             patch.object(AUDIT, 'utc_now', side_effect=lambda: self.now), \
              contextlib.redirect_stdout(io.StringIO()):
-            code = AUDIT.main(['--output', str(self.output)])
+            arguments = ['--output', str(self.output)]
+            if self.risk_context is not None:
+                arguments += ['--risk-context', self.risk_context]
+            code = AUDIT.main(arguments)
         summary = json.loads((self.output / 'summary.json').read_text())
         self.assertTrue(self.initial_evidence_observed)
         self.assertFalse(list(self.output.glob('.summary-*.tmp')))
         return code, summary
+
+    def prepare_risk(self):
+        self.policy = json.loads(AUDIT.RISK_POLICY.read_text())
+        self.record = self.policy['acceptances'][0]
+        self.assertEqual(self.record['cve'], 'CVE-2025-68121')
+        # Isolate one record for classifier/expiry failure-path tests. The
+        # complete shipped register is verified against the observed inventory below.
+        self.policy['acceptances'] = [self.record]
+        self.policy_path = self.output / 'risk-acceptances.json'
+        self.write_policy()
+        self.risk_context = 'synthetic-lab'
+        self.images = [self.record['image']]
+        reference, digest = self.record['image'].split('@', 1)
+        self.repo_digests[self.record['image']] = [reference.rsplit(':', 1)[0] + '@' + digest]
+        self.vulnerabilities = [{'VulnerabilityID': self.record['cve'],
+            'PkgName': self.record['package'], 'InstalledVersion': self.record['installed_version'],
+            'Severity': self.record['severity'], 'FixedVersion': '1.26.9'}]
+
+    def write_policy(self):
+        self.policy_path.write_text(json.dumps(self.policy))
+
+    def prepare_full_cockroach_risk(self):
+        self.prepare_risk()
+        self.policy = json.loads(AUDIT.RISK_POLICY.read_text())
+        self.write_policy()
+        snapshot = json.loads((AUDIT.ROOT / 'docs/security/dependency-recheck-2026-10-16.json').read_text())
+        image = next(i for i in snapshot['images'] if self.record['image'] in i['tags'])
+        self.vulnerabilities = image['blocking_findings']
+
+    def test_shipped_register_accepts_exactly_the_observed_cockroach_findings(self):
+        self.prepare_full_cockroach_risk()
+        expected = {(v['VulnerabilityID'], v['PkgName'], v['InstalledVersion'], v['Severity'])
+                    for v in self.vulnerabilities}
+        self.assertEqual(len(self.policy['acceptances']), 34)
+        self.assertEqual({(r['cve'], r['package'], r['installed_version'], r['severity'])
+                          for r in self.policy['acceptances']}, expected)
+        self.assertEqual({r['image'] for r in self.policy['acceptances']}, {self.record['image']})
+        self.assertEqual({r['expires_at'] for r in self.policy['acceptances']}, {'2026-11-15T00:00:00Z'})
+        code, summary = self.invoke()
+        self.assertEqual(code, 0)
+        self.assertTrue(summary['passed'])
+        self.assertEqual(summary['status'], 'passed_with_risk_acceptance')
+        self.assertEqual(summary['accepted_high_critical'], 34)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 0)
+        self.assertEqual(summary['images'][0]['counts'], {'HIGH': 33, 'CRITICAL': 1})
+        raw = json.loads((self.output / summary['images'][0]['report']).read_text())
+        self.assertEqual(raw['Results'][0]['Vulnerabilities'], self.vulnerabilities)
+
+    def test_full_register_cannot_accept_a_new_cockroach_finding(self):
+        self.prepare_full_cockroach_risk()
+        self.vulnerabilities.append({'VulnerabilityID': 'CVE-2099-99999', 'PkgName': 'stdlib',
+            'InstalledVersion': self.record['installed_version'], 'Severity': 'HIGH', 'FixedVersion': 'future'})
+        code, summary = self.invoke()
+        self.assertEqual(code, 1)
+        self.assertFalse(summary['passed'])
+        self.assertEqual(summary['accepted_high_critical'], 34)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 1)
+
+    def test_full_register_cannot_accept_shared_cves_in_other_vendor_images(self):
+        self.prepare_full_cockroach_risk()
+        other = 'grafana/loki:synthetic@sha256:' + '1' * 64
+        self.images.append(other)
+        self.repo_digests[other] = ['grafana/loki@sha256:' + '1' * 64]
+        code, summary = self.invoke()
+        self.assertEqual(code, 1)
+        self.assertFalse(summary['passed'])
+        self.assertEqual(summary['accepted_high_critical'], 34)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 34)
+        other_image = next(i for i in summary['images'] if other in i['tags'])
+        self.assertEqual(other_image['accepted_findings'], [])
+
+    def test_exact_lab_risk_is_visible_in_success_and_original_report(self):
+        self.prepare_risk()
+        code, summary = self.invoke()
+        self.assertEqual(code, 0)
+        self.assertEqual(summary['status'], 'passed_with_risk_acceptance')
+        self.assertTrue(summary['passed'])
+        self.assertTrue(summary['completed'])
+        self.assertEqual(summary['accepted_high_critical'], 1)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 0)
+        image = summary['images'][0]
+        self.assertEqual(image['counts'], {'CRITICAL': 1})
+        self.assertEqual(image['fixable_high_critical'], 1)
+        self.assertEqual(image['accepted_findings'][0]['risk_acceptance_id'], 'SFL-RA-0001')
+        raw = json.loads((self.output / image['report']).read_text())
+        self.assertEqual(raw['Results'][0]['Vulnerabilities'], self.vulnerabilities)
+        self.assertEqual(summary['risk_acceptances'][0]['expires_at'], self.record['expires_at'])
+
+    def test_strict_default_never_applies_the_lab_acceptance(self):
+        self.prepare_risk()
+        self.risk_context = None
+        code, summary = self.invoke()
+        self.assertEqual(code, 1)
+        self.assertFalse(summary['passed'])
+        self.assertEqual(summary['accepted_high_critical'], 0)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 1)
+        self.assertEqual(summary['risk_acceptances'], [])
+
+    def test_expired_or_future_acceptance_cannot_allow_a_finding(self):
+        self.prepare_risk()
+        for now, state in [(datetime(2026, 11, 15, tzinfo=timezone.utc), 'expired'),
+                           (datetime(2026, 10, 15, tzinfo=timezone.utc), 'not_yet_active')]:
+            with self.subTest(state=state):
+                self.now = now
+                code, summary = self.invoke()
+                self.assertEqual(code, 1)
+                self.assertFalse(summary['passed'])
+                self.assertTrue(summary['completed'])
+                self.assertEqual(summary['accepted_high_critical'], 0)
+                self.assertEqual(summary['risk_acceptances'][0]['state'], state)
+
+    def test_scope_cannot_expand_to_another_cve_package_version_or_severity(self):
+        self.prepare_risk()
+        for key, changed in [('VulnerabilityID', 'CVE-2026-78667'), ('PkgName', 'other'),
+                             ('InstalledVersion', 'v1.23.13'), ('Severity', 'HIGH')]:
+            with self.subTest(field=key):
+                original = self.vulnerabilities[0][key]
+                self.vulnerabilities[0][key] = changed
+                code, summary = self.invoke()
+                self.assertEqual(code, 1)
+                self.assertFalse(summary['passed'])
+                self.assertEqual(summary['accepted_high_critical'], 0)
+                self.vulnerabilities[0][key] = original
+
+    def test_scope_requires_both_exact_configured_image_and_observed_digest(self):
+        self.prepare_risk()
+        original = self.images[0]
+        for image, digests in [(original, []), (original, ['cockroachdb/cockroach@sha256:' + '0' * 64]),
+                               ('cockroachdb/cockroach:other', self.repo_digests[original])]:
+            with self.subTest(image=image, digests=digests):
+                self.images = [image]
+                self.repo_digests[image] = digests
+                code, summary = self.invoke()
+                self.assertEqual(code, 1)
+                self.assertFalse(summary['passed'])
+                self.assertEqual(summary['accepted_high_critical'], 0)
+
+    def test_additional_cockroach_finding_remains_blocking(self):
+        self.prepare_risk()
+        self.vulnerabilities.append({'VulnerabilityID': 'CVE-2026-78667', 'PkgName': 'stdlib',
+            'InstalledVersion': self.record['installed_version'], 'Severity': 'HIGH', 'FixedVersion': '1.26.9'})
+        code, summary = self.invoke()
+        self.assertEqual(code, 1)
+        self.assertFalse(summary['passed'])
+        self.assertEqual(summary['accepted_high_critical'], 1)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 1)
+
+    def test_accepted_risk_does_not_mask_python_advisory_or_failed_image_scan(self):
+        self.prepare_risk()
+        self.python_report['dependencies'][0]['vulns'] = [{'id': 'CVE-other'}]
+        self.python_code = 1
+        code, summary = self.invoke()
+        self.assertEqual(code, 1)
+        self.assertFalse(summary['passed'])
+        self.assertEqual(summary['accepted_high_critical'], 1)
+        self.scan_code = 1
+        code, summary = self.invoke()
+        self.assertNotEqual(code, 0)
+        self.assertFalse(summary['passed'])
+        self.assertFalse(summary['completed'])
+        self.assertTrue(summary['errors'])
+
+    def test_missing_or_malformed_risk_policy_fails_closed(self):
+        self.prepare_risk()
+        for document in [None, '{', '{"schema_version":1,"acceptances":{}}']:
+            with self.subTest(document=document):
+                if document is None:
+                    self.policy_path.unlink(missing_ok=True)
+                else:
+                    self.policy_path.write_text(document)
+                code, summary = self.invoke()
+                self.assertNotEqual(code, 0)
+                self.assertFalse(summary['passed'])
+                self.assertFalse(summary['completed'])
+                self.assertTrue(summary['errors'])
+
+    def test_incomplete_broad_or_duplicate_risk_policy_fails_closed(self):
+        self.prepare_risk()
+        original = dict(self.record)
+        changes = [{'cve': '*'}, {'image': 'cockroachdb/cockroach:latest'},
+                   {'context': 'production'}, {'expires_at': '2026-11-15'},
+                   {'expires_at': '2026-10-01T00:00:00Z'}, {'expires_at': None},
+                   {'owner': ''}, {'unexpected': 'field'}]
+        for change in changes:
+            with self.subTest(change=change):
+                self.policy['acceptances'] = [original | change]
+                self.write_policy()
+                code, summary = self.invoke()
+                self.assertNotEqual(code, 0)
+                self.assertFalse(summary['passed'])
+                self.assertFalse(summary['completed'])
+        self.policy['acceptances'] = [original, original | {'id': 'SFL-RA-0002'}]
+        self.write_policy()
+        code, summary = self.invoke()
+        self.assertNotEqual(code, 0)
+        self.assertFalse(summary['passed'])
+
+    def test_acceptance_expiring_during_scan_cannot_publish_success(self):
+        self.prepare_risk()
+        original_match = AUDIT.accepted_risk
+
+        def expires_after_match(*args):
+            result = original_match(*args)
+            # The first check permits the match; the final lifetime check must
+            # still revoke success if the acceptance expires before publication.
+            self.now = datetime(2026, 11, 15, tzinfo=timezone.utc)
+            return result
+
+        with patch.object(AUDIT, 'accepted_risk', side_effect=expires_after_match):
+            code, summary = self.invoke()
+        self.assertNotEqual(code, 0)
+        self.assertFalse(summary['passed'])
+        self.assertFalse(summary['completed'])
+        self.assertIn('expired during audit', summary['errors'][0])
 
     def test_clean_completed_scan_can_pass_and_reports_are_current(self):
         code, summary = self.invoke()
