@@ -77,10 +77,10 @@ and the policy's owner, rationale and expiry make the disposition inspectable.
 If accepted findings are the only otherwise blocking results, the exit code is
 zero with `status: passed_with_risk_acceptance`, not a claim of zero CVEs.
 
-Against the 16 October inventory, this accepts **all 34 currently blocking
-CockroachDB finding instances**. After the latest observability-image upgrade,
-**64 remain blocking**: 60 Grafana and four Loki; Collector has none. The records
-are not a blanket CockroachDB exclusion: unlisted
+Against the 16 October inventory, this accepts **all 34 otherwise-blocking
+CockroachDB finding instances**. The later Grafana/Loki approval below covers
+another 64 instances through separate exact records; Collector needs none.
+The CockroachDB records are not a blanket exclusion: unlisted
 CVEs/packages, changed versions or image digests, and other products do not inherit
 acceptance. No Python advisory, skipped package, missing image or scan error is
 accepted. Obtain compatible patched vendor images, rerun complete
@@ -98,7 +98,7 @@ exited 1 for the 13 other vendor finding instances. This verifies the
 disposition against real scanner evidence; it is not a passing security gate or
 a new clean-build functional/container result.
 
-## Non-Cockroach findings requiring a decision
+## Accepted development risk: Grafana and Loki findings
 
 The user requested the latest stable observability releases after the earlier
 PR #7 audit. Compose now pins Grafana **13.2.4**, Loki **3.7.8** and Collector
@@ -107,12 +107,13 @@ later on 16 October and removes its four previously blocking findings. Loki
 3.6.18 is newer by publication date but belongs to the older 3.6 line; the latest
 stable 3.7 release remains selected.
 
-The upgrade audit completed all 11 image scans without errors and found zero
-Python advisories/skips. The 34 approved CockroachDB scopes remain accepted;
-**64 HIGH finding instances across 11 CVEs remain blocking**, corresponding to
-23 distinct image/CVE/package/installed-version/severity scopes:
+Before the separate user approval, the upgrade audit completed all 11 image
+scans without errors and found zero Python advisories/skips. It accepted the
+34 CockroachDB scopes and failed for **64 HIGH finding instances across 11 CVEs**,
+corresponding to 23 distinct image/CVE/package/installed-version/severity scopes.
+The user explicitly approved those additional scopes on 16 October 2026:
 
-| Pinned component | Findings | CVEs | Reported package fixes |
+| Pinned component | Approved HIGH instances | CVEs | Reported package fixes |
 |---|---:|---|---|
 | Grafana 13.2.4 | 60 | CVE-2026-100351, CVE-2026-100352, CVE-2026-100353, CVE-2026-100354; CVE-2026-21728, CVE-2026-28377; CVE-2026-78667, CVE-2026-78669, CVE-2026-97031; CVE-2026-84304, CVE-2026-84445 | Reported fixes affect embedded kin-openapi, Tempo, Go, x/net and gRPC dependencies; exact versions and affected plugin binaries are in the request inventory |
 | Loki 3.7.8 | 4 | CVE-2026-78667, CVE-2026-78669, CVE-2026-97031 | Go 1.26.9 / 1.27.2 and golang.org/x/net 0.60.0; CVE-2026-78669 appears in both dependencies |
@@ -126,19 +127,42 @@ No additional scanner filter, plugin deletion or patched vendor fork is used to
 clear the gate. The historical 13-instance request is superseded, rather than
 carried forward to changed image identities.
 
-The [pending exception requests](security/non-cockroach-exception-requests-2026-10-16.json)
-list exact images, digests, package versions, CVEs, affected targets and reported
-fixes for the current Grafana and Loki images. Collector no longer requests an
-exception. The requests propose
-the same synthetic-only scope and 15 November expiry as CockroachDB and require
-separate user approval. **They are not active acceptances and are never loaded by
-the audit.** No non-Cockroach exception has been approved or applied. The Grafana
-Tempo findings also need a reviewed applicability assessment; this lab does not
-infer reachability or silently mark embedded client code unaffected.
+The [approved exception inventory](security/non-cockroach-exception-requests-2026-10-16.json)
+retains exact images, digests, package versions, CVEs, affected targets and
+reported fixes. **SFL-RA-0035 through SFL-RA-0057** in the
+[active register](security/risk-acceptances.json) implement that approval:
+19 Grafana scopes and four Loki scopes. The inventory is not itself loaded by
+the audit. Existing CockroachDB records remain unchanged; Collector has none.
 
-Use patched vendor builds plus full revalidation, or explicitly decide these
-scoped development exceptions. Separately maintained source builds require their
-own build, dependency and runtime validation; no vendor fork is introduced here.
+Risk owner **paulcull** accepted these findings only for trusted single-host
+synthetic development, with gateways on loopback and SQL/admin ports internal,
+until **15 November 2026 at 00:00 UTC**. This does not approve production, a bank
+pilot, a public preview or real customer data. It does not patch the binaries or
+claim that the Grafana Tempo findings or other embedded code are unreachable.
+
+The register now has **57 exact scopes covering 98 otherwise-blocking finding
+instances** in the observed inventory: 34 CockroachDB, 60 Grafana and four Loki.
+Only explicit `--risk-context synthetic-lab` can apply them; strict mode still
+rejects the vulnerable artifacts. New CVEs, changed packages, versions or image
+digests, expired approval, Python advisories and incomplete scans remain blocking.
+A successful synthetic audit is reported as `passed_with_risk_acceptance` and
+retains all original scanner findings.
+
+Executed after approval on 16 October: all **34 audit regressions passed**. The
+real-image audit covered all **11 configured images/identities**, with zero
+Python advisories, skipped packages or scan errors; the synthetic context passed
+with **98 accepted finding instances and zero unaccepted fixable HIGH/CRITICAL
+findings**. A separate complete strict audit rejected all 98, applied no
+acceptances and exited 1 as expected. Full-severity and unfixed findings remain
+reported. The [approval validation evidence](security/observability-risk-acceptance-2026-10-16.json)
+records exact scanner/database versions, artifact and configuration hashes and
+the pre-commit audit provenance. Use the final commit's GitHub Actions run for
+clean-build container acceptance.
+
+Replace these images with compatible patched vendor builds, rerun full container
+and dependency acceptance, and retire the corresponding records. Separately
+maintained source builds require their own build, dependency and runtime
+validation; no vendor fork is introduced here.
 
 See the [observability upgrade evidence](security/observability-upgrade-2026-10-16.json)
 for selected releases, configuration provenance, container checks and local limits.

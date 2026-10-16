@@ -1,6 +1,6 @@
 {
-  "status": "awaiting_user_approval",
-  "active_acceptance": false,
+  "status": "approved_and_registered",
+  "active_acceptance": true,
   "gate_loads_this_file": false,
   "context": "synthetic-lab",
   "proposed_owner": "paulcull",
@@ -10,7 +10,7 @@
   "audit_commit": "72b2acaec32dd1d132dd5be2ce573b24410689a9",
   "audit_working_tree_dirty": true,
   "supersedes_pre_upgrade_finding_instances": 13,
-  "reason": "User requested the latest stable observability releases. Collector 0.163.1 removes its four blocking findings. Grafana 13.2.4 and Loki 3.7.8 retain the exact findings below; selecting newer images grants no risk acceptance. This inactive request replaces the previous Grafana 12/Collector inventory. Approval would require separate exact image/CVE/package/version records in the active register.",
+  "reason": "The user explicitly approved the exact Grafana 13.2.4 and Loki 3.7.8 scopes in this inventory for trusted synthetic single-host development only through 2026-11-15T00:00:00Z. These 23 scopes cover 64 reported HIGH instances across 11 CVEs and are now registered individually in risk-acceptances.json. This inventory itself is not loaded by the gate. Collector 0.163.1 requires no exception. The historical pre-upgrade 13-instance proposal remains superseded.",
   "finding_instances": 64,
   "unique_image_package_scopes": 23,
   "distinct_cves": 11,
@@ -587,6 +587,27 @@
           "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-97031",
           "target": "usr/share/grafana/data/plugins-bundled/zipkin/gpx_grafana-zipkin-datasource_linux_amd64"
         }
+      ],
+      "active_acceptance_ids": [
+        "SFL-RA-0035",
+        "SFL-RA-0036",
+        "SFL-RA-0037",
+        "SFL-RA-0038",
+        "SFL-RA-0039",
+        "SFL-RA-0040",
+        "SFL-RA-0041",
+        "SFL-RA-0042",
+        "SFL-RA-0043",
+        "SFL-RA-0044",
+        "SFL-RA-0045",
+        "SFL-RA-0046",
+        "SFL-RA-0047",
+        "SFL-RA-0048",
+        "SFL-RA-0049",
+        "SFL-RA-0050",
+        "SFL-RA-0051",
+        "SFL-RA-0052",
+        "SFL-RA-0053"
       ]
     },
     {
@@ -635,7 +656,46 @@
           "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-97031",
           "target": "usr/bin/loki"
         }
+      ],
+      "active_acceptance_ids": [
+        "SFL-RA-0054",
+        "SFL-RA-0055",
+        "SFL-RA-0056",
+        "SFL-RA-0057"
       ]
     }
-  ]
+  ],
+  "active_register": "docs/security/risk-acceptances.json",
+  "approval": {
+    "owner": "paulcull",
+    "approved_by": "Explicit user approval in the repository development chat on 2026-10-16: approved, in response to the documented exact Grafana 13.2.4 and Loki 3.7.8 exception request, synthetic development only, owned by paulcull, expiring 2026-11-15T00:00:00Z.",
+    "approved_at": "2026-10-16T21:24:54Z",
+    "expires_at": "2026-11-15T00:00:00Z",
+    "conditions": "Synthetic data only; trusted single-host lab; development gateways bound to loopback; SQL and admin ports remain internal to Compose. This is not production, bank-pilot, public-preview or real-customer-data approval. The context flag declares this operating scope; the audit does not independently verify runtime exposure or data contents.",
+    "acceptance_ids": [
+      "SFL-RA-0035",
+      "SFL-RA-0036",
+      "SFL-RA-0037",
+      "SFL-RA-0038",
+      "SFL-RA-0039",
+      "SFL-RA-0040",
+      "SFL-RA-0041",
+      "SFL-RA-0042",
+      "SFL-RA-0043",
+      "SFL-RA-0044",
+      "SFL-RA-0045",
+      "SFL-RA-0046",
+      "SFL-RA-0047",
+      "SFL-RA-0048",
+      "SFL-RA-0049",
+      "SFL-RA-0050",
+      "SFL-RA-0051",
+      "SFL-RA-0052",
+      "SFL-RA-0053",
+      "SFL-RA-0054",
+      "SFL-RA-0055",
+      "SFL-RA-0056",
+      "SFL-RA-0057"
+    ]
+  }
 }

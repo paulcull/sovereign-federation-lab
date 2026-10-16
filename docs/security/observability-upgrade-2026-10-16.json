@@ -189,7 +189,7 @@
       }
     ]
   },
-  "risk_acceptance": "Existing 34 CockroachDB scopes unchanged; no non-Cockroach acceptance active. Current pending requests cover 64 instances / 23 exact package scopes / 11 CVEs.",
+  "risk_acceptance": "Historical upgrade-audit disposition before the later user approval: Existing 34 CockroachDB scopes unchanged; no non-Cockroach acceptance active. Current pending requests cover 64 instances / 23 exact package scopes / 11 CVEs.",
   "artifact_directory": "artifacts/latest-observability-2026-10-16/ (ignored locally); CI publishes lab-evidence from the exact workflow run",
   "limitations": "Single-host synthetic lab only; no production, regional HA/residency, performance or backup-erasure claim. New CI result must be read from its actual run.",
   "startup_commands": [
@@ -212,5 +212,17 @@
       "gateway_dns": "failed: static address unsupported on default automatic subnet",
       "later_gates": "not executed; no pass claimed"
     }
-  ]
+  ],
+  "subsequent_risk_decision": {
+    "status": "approved_and_registered",
+    "date": "2026-10-16",
+    "inventory": "docs/security/non-cockroach-exception-requests-2026-10-16.json",
+    "register": "docs/security/risk-acceptances.json",
+    "additional_exact_scopes": 23,
+    "additional_finding_instances": 64,
+    "context": "synthetic-lab",
+    "owner": "paulcull",
+    "expires_at": "2026-11-15T00:00:00Z",
+    "note": "This later approval changes the risk disposition, not the scanner output or the historical functional/security results above."
+  }
 }

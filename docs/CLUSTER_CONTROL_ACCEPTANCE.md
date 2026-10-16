@@ -81,9 +81,11 @@ artifact retains logs and `cluster-control/browser/` screenshots. Use the exact
 PR commit's workflow for clean-build evidence; an earlier run is not a result for
 a changed revision.
 
-The existing vendor CVE gate remains blocked. Functional acceptance is not
-security approval, business backup coverage, off-host DR, HA or physical residency
-validation.
+The strict vendor CVE gate remains blocked. The user has approved exact, expiring
+CockroachDB, Grafana and Loki exceptions for the explicit synthetic development
+context; see [dependency security](DEPENDENCY_SECURITY.md). Functional acceptance
+and development risk acceptance provide no production security approval,
+business backup coverage, off-host DR, HA or physical residency validation.
 
 The merge follow-up passed nine controller units, 30 security-audit regressions,
 native cluster recovery/restart, actual India SQL pause with independent UK work,
@@ -91,7 +93,10 @@ the complete base federation/operational/migration/telemetry suite, MDM/servicin
 SQL/OPA acceptance and all four Chromium walkthroughs. Documentation verification
 passed 57 HTML pages, 1,637 local links and 20 ADRs. Logs remain under ignored
 `artifacts/pr7-followup/` and `artifacts/pr7-security-final-2026-10-16/` locally.
-The real dependency audit completed all 11 image scans without errors, with zero
+Before the observability upgrade and subsequent user approval, the real
+dependency audit completed all 11 image scans without errors, with zero
 Python advisories/skips, 34 accepted CockroachDB finding instances and 13 other
-vendor finding instances still blocking. Their proposed exceptions remain
-inactive pending user approval; this is a completed failed security gate.
+vendor finding instances still blocking. That historical scan was a completed
+failed security gate. The current pinned images and approved scope are recorded
+in [dependency security](DEPENDENCY_SECURITY.md); use the latest exact-commit CI
+result for the current revision.

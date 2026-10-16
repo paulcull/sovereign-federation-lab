@@ -160,10 +160,10 @@ class AuditTests(unittest.TestCase):
         self.prepare_full_cockroach_risk()
         expected = {(v['VulnerabilityID'], v['PkgName'], v['InstalledVersion'], v['Severity'])
                     for v in self.vulnerabilities}
-        self.assertEqual(len(self.policy['acceptances']), 34)
+        records = [r for r in self.policy['acceptances'] if r['image'] == self.record['image']]
+        self.assertEqual(len(records), 34)
         self.assertEqual({(r['cve'], r['package'], r['installed_version'], r['severity'])
-                          for r in self.policy['acceptances']}, expected)
-        self.assertEqual({r['image'] for r in self.policy['acceptances']}, {self.record['image']})
+                          for r in records}, expected)
         self.assertEqual({r['expires_at'] for r in self.policy['acceptances']}, {'2026-11-15T00:00:00Z'})
         code, summary = self.invoke()
         self.assertEqual(code, 0)
@@ -174,6 +174,101 @@ class AuditTests(unittest.TestCase):
         self.assertEqual(summary['images'][0]['counts'], {'HIGH': 33, 'CRITICAL': 1})
         raw = json.loads((self.output / summary['images'][0]['report']).read_text())
         self.assertEqual(raw['Results'][0]['Vulnerabilities'], self.vulnerabilities)
+
+    def observability_requests(self):
+        return json.loads((AUDIT.ROOT / 'docs/security/'
+            'non-cockroach-exception-requests-2026-10-16.json').read_text())['requests']
+
+    def prepare_observability_risk(self, request):
+        self.risk_context = 'synthetic-lab'
+        self.now = datetime(2026, 10, 17, 12, tzinfo=timezone.utc)
+        self.images = [request['image']]
+        self.repo_digests = {request['image']: request['repo_digests'][:]}
+        self.vulnerabilities = [dict(finding) for finding in request['findings']]
+
+    def test_shipped_observability_register_matches_only_the_approved_scopes(self):
+        policy = json.loads(AUDIT.RISK_POLICY.read_text())['acceptances']
+        self.assertEqual(len(policy), 57)
+        requests = self.observability_requests()
+        records = [r for r in policy if not r['image'].startswith('cockroachdb/')]
+        expected = {(request['image'], finding['VulnerabilityID'], finding['PkgName'],
+                     finding['InstalledVersion'], finding['Severity'])
+                    for request in requests for finding in request['findings']}
+        self.assertEqual(len(expected), 23)
+        self.assertEqual(len(records), 23)
+        self.assertEqual({(r['image'], r['cve'], r['package'], r['installed_version'], r['severity'])
+                          for r in records}, expected)
+        self.assertEqual({r['id'] for r in records},
+                         {f'SFL-RA-{number:04d}' for number in range(35, 58)})
+        self.assertEqual({r['id'] for r in records},
+                         {risk_id for request in requests for risk_id in request['active_acceptance_ids']})
+        self.assertEqual({r['context'] for r in records}, {'synthetic-lab'})
+        self.assertEqual({r['owner'] for r in records}, {'paulcull'})
+        self.assertEqual({r['expires_at'] for r in records}, {'2026-11-15T00:00:00Z'})
+
+    def test_observability_acceptances_retain_all_64_raw_finding_instances(self):
+        accepted = 0
+        for request in self.observability_requests():
+            with self.subTest(component=request['component']):
+                self.prepare_observability_risk(request)
+                code, summary = self.invoke()
+                self.assertEqual(code, 0)
+                self.assertTrue(summary['passed'])
+                self.assertEqual(summary['status'], 'passed_with_risk_acceptance')
+                self.assertEqual(summary['accepted_high_critical'], request['finding_instances'])
+                self.assertEqual(summary['unaccepted_fixable_high_critical'], 0)
+                image = summary['images'][0]
+                self.assertEqual(image['counts'], {'HIGH': request['finding_instances']})
+                self.assertEqual({f['risk_acceptance_id'] for f in image['accepted_findings']},
+                                 set(request['active_acceptance_ids']))
+                raw = json.loads((self.output / image['report']).read_text())
+                self.assertEqual(raw['Results'][0]['Vulnerabilities'], self.vulnerabilities)
+                accepted += summary['accepted_high_critical']
+        self.assertEqual(accepted, 64)
+
+    def test_observability_acceptances_reject_new_findings_versions_and_images(self):
+        for request in self.observability_requests():
+            for change in ('new_cve', 'version', 'package', 'digest', 'reference'):
+                with self.subTest(component=request['component'], change=change):
+                    self.prepare_observability_risk(request)
+                    if change == 'new_cve':
+                        self.vulnerabilities.append(self.vulnerabilities[0] |
+                                                   {'VulnerabilityID': 'CVE-2099-99999'})
+                    elif change == 'version':
+                        self.vulnerabilities[0]['InstalledVersion'] = 'unapproved-version'
+                    elif change == 'package':
+                        self.vulnerabilities[0]['PkgName'] = 'unapproved-package'
+                    elif change == 'digest':
+                        self.repo_digests[request['image']] = [
+                            request['component'] + '@sha256:' + '0' * 64]
+                    else:
+                        image = request['component'] + ':unapproved'
+                        self.images = [image]
+                        self.repo_digests[image] = request['repo_digests'][:]
+                    code, summary = self.invoke()
+                    self.assertEqual(code, 1)
+                    self.assertFalse(summary['passed'])
+                    self.assertGreater(summary['unaccepted_fixable_high_critical'], 0)
+                    if change in ('digest', 'reference'):
+                        self.assertEqual(summary['accepted_high_critical'], 0)
+
+    def test_observability_acceptances_require_lab_context_and_unexpired_approval(self):
+        for request in self.observability_requests():
+            for mode in ('strict', 'expired', 'not_yet_approved'):
+                with self.subTest(component=request['component'], mode=mode):
+                    self.prepare_observability_risk(request)
+                    if mode == 'strict':
+                        self.risk_context = None
+                    elif mode == 'expired':
+                        self.now = datetime(2026, 11, 15, tzinfo=timezone.utc)
+                    else:
+                        self.now = datetime(2026, 10, 15, tzinfo=timezone.utc)
+                    code, summary = self.invoke()
+                    self.assertEqual(code, 1)
+                    self.assertFalse(summary['passed'])
+                    self.assertEqual(summary['accepted_high_critical'], 0)
+                    self.assertEqual(summary['unaccepted_fixable_high_critical'],
+                                     request['finding_instances'])
 
     def test_full_register_cannot_accept_a_new_cockroach_finding(self):
         self.prepare_full_cockroach_risk()
