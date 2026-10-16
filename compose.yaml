@@ -146,7 +146,7 @@
       "restart": "unless-stopped"
     },
     "otel-collector": {
-      "image": "otel/opentelemetry-collector:0.162.0@sha256:310a800ad69ee430e7c541796852a242c9c7db97aaad4daa5ccf843c525fbdb2",
+      "image": "otel/opentelemetry-collector:0.163.1@sha256:f0e23036dce3db3f9cb80d907c75a0d034cd32e93511a1943482d46129b9ae9c",
       "command": [
         "--config=/etc/otel.yaml"
       ],
@@ -361,7 +361,7 @@
       "restart": "unless-stopped"
     },
     "grafana": {
-      "image": "grafana/grafana:12.4.13@sha256:41bbc1b5e04416f81891806076db2a2ff60a5d4da5f78d36a88b033a8c199185",
+      "image": "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f",
       "environment": {
         "GF_SERVER_ROOT_URL": "http://localhost:${LAB_PORT:-8080}/grafana/",
         "GF_SERVER_SERVE_FROM_SUB_PATH": "true",

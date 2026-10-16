@@ -99,6 +99,12 @@ SQL stays inside Compose networking; only the gateway is published on loopback.
 
 Tests assume no concurrent manual fixture edits. They restore operational policy changes, add synthetic records, explicitly reset the isolated migration and restart the API. Use a separate COMPOSE_PROJECT_NAME for independent runs.
 
+After an image upgrade, `python3 poc/tests/gateway_dns_acceptance.py` verifies
+that the unchanged gateway process follows a real Grafana address change and
+restores its original address. Run it separately from the mutable fault suites.
+See [observability upgrades](OBSERVABILITY.md#pinned-releases-and-upgrades) for
+the Grafana major-version state backup and the current vendor security findings.
+
 ## Access and topology
 
 ```mermaid

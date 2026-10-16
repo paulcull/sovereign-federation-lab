@@ -18,6 +18,40 @@ Both `./lab up` and `./lab test` run this gate. Ordinary API health checks do no
 depend on telemetry delivery. A telemetry gate failure requires investigation;
 it must not be reported as a successful logging deployment.
 
+## Pinned releases and upgrades
+
+The 16 October 2026 release check selects Grafana **13.2.4**, Loki **3.7.8**
+and OpenTelemetry Collector **0.163.1**, with immutable manifest digests in
+`compose.yaml`. Loki 3.6.18 has a later publication date but is a patch on the
+older 3.6 line; this upgrade retains the latest stable 3.7 release.
+
+Grafana 13 is a major-version upgrade. Before starting it against an existing
+Grafana volume, stop the Grafana service and copy its complete persisted state
+into a private rollback directory. The local validation keeps that stopped-service
+copy under ignored artifacts. Rolling back requires the previous image together
+with its pre-upgrade state, rather than opening a migrated database with the old
+binary. Grafana UI metadata is separate from CockroachDB business and audit data.
+
+The gateway resolves Docker service names again when their addresses change.
+`python3 poc/tests/gateway_dns_acceptance.py` moves the real Grafana container to
+a different address, verifies access through the unchanged gateway process, and
+restores its original address. Run it after startup and separately from mutable
+fault suites. This protects image replacements from stale upstream-address 502s.
+
+A newer version does not establish a security pass. The Collector candidate scan
+removes its four previously blocking findings, while Grafana 13 includes bundled
+plugin binaries with additional findings. The complete image audit and
+[dependency-security disposition](DEPENDENCY_SECURITY.md) govern the remaining
+exceptions; no additional acceptance follows from an image upgrade.
+
+Allow additional disk headroom for a major image upgrade with Docker's VFS
+driver. The recorded workspace pull first failed with insufficient extraction
+space, then succeeded after superseded images were removed. Its final roughly
+2.10 GB free remains below the native recovery rehearsal's 2.70 GB requirement;
+that local gate remains blocked rather than lowering the existing 8% guard.
+The complete native recovery gate remains mandatory in GitHub Actions. See the
+[upgrade evidence](security/observability-upgrade-2026-10-16.json).
+
 ## Signal paths
 
 | Signal | Implemented path | Storage / limits |

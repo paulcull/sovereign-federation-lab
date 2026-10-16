@@ -78,8 +78,9 @@ If accepted findings are the only otherwise blocking results, the exit code is
 zero with `status: passed_with_risk_acceptance`, not a claim of zero CVEs.
 
 Against the 16 October inventory, this accepts **all 34 currently blocking
-CockroachDB finding instances**. **13 remain blocking**: five Grafana, four Loki
-and four Collector. The records are not a blanket CockroachDB exclusion: unlisted
+CockroachDB finding instances**. After the latest observability-image upgrade,
+**64 remain blocking**: 60 Grafana and four Loki; Collector has none. The records
+are not a blanket CockroachDB exclusion: unlisted
 CVEs/packages, changed versions or image digests, and other products do not inherit
 acceptance. No Python advisory, skipped package, missing image or scan error is
 accepted. Obtain compatible patched vendor images, rerun complete
@@ -90,8 +91,8 @@ Executed validation on 16 October: all 30 audit regressions passed, including
 expiry during a scan, malformed policy, strict defaults and changed image/package
 scope. The additional register tests require exact correspondence to the observed
 CockroachDB inventory, retain a new unlisted CockroachDB finding as blocking and
-reject applying the same CVEs to another product. The real audit scanned all 11
-current shared lab image identities without errors, retained zero Python
+reject applying the same CVEs to another product. The pre-upgrade audit scanned
+all 11 shared lab image identities without errors, retained zero Python
 advisories/skips, accepted the 34 registered CockroachDB finding instances and
 exited 1 for the 13 other vendor finding instances. This verifies the
 disposition against real scanner evidence; it is not a passing security gate or
@@ -99,25 +100,36 @@ a new clean-build functional/container result.
 
 ## Non-Cockroach findings requiring a decision
 
-The PR #7 recheck completed all 11 current image scans without errors and found
-zero Python advisories/skips. The 34 approved CockroachDB finding scopes are
-accepted; **13 HIGH finding instances across eight CVEs remain blocking**:
+The user requested the latest stable observability releases after the earlier
+PR #7 audit. Compose now pins Grafana **13.2.4**, Loki **3.7.8** and Collector
+**0.163.1**, including immutable manifest digests. Collector 0.163.1 was published
+later on 16 October and removes its four previously blocking findings. Loki
+3.6.18 is newer by publication date but belongs to the older 3.6 line; the latest
+stable 3.7 release remains selected.
+
+The upgrade audit completed all 11 image scans without errors and found zero
+Python advisories/skips. The 34 approved CockroachDB scopes remain accepted;
+**64 HIGH finding instances across 11 CVEs remain blocking**, corresponding to
+23 distinct image/CVE/package/installed-version/severity scopes:
 
 | Pinned component | Findings | CVEs | Reported package fixes |
 |---|---:|---|---|
-| Grafana 12.4.13 | 5 | CVE-2026-100352, CVE-2026-100353, CVE-2026-100354; CVE-2026-21728, CVE-2026-28377 | kin-openapi 0.149.0 covers the three parser/validation findings; Tempo 2.10.3 covers both Tempo-module findings |
+| Grafana 13.2.4 | 60 | CVE-2026-100351, CVE-2026-100352, CVE-2026-100353, CVE-2026-100354; CVE-2026-21728, CVE-2026-28377; CVE-2026-78667, CVE-2026-78669, CVE-2026-97031; CVE-2026-84304, CVE-2026-84445 | Reported fixes affect embedded kin-openapi, Tempo, Go, x/net and gRPC dependencies; exact versions and affected plugin binaries are in the request inventory |
 | Loki 3.7.8 | 4 | CVE-2026-78667, CVE-2026-78669, CVE-2026-97031 | Go 1.26.9 / 1.27.2 and golang.org/x/net 0.60.0; CVE-2026-78669 appears in both dependencies |
-| Collector 0.162.0 | 4 | CVE-2026-78667, CVE-2026-78669, CVE-2026-97031 | Go 1.26.9 / 1.27.2 and golang.org/x/net 0.60.0; CVE-2026-78669 appears in both dependencies |
+| Collector 0.163.1 | 0 | No HIGH/CRITICAL findings in this scan | One UNKNOWN advisory remains visible; this is not a claim of zero vulnerabilities |
 
-These package fixes are not present in the pinned vendor binaries. The checked
-next compatible image tags are not published; Collector/Loki latest release
-redirects remain 0.162.0/3.7.8. The previously evaluated Grafana 13.2.4 major-line
-image had 56 HIGH findings, so upgrading to it does not clear the gate. Replacing
-embedded dependencies in place would not create a supported vendor release.
-No compatible official-image remediation was identified among these releases.
+Grafana's bundled plugin binaries retain repeated affected dependency instances.
+The earlier candidate scan reported 56 HIGH instances; the complete upgrade audit
+reports 60. Selecting the latest release removes neither those binaries nor
+their findings. Package-level fixes are not contained in every vendor artifact.
+No additional scanner filter, plugin deletion or patched vendor fork is used to
+clear the gate. The historical 13-instance request is superseded, rather than
+carried forward to changed image identities.
 
 The [pending exception requests](security/non-cockroach-exception-requests-2026-10-16.json)
-list exact images, digests, package versions, CVEs and reported fixes. They propose
+list exact images, digests, package versions, CVEs, affected targets and reported
+fixes for the current Grafana and Loki images. Collector no longer requests an
+exception. The requests propose
 the same synthetic-only scope and 15 November expiry as CockroachDB and require
 separate user approval. **They are not active acceptances and are never loaded by
 the audit.** No non-Cockroach exception has been approved or applied. The Grafana
@@ -127,6 +139,9 @@ infer reachability or silently mark embedded client code unaffected.
 Use patched vendor builds plus full revalidation, or explicitly decide these
 scoped development exceptions. Separately maintained source builds require their
 own build, dependency and runtime validation; no vendor fork is introduced here.
+
+See the [observability upgrade evidence](security/observability-upgrade-2026-10-16.json)
+for selected releases, configuration provenance, container checks and local limits.
 
 ## Refresh dependencies
 
@@ -198,9 +213,9 @@ CVE-2026-100354 in `github.com/getkin/kin-openapi` 0.147.0; reported fixes requi
 0.148.0/0.149.0. The CockroachDB CRITICAL remains CVE-2025-68121 in its embedded Go
 standard library. These are scanner findings, not claims of demonstrated reachability.
 
-The four affected vendor tags still resolve to the same immutable digests as
+At that earlier check, the four affected vendor tags resolved to the same immutable digests as
 the failed CI run. The checked next patch tags return registry HTTP 404; the
-Collector and Loki latest-release redirects still name 0.162.0 and 3.7.8.
+Collector and Loki latest-release redirects named 0.162.0 and 3.7.8.
 Previously evaluated CockroachDB 26.3.2 and Grafana 13.2.4 also retained blocking
 findings, as recorded in the 15 October inventory. No compatible official-image
 update that clears the gate was identified among these releases. A package's

@@ -154,6 +154,14 @@ For a canonical Singapore/UK-only customer UUID, inspect `fe_replicas`, `fe_fenc
 
 ## Application logging extension
 
+The gateway upgrade regression, `python3 poc/tests/gateway_dns_acceptance.py`,
+changes the real Grafana container's Docker address, requires the same gateway
+process to recover access, and restores the original address. Run it after
+startup, separately from other mutable suites. It is included in container CI.
+The [16 October observability upgrade evidence](docs/security/observability-upgrade-2026-10-16.json)
+distinguishes passed telemetry/browser checks from local disk-blocked recovery
+and the remaining vendor CVE gate.
+
 See [observability setup and evidence](docs/OBSERVABILITY.md). `./lab telemetry` verifies API → OTel Collector → Loki, trace correlation and Grafana provisioning. `./lab up` and `./lab test` include this gate. Python OTLP tests passed during authoring. The full Docker/Loki/Grafana path subsequently passed; see [container acceptance](docs/CONTAINER_ACCEPTANCE.md). The starting Docker budget with this extension is 10 GB RAM and 15 GB disk, not measured.
 
 ## Production foundation regressions

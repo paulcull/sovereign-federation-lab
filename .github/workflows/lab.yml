@@ -23,6 +23,8 @@ jobs:
           mkdir -p artifacts
           ./lab doctor 2>&1 | tee artifacts/doctor.txt
           ./lab up 2>&1 | tee artifacts/startup.log
+      - name: Gateway follows a real Grafana address change
+        run: python3 poc/tests/gateway_dns_acceptance.py 2>&1 | tee artifacts/gateway-dns.log
       - name: Execute integration and restart gates
         run: ./lab test 2>&1 | tee artifacts/acceptance.log
       - name: Actual OPA and Collector outage gates
