@@ -83,7 +83,48 @@ walkthroughs sequentially. Keep mandatory transactional audit independent of
 telemetry failures and check trace/log correlation after SDK or Collector changes.
 Use the exact commit's CI result, not a previous image's acceptance.
 
-## Findings and residual exposure
+## Latest recheck: 16 October 2026
+
+**PR #6 remains blocked by its security gate.** Its latest clean-build CI passed
+every functional, outage and browser stage and failed only the dependency audit.
+The 15 October CI reported 44 blocking vendor finding instances. A fresh local
+audit on 16 October completed without scan errors and reported **47**:
+
+| Pinned vendor image | HIGH/CRITICAL findings with a reported fixed version |
+|---|---:|
+| CockroachDB 25.4.17 | 34, including one CRITICAL |
+| Grafana 12.4.13 | 5 |
+| Loki 3.7.8 | 4 |
+| Collector 0.162.0 | 4 |
+
+Python still reports zero advisories and zero skipped packages. All seventeen
+audit regressions passed again. The [dated recheck inventory](security/dependency-recheck-2026-10-16.json)
+retains the image identities, all-severity counts, blocking package/version
+records, scanner metadata and release checks. The local audit ran from the
+descendant PR #7 checkout; its vendor pins, Dockerfiles, Python locks and audit
+script are byte-identical to PR #6. This is not a new clean-build CI result for
+PR #6. Full local reports are under ignored `artifacts/security-recheck-2026-10-16/`.
+
+The three additional Grafana findings are CVE-2026-100352, CVE-2026-100353 and
+CVE-2026-100354 in `github.com/getkin/kin-openapi` 0.147.0; reported fixes require
+0.148.0/0.149.0. The CockroachDB CRITICAL remains CVE-2025-68121 in its embedded Go
+standard library. These are scanner findings, not claims of demonstrated reachability.
+
+The four affected vendor tags still resolve to the same immutable digests as
+the failed CI run. The checked next patch tags return registry HTTP 404; the
+Collector and Loki latest-release redirects still name 0.162.0 and 3.7.8.
+Previously evaluated CockroachDB 26.3.2 and Grafana 13.2.4 also retained blocking
+findings, as recorded in the 15 October inventory. No compatible official-image
+update that clears the gate was identified among these releases. A package's
+reported fixed version is not a patched vendor image.
+
+Remediation requires vendor images containing the fixes, followed by the complete
+container and security acceptance. Separately maintained vendor builds or a
+database release-line migration require their own implementation and validation;
+no such changes or vulnerability exceptions are included here. Re-running the
+same pinned images cannot install an embedded dependency fix.
+
+## Findings and residual exposure: 15 October baseline
 
 The 15 October 2026 scan used pip-audit 2.10.1 and Trivy 0.76.0. The initial Python
 resolution included Starlette 0.46.2 through FastAPI 0.115.12. Seven distinct CVEs
