@@ -17,7 +17,7 @@ doctor() {
   echo 'Docker/Compose and configuration checks passed. Allow 10 GB Docker memory and 15 GB free disk (unmeasured starting budget).'
 }
 build() {
-  dc build tools
+  dc build tools node-tools
   dc run --rm --no-deps --user "$(id -u):$(id -g)" tools scripts/build.py
   dc run --rm --no-deps --user "$(id -u):$(id -g)" tools scripts/verify.py
 }
@@ -35,13 +35,30 @@ faults() (
   dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/fault_acceptance.py recovered
   dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/logging_integration.py
 )
+read_isolation() (
+  trap 'dc unpause pilot-peer-uk >/dev/null 2>&1 || :; dc unpause opa-sg >/dev/null 2>&1 || :' EXIT
+  dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_read_isolation.py setup
+  dc pause pilot-peer-uk
+  dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_read_isolation.py paused
+  dc unpause pilot-peer-uk
+  dc pause opa-sg
+  dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_read_isolation.py policy-paused
+  dc unpause opa-sg
+  dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_read_isolation.py recovered
+)
 case "${1:-help}" in
   pilot-up)
     python3 "$ROOT/scripts/pilot_setup.py"
     export LAB_PILOT=1
     doctor; build
+    dc up -d --wait --wait-timeout 240 db-sg db-uk db-us db-in opa-sg opa-uk opa-us opa-in
+    # OPA loads mounted bundles at process start; include new service policy on upgrades.
+    dc restart opa-sg opa-uk opa-us opa-in
+    dc run --rm --no-deps --user "$(id -u):$(id -g)" -e SERVICING_ADMIN_DSN=postgresql://root@db-sg:26257/defaultdb?sslmode=disable tools poc/servicing_bootstrap.py source
+    dc run --rm --no-deps --user "$(id -u):$(id -g)" -e SERVICING_ADMIN_DSN=postgresql://root@db-uk:26257/defaultdb?sslmode=disable tools poc/servicing_bootstrap.py recipient
     dc up --build -d --wait --wait-timeout 240
     ready
+    dc exec -T monitor python pilot_reconcile.py --dsn-env DB_SG
     echo 'Synthetic pilot: http://localhost:8081 (PILOT_PORT overrides). Get a test credential with ./lab pilot-token crm-sg or uk-servicing.'
     ;;
   pilot-test)
@@ -49,6 +66,14 @@ case "${1:-help}" in
     ready
     dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_acceptance.py
     dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_review_acceptance.py
+    for test in security_test.py pilot_scope_query_acceptance.py pilot_protocol_acceptance.py pilot_security_acceptance.py service_integration.py; do
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" tools "poc/tests/$test"
+    done
+    ;;
+  pilot-isolation)
+    export LAB_PILOT=1
+    ready
+    read_isolation
     ;;
   pilot-faults)
     export LAB_PILOT=1
@@ -73,7 +98,17 @@ case "${1:-help}" in
       dc up -d --wait --wait-timeout 240 monitor pilot-api pilot-peer-uk pilot-peer-us pilot-gateway
       dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py restart
       dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py logs
+      read_isolation
     )
+    ;;
+  pilot-reconcile)
+    export LAB_PILOT=1
+    shift
+    dc exec -T monitor python pilot_reconcile.py --dsn-env DB_SG "$@"
+    ;;
+  pilot-identity)
+    shift
+    python3 "$ROOT/scripts/pilot_setup.py" "$@"
     ;;
   pilot-token)
     python3 "$ROOT/scripts/pilot_setup.py" token "${2:-}"
@@ -81,6 +116,24 @@ case "${1:-help}" in
   pilot-down)
     export LAB_PILOT=1
     dc down --remove-orphans
+    ;;
+  cluster-test)
+    ready
+    dc exec -T monitor python -m unittest discover -s tests -p cluster_control_unit.py
+    dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/cluster_control_acceptance.py
+    dc restart monitor
+    dc up -d --wait --wait-timeout 240 monitor gateway
+    dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/cluster_control_acceptance.py --phase restart
+    ;;
+  cluster-faults)
+    ready
+    (
+      trap 'dc unpause db-in >/dev/null 2>&1 || :' EXIT
+      dc pause db-in
+      dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/cluster_control_acceptance.py --phase paused
+      dc unpause db-in
+      dc exec -T monitor python health_probe.py --wait 45
+    )
     ;;
   doctor) doctor ;;
   build) doctor; build ;;
@@ -152,6 +205,8 @@ Sovereign Federation Lab — CockroachDB only
   ./lab doctor       Check Docker/Compose and configuration
   ./lab up           Build docs/images, start and wait for SQL + OPA readiness
   ./lab status       Container and dependency health
+  ./lab cluster-test Real cluster inventory, native canary backup/restore and restart evidence
+  ./lab cluster-faults Pause India SQL and verify independent cluster controls
   ./lab smoke        Gateway, API, SQL identity and policy readiness
   ./lab telemetry    Verify API → Collector → Loki and Grafana provisioning
   ./lab faults       Stop real OPA/Collector; verify fail-closed exports and SQL audit isolation
@@ -159,6 +214,9 @@ Sovereign Federation Lab — CockroachDB only
   ./lab pilot-up     Wire synthetic customer MDM, system/experience APIs and mTLS peers
   ./lab pilot-test   Actual SQL/OPA/API pilot acceptance
   ./lab pilot-faults Stop real peers/OPA/Collector and verify recovery and persistence
+  ./lab pilot-isolation Pause peer/OPA; verify unrelated owner reads remain available
+  ./lab pilot-reconcile [--batch-size 10]   Requeue current-state intents for protocol upgrade
+  ./lab pilot-identity revoke|rotate IDENTITY   Revoke/rotate a synthetic credential
   ./lab pilot-token crm-sg|uk-servicing|us-reader   Print one local test credential
   ./lab pilot-down   Stop the pilot and lab; preserve volumes
   ./lab generate --count 5 --scenario sg-uk-no-us

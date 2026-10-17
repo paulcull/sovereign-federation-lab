@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cluster Control · Sovereign Lab</title>
+  <link rel="stylesheet" href="/clusters/control.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/clusters/" aria-label="Cluster Control home"><span class="brand-mark">◈</span><span>SOVEREIGN<small>CLUSTER CONTROL</small></span></a>
+    <div class="nav-label">DATABASE OPERATIONS</div>
+    <nav aria-label="Database operations">
+      <button data-route="fleet" class="nav-item"><span aria-hidden="true">▦</span><span>Clusters</span></button>
+      <button data-route="operations" class="nav-item"><span aria-hidden="true">↺</span><span>Operation history</span></button>
+    </nav>
+    <div class="nav-label platform-label">PLATFORM CONTEXT</div>
+    <nav aria-label="Platform context">
+      <button data-route="environment" class="nav-item"><span aria-hidden="true">◇</span><span>Environment</span></button>
+      <a href="/" class="nav-item"><span aria-hidden="true">↗</span><span>Federation lab</span></a>
+    </nav>
+    <div class="sidebar-note"><span class="operator-icon">D</span><span>Development operator<small>Private lab · synthetic data</small></span></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div><span class="context-dot"></span> Federation lab <span class="context-separator">/</span> <strong id="breadcrumb">Database operations</strong></div><span class="mode" id="mode">Connecting to live clusters</span></header>
+    <main id="main" tabindex="-1"><div class="loading"><span class="spinner"></span><h1>Connecting to your clusters</h1><p>Reading CockroachDB directly. Cluster status will appear here.</p></div></main>
+    <footer class="workspace-footer">Cluster Control · Self-hosted lab adapter <span>Business services handle interactions. Sovereign services govern data sharing and routing.</span></footer>
+  </div>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <dialog id="operation-dialog" aria-labelledby="dialog-title">
+    <form id="operation-form">
+      <div class="dialog-top"><span class="eyebrow">REVIEW DATABASE OPERATION</span><button type="button" id="close-dialog" class="icon-button" aria-label="Close dialog">×</button></div>
+      <h2 id="dialog-title">Run recovery rehearsal</h2>
+      <p class="muted">Verify a real CockroachDB backup and restore on <strong id="dialog-cluster"></strong>.</p>
+      <dl class="review-list"><div><dt>Data scope</dt><dd>3 generated synthetic canary rows</dd></div><div><dt>Backup location</dt><dd>This cluster’s node-local volume</dd></div><div><dt>Restore target</dt><dd>A new temporary database on this cluster</dd></div><div><dt>Business databases</dt><dd>Unchanged</dd></div></dl>
+      <div class="callout warning"><strong>This is a recovery rehearsal.</strong><p>It does not create a business-data backup or prove recovery after losing this host. The local canary backup is retained; temporary databases are removed after verification.</p></div>
+      <label class="input-label" for="confirm-cluster">Type <strong id="confirm-label"></strong> to confirm the cluster</label>
+      <input id="confirm-cluster" autocomplete="off" required spellcheck="false">
+      <p id="dialog-error" class="error-text" role="alert"></p>
+      <div class="dialog-actions"><button type="button" id="cancel-dialog" class="button secondary">Cancel</button><button type="submit" id="confirm-operation" class="button primary">Run rehearsal</button></div>
+    </form>
+  </dialog>
+  <script type="module" src="/clusters/control.mjs"></script>
+</body>
+</html>

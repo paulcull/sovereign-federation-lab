@@ -12,9 +12,11 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.sdk.resources import Resource
 from observability import ApplicationLogs, RequestTelemetry
+from cluster_control import ClusterControl
 from seed import make_record, SCENARIOS, REGIONS, CATALOG, ENTITIES, STORE_INFO, placement
 
 LOCK = threading.RLock()  # Single harness serializes policy edits and delivery. Not a distributed fence.
+CLUSTER_CONTROL = ClusterControl()
 STOP = threading.Event()
 PAUSED = {r: False for r in STORE_INFO}
 HEALTH = {r: True for r in REGIONS}
@@ -189,14 +191,17 @@ async def lifespan(app):
     if PILOT is not None:PILOT.mdm.initialize()
     if MIGRATION is not None:MIGRATION.initialize()
     STOP.clear();thread=threading.Thread(target=worker,daemon=True);thread.start()
+    CLUSTER_CONTROL.start()
     LOGS.emit('service.started')
     try:
         yield
     finally:
         STOP.set();thread.join(timeout=5)
+        CLUSTER_CONTROL.shutdown()
         LOGS.emit('service.stopped');LOGS.shutdown();provider.shutdown()
 app=FastAPI(title='Sovereign Federation Lab · CockroachDB',lifespan=lifespan,docs_url='/api-docs',redoc_url=None)
 app.add_middleware(RequestTelemetry, logs=LOGS, tracer=TRACER)
+app.include_router(CLUSTER_CONTROL.router())
 from lab_health import router as health_router
 app.include_router(health_router())
 class Generate(BaseModel):

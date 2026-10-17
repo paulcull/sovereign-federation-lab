@@ -1,0 +1,461 @@
+{
+  "recorded_at": "2026-10-16T21:28:43.624390+00:00",
+  "scope": "Trusted single-host synthetic development only; loopback gateways; internal SQL/admin ports; owner paulcull; expiry 2026-11-15T00:00:00Z. No production, bank-pilot, public-preview or real-customer-data approval.",
+  "decision": {
+    "existing_cockroach_records_unchanged": 34,
+    "new_grafana_records": 19,
+    "new_loki_records": 4,
+    "total_exact_scopes": 57,
+    "accepted_finding_instances": 98,
+    "vulnerabilities_remain_present": true,
+    "scanner_or_workflow_logic_changed": false
+  },
+  "regressions": {
+    "command": "python3 -m unittest discover -s scripts/tests -p test_audit_dependencies.py",
+    "passed": 34
+  },
+  "synthetic_lab_audit": {
+    "run_id": "078b0e255cb942b685a794b78874b85b",
+    "commit": "10637e0280ab19605183088c23fa02c9e4de8f52",
+    "working_tree_dirty": true,
+    "scanned_at": "2026-10-16T21:26:04.798911+00:00",
+    "finished_at": "2026-10-16T21:27:25.166419+00:00",
+    "status": "passed_with_risk_acceptance",
+    "passed": true,
+    "completed": true,
+    "risk_context": "synthetic-lab",
+    "configured_image_count": 11,
+    "accepted_high_critical": 98,
+    "unaccepted_fixable_high_critical": 0,
+    "errors": [],
+    "trivy": {
+      "Version": "0.76.0",
+      "VulnerabilityDB": {
+        "Version": 2,
+        "NextUpdate": "2026-10-17T01:13:54.947090202Z",
+        "UpdatedAt": "2026-10-16T01:13:54.947090392Z",
+        "DownloadedAt": "2026-10-16T14:05:48.177134821Z"
+      }
+    },
+    "python": {
+      "report": "run-078b0e255cb942b685a794b78874b85b/python.json",
+      "advisory_records": 0,
+      "skipped_packages": []
+    },
+    "image_identity_count": 11,
+    "summary_sha256": "de13802393517bd5ea6ffb662124a385b8b1e4609bdd8e09e6bff2c9890ea6db",
+    "python_report_sha256": "86607d384ebba2dce3d214b82dd68d8d4402c440155a9009a3cd20b0c1a89407",
+    "images": [
+      {
+        "image_id": "sha256:79881e37782c00b08f96945b255ccd127b4e5716b58916e1bd98639413da259f",
+        "tags": [
+          "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e"
+        ],
+        "repo_digests": [
+          "cockroachdb/cockroach@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e"
+        ],
+        "counts": {
+          "MEDIUM": 167,
+          "LOW": 81,
+          "HIGH": 42,
+          "CRITICAL": 1,
+          "UNKNOWN": 1
+        },
+        "fixable_high_critical": 34,
+        "accepted_high_critical": 34,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "ccd7fd304aaacbcbfa7262448d7e66fd82e690b3d374f744847934b2a74b2cd9"
+      },
+      {
+        "image_id": "sha256:45900b2eda7da0cbda80b9025e446147d9085fee71675ba86a48a1cad34e4c8a",
+        "tags": [
+          "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f"
+        ],
+        "repo_digests": [
+          "grafana/grafana@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f"
+        ],
+        "counts": {
+          "MEDIUM": 162,
+          "HIGH": 60,
+          "UNKNOWN": 18,
+          "LOW": 13
+        },
+        "fixable_high_critical": 60,
+        "accepted_high_critical": 60,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "347463a404da937021471ad4e6735fde63c3b65854b1428fe121ebebdca51713"
+      },
+      {
+        "image_id": "sha256:ceccdbc45e274f08eb23d6ca6e0b648921d580c592ab47b4304225c0f17a406a",
+        "tags": [
+          "grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193"
+        ],
+        "repo_digests": [
+          "grafana/loki@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193"
+        ],
+        "counts": {
+          "MEDIUM": 14,
+          "LOW": 5,
+          "UNKNOWN": 2,
+          "HIGH": 4
+        },
+        "fixable_high_critical": 4,
+        "accepted_high_critical": 4,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "6ecf4e6294b447ca4a2ccd91288ce86e5b1e64c9b2cf7decaabbc04deeea5c3f"
+      },
+      {
+        "image_id": "sha256:0d831f5435ede3eeaba5768270c9e6f542d58306f69bb61f148e5c2374b57c56",
+        "tags": [
+          "nginx:1.30.6-alpine@sha256:ff8328b4279ec385af48cde9ef486e7165ad74b7065cb3cd86c377384e2e2dd5"
+        ],
+        "repo_digests": [
+          "nginx@sha256:ff8328b4279ec385af48cde9ef486e7165ad74b7065cb3cd86c377384e2e2dd5"
+        ],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "0e54e9a2b91ba113a523d361fb7d6692cad1bbcf0a91b4d31ed04d77f5dc1cad"
+      },
+      {
+        "image_id": "sha256:d71e8282b9ce0aae6199af8b9dd27b62c7e48fca997c22c543ff91de6182a153",
+        "tags": [
+          "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5"
+        ],
+        "repo_digests": [
+          "openpolicyagent/opa@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5"
+        ],
+        "counts": {
+          "UNKNOWN": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "ecfa67059f8c02c48bc23424535acfd33bfd9de3d9d54e47eedf480e24ac9552"
+      },
+      {
+        "image_id": "sha256:8aea5f9933381bcc916abd9c102f38d927e3812e4d5e19cfc3f21d72af2c757a",
+        "tags": [
+          "otel/opentelemetry-collector:0.163.1@sha256:f0e23036dce3db3f9cb80d907c75a0d034cd32e93511a1943482d46129b9ae9c"
+        ],
+        "repo_digests": [
+          "otel/opentelemetry-collector@sha256:f0e23036dce3db3f9cb80d907c75a0d034cd32e93511a1943482d46129b9ae9c"
+        ],
+        "counts": {
+          "UNKNOWN": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "ff4bd34b2a3fcaca39a655935961173d3caea84e9e8644ad96b9228cc1bc84d3"
+      },
+      {
+        "image_id": "sha256:ededd1175592afe8fa84e4c2b8ce06664f95f07b366a31d560953a920330f368",
+        "tags": [
+          "sfl-acceptance-gateway"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "bece34de2f9ae888515f7c0e02b2df5d95d91a77b66135bc82fcfa8d0d70a9ed"
+      },
+      {
+        "image_id": "sha256:8187c61c5376473716b15fad52101af617899d3de1963aed3779af1b401d9525",
+        "tags": [
+          "sfl-acceptance-node-tools"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "715ed08f86426d9c91b7c6d3e6c55594da2d0aec56cc3802f9211ad0d81f6d1d"
+      },
+      {
+        "image_id": "sha256:42a135c7f8b16f90aa8af03a8f1f4480f1ff3fb73bb8492d8e4ee10c44bb3dfd",
+        "tags": [
+          "sfl-acceptance-pilot-gateway"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "7a070a5d6304637d794cc5ef437dd356836218909dd58e8ebca88839bc5167a1"
+      },
+      {
+        "image_id": "sha256:74028c5000bb17d5156341a6c7bfe8420128eed067822c2c410b59c83247824c",
+        "tags": [
+          "sfl-acceptance-tools"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "LOW": 62,
+          "HIGH": 44,
+          "MEDIUM": 63,
+          "UNKNOWN": 3
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "5ab4806629b7bd12f13f14cb055f2070aaab9570b4c44f87c79068a1f3f4a0a2"
+      },
+      {
+        "image_id": "sha256:f0c809fb92c930ab9e2bcc5f5b41ff7ba6bc93c4f01dff997a9df9acb40eec2e",
+        "tags": [
+          "sovereign-federation-pilot:local"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "LOW": 62,
+          "HIGH": 44,
+          "MEDIUM": 63,
+          "UNKNOWN": 3
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "7ed5bc48f0dc88576e4e3b15e78d1c6013fbc7cf032453ff11b1946efe329b0e"
+      }
+    ]
+  },
+  "strict_audit_expected_failure": {
+    "run_id": "9e33e0868edc4eb7b5060a2f85864918",
+    "commit": "10637e0280ab19605183088c23fa02c9e4de8f52",
+    "working_tree_dirty": true,
+    "scanned_at": "2026-10-16T21:27:43.477378+00:00",
+    "finished_at": "2026-10-16T21:28:18.578740+00:00",
+    "status": "failed",
+    "passed": false,
+    "completed": true,
+    "risk_context": "strict",
+    "configured_image_count": 11,
+    "accepted_high_critical": 0,
+    "unaccepted_fixable_high_critical": 98,
+    "errors": [],
+    "trivy": {
+      "Version": "0.76.0",
+      "VulnerabilityDB": {
+        "Version": 2,
+        "NextUpdate": "2026-10-17T01:13:54.947090202Z",
+        "UpdatedAt": "2026-10-16T01:13:54.947090392Z",
+        "DownloadedAt": "2026-10-16T14:05:48.177134821Z"
+      }
+    },
+    "python": {
+      "report": "run-9e33e0868edc4eb7b5060a2f85864918/python.json",
+      "advisory_records": 0,
+      "skipped_packages": []
+    },
+    "image_identity_count": 11,
+    "summary_sha256": "2d1adb5295b3bc728f97b0bc97bf7641fededdf663611b0a537168cf24aea593",
+    "python_report_sha256": "86607d384ebba2dce3d214b82dd68d8d4402c440155a9009a3cd20b0c1a89407",
+    "images": [
+      {
+        "image_id": "sha256:79881e37782c00b08f96945b255ccd127b4e5716b58916e1bd98639413da259f",
+        "tags": [
+          "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e"
+        ],
+        "repo_digests": [
+          "cockroachdb/cockroach@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e"
+        ],
+        "counts": {
+          "MEDIUM": 167,
+          "LOW": 81,
+          "HIGH": 42,
+          "CRITICAL": 1,
+          "UNKNOWN": 1
+        },
+        "fixable_high_critical": 34,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 34,
+        "raw_report_sha256": "8720d6e620b92fca3f82a82bd8ba7cc41d731f6dfe36b60d3825f1232b98c876"
+      },
+      {
+        "image_id": "sha256:45900b2eda7da0cbda80b9025e446147d9085fee71675ba86a48a1cad34e4c8a",
+        "tags": [
+          "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f"
+        ],
+        "repo_digests": [
+          "grafana/grafana@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f"
+        ],
+        "counts": {
+          "MEDIUM": 162,
+          "HIGH": 60,
+          "UNKNOWN": 18,
+          "LOW": 13
+        },
+        "fixable_high_critical": 60,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 60,
+        "raw_report_sha256": "de11c6ee2cd4a31671e29fdd0b36bd3b9a80c2a7e25988135018f265441cf8bc"
+      },
+      {
+        "image_id": "sha256:ceccdbc45e274f08eb23d6ca6e0b648921d580c592ab47b4304225c0f17a406a",
+        "tags": [
+          "grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193"
+        ],
+        "repo_digests": [
+          "grafana/loki@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193"
+        ],
+        "counts": {
+          "MEDIUM": 14,
+          "LOW": 5,
+          "UNKNOWN": 2,
+          "HIGH": 4
+        },
+        "fixable_high_critical": 4,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 4,
+        "raw_report_sha256": "72f6bfa085ec9f95ac5db1f135d028859e75fe35c51f33c0de73fb9ce1e94796"
+      },
+      {
+        "image_id": "sha256:0d831f5435ede3eeaba5768270c9e6f542d58306f69bb61f148e5c2374b57c56",
+        "tags": [
+          "nginx:1.30.6-alpine@sha256:ff8328b4279ec385af48cde9ef486e7165ad74b7065cb3cd86c377384e2e2dd5"
+        ],
+        "repo_digests": [
+          "nginx@sha256:ff8328b4279ec385af48cde9ef486e7165ad74b7065cb3cd86c377384e2e2dd5"
+        ],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "834e92ac334c20854025610cbed89338ba3364e68b3e6c203e8dda6dd9574d52"
+      },
+      {
+        "image_id": "sha256:d71e8282b9ce0aae6199af8b9dd27b62c7e48fca997c22c543ff91de6182a153",
+        "tags": [
+          "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5"
+        ],
+        "repo_digests": [
+          "openpolicyagent/opa@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5"
+        ],
+        "counts": {
+          "UNKNOWN": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "d8c55b766eb045779023467a39b1ae59cdec308997c8099a6474b48dae010c81"
+      },
+      {
+        "image_id": "sha256:8aea5f9933381bcc916abd9c102f38d927e3812e4d5e19cfc3f21d72af2c757a",
+        "tags": [
+          "otel/opentelemetry-collector:0.163.1@sha256:f0e23036dce3db3f9cb80d907c75a0d034cd32e93511a1943482d46129b9ae9c"
+        ],
+        "repo_digests": [
+          "otel/opentelemetry-collector@sha256:f0e23036dce3db3f9cb80d907c75a0d034cd32e93511a1943482d46129b9ae9c"
+        ],
+        "counts": {
+          "UNKNOWN": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "1e539e83c35e55f46a27ff85853bd675bec5779b40990f4660187b84d420b837"
+      },
+      {
+        "image_id": "sha256:ededd1175592afe8fa84e4c2b8ce06664f95f07b366a31d560953a920330f368",
+        "tags": [
+          "sfl-acceptance-gateway"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "1fe0ab605a456d80b6a54f2af6176cdbcf29af902e4a87abec89f99d030c1eb9"
+      },
+      {
+        "image_id": "sha256:8187c61c5376473716b15fad52101af617899d3de1963aed3779af1b401d9525",
+        "tags": [
+          "sfl-acceptance-node-tools"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "8ae1a3fe60d6b14c8c27ec39c043a39f551d8015aaa69c3bec64f3708b9eaea8"
+      },
+      {
+        "image_id": "sha256:42a135c7f8b16f90aa8af03a8f1f4480f1ff3fb73bb8492d8e4ee10c44bb3dfd",
+        "tags": [
+          "sfl-acceptance-pilot-gateway"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "MEDIUM": 1
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "67d08591eba3b66dcd0514c68eee037595ecff2300e40cc95d74bd02ba012e50"
+      },
+      {
+        "image_id": "sha256:74028c5000bb17d5156341a6c7bfe8420128eed067822c2c410b59c83247824c",
+        "tags": [
+          "sfl-acceptance-tools"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "LOW": 62,
+          "HIGH": 44,
+          "MEDIUM": 63,
+          "UNKNOWN": 3
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "a18ec63cfb194269c939353fced436145d4e0fbeeb3e38b74a3d849d001c4cb4"
+      },
+      {
+        "image_id": "sha256:f0c809fb92c930ab9e2bcc5f5b41ff7ba6bc93c4f01dff997a9df9acb40eec2e",
+        "tags": [
+          "sovereign-federation-pilot:local"
+        ],
+        "repo_digests": [],
+        "counts": {
+          "LOW": 62,
+          "HIGH": 44,
+          "MEDIUM": 63,
+          "UNKNOWN": 3
+        },
+        "fixable_high_critical": 0,
+        "accepted_high_critical": 0,
+        "unaccepted_fixable_high_critical": 0,
+        "raw_report_sha256": "19fac11c5c74e44fc58034f7f2fdd0287281a2a4f153e1d2aeeb90173289e84a"
+      }
+    ]
+  },
+  "configuration_sha256": {
+    "docs/security/risk-acceptances.json": "01e6547076e04a6eb7c238a331e57051bcbd9cdc213ea91fcf50c79d429c894b",
+    "docs/security/non-cockroach-exception-requests-2026-10-16.json": "91ea76c4d4ab77380217b6f6a2c2df972999580bba2ad155f92e3b1587eec71a",
+    "compose.yaml": "8c0b18347271afaa5353551add16dd31d428ab5c853204e8dd2be9cd55eee106",
+    "compose.pilot.yaml": "a65c73128cbd892993c50c85183bd661345ff27f4a1af00e8605c552a488c581",
+    "poc/requirements.txt": "c51850fab2b4b131a1794521b644f7fcb8c08740b672e432637f9ec38961eb6f",
+    "scale/requirements.txt": "327d7a1c30e151b7248133e895761cfd32121861c6817e8139305475b102982a",
+    "requirements-dev.txt": "4fc956822994dc897d5c209f3d1e602596e2b24c2be5c2f928a2e8baf53b97bf",
+    "scripts/audit_dependencies.py": "1190d0aa12a5dc6cad6492506d50ba7ea47ab97ba4edf606cb05524a25f2fc3b",
+    "scripts/tests/test_audit_dependencies.py": "7d3989355a632a9028c0d75fc2ba5a7b0f38ea182ff04c3e872ac06e738c5a54"
+  },
+  "provenance_note": "These real-image audits ran before the approval commit, against the recorded parent commit with a dirty working tree. Use the exact approval commit GitHub Actions run for clean-build functional and security acceptance. Full local reports remain in the ignored artifacts/observability-risk-acceptance-2026-10-16 directory."
+}

@@ -2,14 +2,14 @@
   "name": "sovereign-lab",
   "services": {
     "db-sg": {
-      "image": "cockroachdb/cockroach:v25.4.0",
+      "image": "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e",
       "command": [
         "start-single-node",
         "--insecure",
         "--listen-addr=0.0.0.0:26257",
         "--http-addr=0.0.0.0:8080",
         "--cache=64MiB",
-        "--max-sql-memory=64MiB",
+        "--max-sql-memory=256MiB",
         "--locality=country=SG"
       ],
       "volumes": [
@@ -36,7 +36,7 @@
       ]
     },
     "opa-sg": {
-      "image": "openpolicyagent/opa:1.9.0",
+      "image": "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5",
       "command": [
         "run",
         "--disable-telemetry",
@@ -50,14 +50,14 @@
       "restart": "unless-stopped"
     },
     "db-uk": {
-      "image": "cockroachdb/cockroach:v25.4.0",
+      "image": "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e",
       "command": [
         "start-single-node",
         "--insecure",
         "--listen-addr=0.0.0.0:26257",
         "--http-addr=0.0.0.0:8080",
         "--cache=64MiB",
-        "--max-sql-memory=64MiB",
+        "--max-sql-memory=256MiB",
         "--locality=country=GB"
       ],
       "volumes": [
@@ -84,7 +84,7 @@
       ]
     },
     "opa-uk": {
-      "image": "openpolicyagent/opa:1.9.0",
+      "image": "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5",
       "command": [
         "run",
         "--disable-telemetry",
@@ -98,14 +98,14 @@
       "restart": "unless-stopped"
     },
     "db-us": {
-      "image": "cockroachdb/cockroach:v25.4.0",
+      "image": "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e",
       "command": [
         "start-single-node",
         "--insecure",
         "--listen-addr=0.0.0.0:26257",
         "--http-addr=0.0.0.0:8080",
         "--cache=64MiB",
-        "--max-sql-memory=64MiB",
+        "--max-sql-memory=256MiB",
         "--locality=country=US"
       ],
       "volumes": [
@@ -132,7 +132,7 @@
       ]
     },
     "opa-us": {
-      "image": "openpolicyagent/opa:1.9.0",
+      "image": "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5",
       "command": [
         "run",
         "--disable-telemetry",
@@ -146,7 +146,7 @@
       "restart": "unless-stopped"
     },
     "otel-collector": {
-      "image": "otel/opentelemetry-collector:0.140.0",
+      "image": "otel/opentelemetry-collector:0.163.1@sha256:f0e23036dce3db3f9cb80d907c75a0d034cd32e93511a1943482d46129b9ae9c",
       "command": [
         "--config=/etc/otel.yaml"
       ],
@@ -233,14 +233,14 @@
       }
     },
     "db-in": {
-      "image": "cockroachdb/cockroach:v25.4.0",
+      "image": "cockroachdb/cockroach:v25.4.17@sha256:a0809a5e77166cebaa92cb974114a6740c49e1f57ee14f323c0c9801847bb84e",
       "command": [
         "start-single-node",
         "--insecure",
         "--listen-addr=0.0.0.0:26257",
         "--http-addr=0.0.0.0:8080",
         "--cache=64MiB",
-        "--max-sql-memory=64MiB",
+        "--max-sql-memory=256MiB",
         "--locality=country=IN"
       ],
       "volumes": [
@@ -267,7 +267,7 @@
       ]
     },
     "opa-in": {
-      "image": "openpolicyagent/opa:1.9.0",
+      "image": "openpolicyagent/opa:1.21.2@sha256:7459fa69661242c8983d6e4116779550cbb17608f1110ddcd4e9e24da4dcb0e5",
       "command": [
         "run",
         "--disable-telemetry",
@@ -337,17 +337,20 @@
       "profiles": [
         "tools"
       ],
-      "image": "node:22.14.0-alpine",
       "working_dir": "/workspace",
       "volumes": [
         ".:/workspace"
       ],
       "entrypoint": [
         "node"
-      ]
+      ],
+      "build": {
+        "context": ".",
+        "dockerfile": "infra/NodeTools.Dockerfile"
+      }
     },
     "loki": {
-      "image": "grafana/loki:3.5.7",
+      "image": "grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193",
       "command": [
         "-config.file=/etc/loki/loki.yaml"
       ],
@@ -358,7 +361,7 @@
       "restart": "unless-stopped"
     },
     "grafana": {
-      "image": "grafana/grafana:12.2.0",
+      "image": "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f",
       "environment": {
         "GF_SERVER_ROOT_URL": "http://localhost:${LAB_PORT:-8080}/grafana/",
         "GF_SERVER_SERVE_FROM_SUB_PATH": "true",

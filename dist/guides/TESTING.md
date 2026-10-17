@@ -1,5 +1,16 @@
 # Unified lab verification — edition 09
 
+## CockroachDB cluster control
+
+`LAB_PILOT=1 ./lab cluster-test` verifies live cluster identities, guarded
+operations, native synthetic BACKUP/RESTORE, exact canary rows, audit and API
+restart persistence. `LAB_PILOT=1 ./lab cluster-faults` pauses the actual India
+database and checks independent UK operations. Run
+`python3 poc/tests/cluster_control_browser.py` for cluster-first navigation,
+separate Environment context, reviewed recovery and responsive layouts.
+See [cluster control scope](docs/CLUSTER_CONTROL.md). Browser transport faults
+check presentation only; database evidence comes from actual CockroachDB.
+
 ## Customer MDM integration pilot
 
 The optional profile has real SQL/OPA and mTLS system/experience API gates:
@@ -143,4 +154,27 @@ For a canonical Singapore/UK-only customer UUID, inspect `fe_replicas`, `fe_fenc
 
 ## Application logging extension
 
+The gateway upgrade regression, `python3 poc/tests/gateway_dns_acceptance.py`,
+changes the real Grafana container's Docker address, requires the same gateway
+process to recover access, and restores the original network attachment. Run it after
+startup, separately from other mutable suites. It is included in container CI.
+The [16 October observability upgrade evidence](docs/security/observability-upgrade-2026-10-16.json)
+distinguishes passed telemetry/browser checks from local disk-blocked recovery
+and the remaining vendor CVE gate.
+
 See [observability setup and evidence](docs/OBSERVABILITY.md). `./lab telemetry` verifies API → OTel Collector → Loki, trace correlation and Grafana provisioning. `./lab up` and `./lab test` include this gate. Python OTLP tests passed during authoring. The full Docker/Loki/Grafana path subsequently passed; see [container acceptance](docs/CONTAINER_ACCEPTANCE.md). The starting Docker budget with this extension is 10 GB RAM and 15 GB disk, not measured.
+
+## Production foundation regressions
+
+`./lab pilot-test` retains the original pilot assertions and adds real CockroachDB
+scoped-query/OPA parity and query-plan checks, import protocol/placement/replay
+and rollback/race checks, live credential/delegation checks, and independent
+servicing-service transaction/UK projection conformance. The isolated credential
+helper tests use synthetic certificates; they are not database evidence.
+
+`./lab pilot-isolation` pauses actual UK peer and SG OPA processes, requires an
+authorized owner read to finish before the stalled operation times out, and
+checks recovery. It is included in `./lab pilot-faults`. Run these mutable suites
+sequentially. See [foundation acceptance](docs/FOUNDATIONS_ACCEPTANCE.md) for
+executed results and [production gates](docs/PRODUCTION_READINESS.md) for work
+that remains unproven.

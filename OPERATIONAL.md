@@ -8,11 +8,11 @@ The business model and sovereignty model are parallel. The local operational ser
 
 Business services retain banking interactions, business rules and authoritative operational records. Sovereignty services govern approved placement, authority and policy-scoped movement. Reuse existing services and their data models through adapters; the normalized lab tables are an example contract, not a required replacement banking master.
 
-The proposed regional sovereignty peer can support several participating services without merging entity permissions. A service outside governed sharing needs no federation adapter; its existing authentication, local controls and applicable residency obligations still apply. Readers of shared views need a guarded query adapter. Writers of governed data need a compatible transactional outbox or local hook that atomically records bindings, versions, export intent and mandatory audit with the business change. Every writer of that data, including bulk imports and maintenance, must follow the contract or have its credentials restricted. Raw CDC alone cannot establish contextual consent, scope membership or complete-transaction intent.
+The regional sovereignty peer design can support several participating services without merging entity permissions; the [MDM pilot](docs/PILOT.md) implements separate peer processes on one host. A service outside governed sharing needs no federation adapter; its existing authentication, local controls and applicable residency obligations still apply. Readers of shared views need a guarded query adapter. Writers of governed data need a compatible transactional outbox or local hook that atomically records bindings, versions, export intent and mandatory audit with the business change. Every writer of that data, including bulk imports and maintenance, must follow the contract or have its credentials restricted. Raw CDC alone cannot establish contextual consent, scope membership or complete-transaction intent.
 
 Loose coupling separates local business success from remote projection delivery. It does not remove the local atomicity requirement or put a remote peer call inside the business transaction. Existing independent business-service boundaries can remain; only a proven business invariant justifies a shared local unit of work. Cross-service workflows need their own explicit consistency or saga contract.
 
-| Request | Proposed routing contract |
+| Request | Routing contract and implementation boundary |
 |---|---|
 | Write | Gateway or service adapter resolves the current authoritative owner from trusted versioned placement. The owner business service revalidates writer authority and commits locally. Recipient copies cannot accept owner writes. |
 | Read an approved local view | Recipient business service uses its policy-scoped projection, checking current permission and placement plus the workflow's acceptable data freshness. |
@@ -21,7 +21,7 @@ Loose coupling separates local business success from remote projection delivery.
 
 Routing is not authorisation. Identity, legal entity, purpose, fields, processing location and storage placement are separate checks. Do not forward request bodies through a prohibited region, query all stores, promote a nearby replica or fall back to another writer on failure. Missing mandatory authority/policy fails closed for the affected operation. Replica and telemetry failures remain separate from mandatory transactional audit.
 
-The current implementation uses one FastAPI harness and independent OPA processes. Recipient reads consult current owner authority and can serve an older ordinary `data_version`; there is no offline authority lease, automatic owner-read fallback or API freshness negotiation. Independent authenticated peers, automatic read/write routing and normalized-table migration remain pilot work. See [ADR-0017](docs/adr/ADR-0017.md) and the microsite's “Business & sovereignty services” reader step.
+The base lab uses one trusted FastAPI operator harness and independent OPA processes. The additive pilot has an authenticated system/experience API and separate mTLS recipient peers, routes writes to the SG business owner, and supports `freshness=projection`, explicit `freshness=owner` and `minimum_data_version`. A projection may have an older ordinary `data_version`, but current owner authority remains mandatory. Neither profile implements an offline authority lease, automatic owner-read fallback or normalized-table migration. See [ADR-0017](docs/adr/ADR-0017.md), [pilot contracts](docs/PILOT.md) and the [production release matrix](docs/PRODUCTION_READINESS.md).
 
 ## Two distribution paths
 
@@ -30,7 +30,7 @@ The current implementation uses one FastAPI harness and independent OPA processe
 
 “Global” is a distribution intent, not a bypass. Each recipient needs an entity grant, valid purpose and physical placement. Example Trading has a party-key US exclusion, so even its party minimum stays out of the US. Excluding Aster's party later removes its US party copy and intersects every relationship scope containing that party.
 
-The global minimum remains identifying metadata. Its legal basis, purpose and approved footprint require bank approval; this fixture is synthetic. The current three recipient grants illustrate all three physical stores, not automatic access for all 30 entities.
+The global minimum remains identifying metadata. A stable global UUID enables correlation even without a name. Its legal basis, purpose and approved footprint require bank approval; some deployments may need regional identifiers and a governed linkage service. This fixture is synthetic. The current three recipient grants illustrate all three physical stores, not automatic access for all 30 entities. Relationship context does not override independent party/shared-attribute restrictions, and merging identities must not union their grants.
 
 ## Table mapping
 
@@ -63,7 +63,7 @@ The source resolves bindings to authoritative business rows and control facts, s
 
 ## Transactions and regional services
 
-The PoC runs a single FastAPI process with a single worker and a process-wide lock. It acts as a modular business service and federation adapter for the three stores. It is not three production service deployments and has no authentication.
+The base PoC runs a single FastAPI coordinator with a process-wide lock and an unauthenticated trusted operator interface on loopback port 8080. It acts as a modular business service and federation adapter for the three stores. The additive pilot on loopback port 8081 authenticates API callers and separate peers, while reusing that coordinator for MDM ownership. These are separate processes on one development host, not regional production service deployments. Keep the original administrative interface private; pilot API authentication does not secure the base operator surface.
 
 Production deployment: regional gateway/BFF → authenticated regional business service modules → local CockroachDB. Resolve owner entity and physical home from trusted context; authorise entity, service action and purpose before routing. A request sent to the wrong home is rejected or forwarded only along an explicitly permitted path. No global gateway should terminate sensitive bodies outside an approved location. Regional service modules include Party, Contact/Consent, Relationship, Holdings and Interaction History. They may share a deployment and local unit of work when business invariants require it. Independently deployed services require an explicit saga or new transaction boundary, not a pretend cross-service ACID transaction.
 
@@ -71,9 +71,9 @@ For `update_contact`, one local transaction writes contact information, the sele
 
 After commit, the worker reads current state, evaluates OPA locally and emits only an approved graph. The recipient rechecks the allowed fields with its own OPA instance. One destination transaction deletes the old scoped graph child-first, inserts the new graph parent-first, and writes manifest, inbox and audit. The source acknowledges separately. A crash between recipient commit and source acknowledgement is retried using the inbox event ID. Older data/policy/decision versions are fenced. Never-authorised denied destinations receive neither payload nor customer-linked tombstone; denials remain at source. Previous recipients retain a compact receipt after purge for fencing; this is governed metadata, not a claim of total erasure.
 
-`data_version` tracks business freshness. `decision_revision` advances for consent and classification changes. `policy_generation` advances for table/key rule changes. `placement_version` fixes the physical target. Remote reads require the current decision/policy/placement version, but can serve an older ordinary data version. A paused store may still contain an old copy while reads fail closed. Reads consult the authoritative policy in this harness; no offline read lease is implemented. Production network importer credentials, signed permits and distributed fencing are extension points.
+`data_version` tracks business freshness. `decision_revision` advances for consent and classification changes. `policy_generation` advances for table/key rule changes. `placement_version` fixes the physical target. Remote reads require the current decision/policy/placement version, but can serve an older ordinary data version subject to the pilot caller's minimum. A paused store may still contain an old copy while reads fail closed. Reads consult authoritative policy; no offline read lease is implemented. The pilot adds mTLS and role-bound importer credentials. Bank workload identity, signed policy activation and distributed writer fencing remain separate gates.
 
-## APIs implemented
+## Base operator APIs implemented
 
 | Method / path | Behaviour |
 |---|---|
@@ -116,7 +116,7 @@ python3 poc/scripts/business_commands.py --command update_contact --count 5 --in
 python3 poc/tests/operational_integration.py
 ```
 
-The generator adds holdings/alternate IDs/classifications or changes contacts; it does not yet create arbitrary new parties and relationships. The original record generator remains in the record sandbox.
+This generator adds holdings/alternate IDs/classifications or changes contacts. The separate [pilot system APIs](docs/PILOT.md) can create synthetic parties and relationships with exact source references and explicit sharing profiles. The original record generator remains in the record sandbox.
 
 ## Performance and extension points
 
@@ -126,7 +126,7 @@ The generator adds holdings/alternate IDs/classifications or changes contacts; i
 - Retain the transactional outbox. Later use CockroachDB CDC on **outbox intents** to regional Kafka, not raw multi-table CDC directly into another geography. Changefeeds provide at-least-once delivery and do not preserve transaction-wide ordering; manifests and inbox deduplication remain necessary. A local polling adapter keeps the PoC small.
 - `operational_core.py`: command planning and dependency closure. `operational.py`: storage/UoW, OPA transport, relay, importer, receipt and read adapter. `operational_schema.sql`: typed tables. `operational.rego`: dataset decisions. `operational_catalog.json`: verified field contract. `operational-engine.js`: hosted simulator. Replace adapters rather than duplicating sovereignty logic in every business handler.
 - Every writer must invoke the hook or be blocked by credentials. The polymorphic resource binding is application-validated; SQL alone does not ensure its UUID exists in the named table. Production needs writer restrictions, registry integrity checks and fail-closed handling of unregistered changes. Bulk loads, deletes, migrations and legacy direct SQL are not solved by a sidecar alone.
-- Real transaction retry/backoff for CockroachDB serialization failures, tombstone lifecycles, identity merging, taxonomy service, large-party fanout and legal-entity rehoming need dedicated implementation. Do not run multiple harness workers.
+- Pilot MDM commands have bounded CockroachDB serialization retries and durable request receipts. That does not establish complete retry coverage for every base operator or future service writer. Tombstone lifecycles, identity merging, taxonomy service, large-party fanout and normalized-table rehoming need dedicated implementation. Do not run multiple harness workers.
 
 ## Observability and audit
 
@@ -134,7 +134,7 @@ Actual runtime spans include `operational.command`, `operational.dataset_gate`, 
 
 ## Acceptance and limits
 
-Executed: actual OPA v1.9.0, 840 browser/OPA cases (7,290 row decisions), Python business commands/graph closure, Node workflow tests, original 12 Rego tests and 990 entity parity cases. The subsequent [container acceptance](docs/CONTAINER_ACCEPTANCE.md) passed actual CockroachDB business commands, typed SQL projection checks, API restart persistence, OTLP log delivery and the live Chromium walkthrough. Database crash/partition/serialization-retry tests and a full accessibility review remain pilot gates.
+Executed baseline: actual OPA v1.9.0, 840 browser/OPA cases (7,290 row decisions), Python business commands/graph closure, Node workflow tests, original 12 Rego tests and 990 entity parity cases. The subsequent [container acceptance](docs/CONTAINER_ACCEPTANCE.md) passed actual CockroachDB business commands, typed SQL projection checks, API restart persistence, OTLP log delivery and the live Chromium walkthrough. The [pilot acceptance](docs/PILOT_ACCEPTANCE.md) adds system/experience API, real peer/OPA/Collector outage and restart evidence. Run the exact revision's gates before relying on changed code. Regional database failure/partition, full-writer retry coverage, normalized migration and a full accessibility review remain release gates.
 
 ```bash
 docker compose exec db-us ./cockroach sql --insecure --execute 'SELECT owner_entity_id, scope_id, destination_entity_id, global_party_id, party_type, display_name FROM projection.party'

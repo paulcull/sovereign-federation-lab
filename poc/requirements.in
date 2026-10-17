@@ -1,0 +1,10 @@
+# Direct runtime dependencies. Compile the hash-locked requirements.txt; see docs/DEPENDENCY_SECURITY.md.
+# FastAPI 0.141 retains the existing explicit telemetry contract.
+fastapi==0.141.1
+# Security fixes require Starlette >=1.3.1; pin the reviewed release.
+starlette==1.8.0
+uvicorn==0.54.0
+psycopg[binary]==3.3.6
+httpx==0.28.1
+opentelemetry-sdk==1.36.0
+opentelemetry-exporter-otlp-proto-http==1.36.0

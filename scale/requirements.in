@@ -1,0 +1,4 @@
+# Python 3.11+; compile the hash-locked requirements.txt.
+numpy==2.3.5
+matplotlib==3.10.8
+httpx==0.28.1

@@ -7,6 +7,21 @@ from fastapi import HTTPException
 import operational_core as core
 from projection_fields import write_fields
 
+SCOPE_POLICY_FACT_INDEXES={
+    ('classification','party_id'):'classification_owner_party',
+    ('classification','relationship_id'):'classification_owner_relationship',
+    ('classification','holding_id'):'classification_owner_holding',
+    ('consent','relationship_id'):'consent_owner_relationship',
+}
+
+def scope_policy_fact_query(table,field,multiple=False):
+    """Keep policy-fact access bounded regardless of table size or statistics."""
+    index=SCOPE_POLICY_FACT_INDEXES[(table,field)]
+    predicate='=ANY(%s)' if multiple else '=%s'
+    return ('SELECT '+','.join(core.TABLES[table]['columns'])+' FROM business.'+table+
+            '@{FORCE_INDEX='+index+',NO_FULL_SCAN} WHERE owner_entity_id=%s AND '+field+predicate+
+            ' ORDER BY id LIMIT %s')
+
 def clean(value):
     if isinstance(value,(uuid.UUID,Decimal)):return str(value)
     if isinstance(value,dict):return {k:clean(v) for k,v in value.items()}
@@ -64,6 +79,67 @@ class OperationalRuntime:
         m['rules']=[r[0] for r in rules.fetchall()]
         m['bindings']=[dict(scope_id=str(r[0]),resource_type=r[1],resource_id=str(r[2])) for r in bindings.fetchall()]
         return m
+    def load_scope(self,c,sid,max_resources=512):
+        """Load one authoritative graph and its policy dependencies in one SQL snapshot.
+
+        Bindings and business rows use their owner-qualified primary keys. Consent
+        and classification facts can restrict a bound row even when those facts
+        are not themselves exported, so they must remain in the evaluation input.
+        Oversized scopes fail explicitly; no truncated graph can be authorised.
+        """
+        owner=core.SPEC['owner_entity_id']
+        m={**copy.deepcopy({k:v for k,v in core.SPEC.items()
+                           if k not in ('rows','scopes','rules','bindings','table_rules')}),
+           'rows':{table:[] for table in core.ORDER},'scopes':[],'rules':[],'bindings':[]}
+        with c.pipeline():
+            scope_cursor=c.execute('SELECT doc FROM sovereignty.scope WHERE owner_entity_id=%s AND id=%s',(owner,sid))
+            binding_cursor=c.execute('SELECT resource_type,resource_id FROM sovereignty.binding '
+                'WHERE owner_entity_id=%s AND scope_id=%s ORDER BY resource_type,resource_id LIMIT %s',
+                (owner,sid,max_resources+1))
+        found=scope_cursor.fetchone()
+        if found is None:return m
+        scope=found[0];m['scopes']=[scope]
+        bindings=binding_cursor.fetchall()
+        if len(bindings)>max_resources:raise HTTPException(422,'Scope exceeds bounded graph query')
+        ids={table:[] for table in core.ORDER}
+        for table,rid in bindings:
+            if table not in ids:raise HTTPException(503,'Unregistered scope resource; fail closed')
+            ids[table].append(rid)
+            m['bindings'].append(dict(scope_id=str(sid),resource_type=table,resource_id=str(rid)))
+        with c.pipeline():
+            rows={table:c.execute('SELECT '+','.join(core.TABLES[table]['columns'])+
+                ' FROM business.'+table+' WHERE owner_entity_id=%s AND id=ANY(%s) ORDER BY id',
+                (owner,resource_ids)) for table,resource_ids in ids.items() if resource_ids}
+            tables=c.execute('SELECT resource_type,rule FROM sovereignty.table_rule WHERE owner_entity_id=%s',(owner,))
+            rules=c.execute('SELECT r.rule FROM sovereignty.binding b JOIN sovereignty.resource_rule r '
+                'ON r.owner_entity_id=b.owner_entity_id AND r.resource_type=b.resource_type AND r.resource_id=b.resource_id '
+                'WHERE b.owner_entity_id=%s AND b.scope_id=%s ORDER BY b.resource_type,b.resource_id', (owner,sid))
+            # Explicit subject indexes prevent a small-table or ORDER BY cost
+            # estimate from choosing an owner-wide primary-key scan. Separate
+            # predicates also avoid the same problem with a combined OR.
+            classifications=[c.execute(scope_policy_fact_query('classification',field,multiple=True),
+                (owner,ids[table],max_resources+1))
+                for table,field in (('party','party_id'),('relationship','relationship_id'),('product_holding','holding_id'))
+                if ids[table]]
+            consents=c.execute(scope_policy_fact_query('consent','relationship_id'),
+                (owner,scope['relationship_id'],max_resources+1))
+        for table,cursor in rows.items():
+            cols=list(core.TABLES[table]['columns'])
+            m['rows'][table]=[clean(dict(zip(cols,row))) for row in cursor.fetchall()]
+        for table,cursors in (('classification',classifications),('consent',[consents])):
+            facts=[row for cursor in cursors for row in cursor.fetchall()]
+            if len(facts)>max_resources:raise HTTPException(422,'Scope policy facts exceed bounded graph query')
+            merged={row['id']:row for row in m['rows'][table]}
+            for row in facts:
+                value=clean(dict(zip(core.TABLES[table]['columns'],row)));merged[value['id']]=value
+            if len(merged)>max_resources:raise HTTPException(422,'Scope policy facts exceed bounded graph query')
+            m['rows'][table]=sorted(merged.values(),key=lambda row:row['id'])
+        m['table_rules']={row[0]:row[1] for row in tables.fetchall()}
+        m['rules']=[row[0] for row in rules.fetchall()]
+        # Missing bound rows/rules are rejected by resources(), never treated as
+        # permission to export the remaining fragment of a customer graph.
+        core.resources(m,scope)
+        return m
     def candidates(self,s):return sorted(set(s['policy']['allowed_entities'])|set(s['policy']['denied_entities'])|set(s['policy']['grants'])|set(s['contacted']))
     def enqueue(self,c,s):
         for dest in self.candidates(s):
@@ -84,8 +160,11 @@ class OperationalRuntime:
             if not isinstance(result,list) or len(result)!=len(core.resources(m,s) if resources is None else resources):raise RuntimeError('Dataset policy missing; fail closed')
             return result
     def plan(self,m,s,dest):return core.manifest(m,s,self.evaluate(m,s,dest))
-    def command(self,sid,body):
+    def command(self,sid,body,validate=None):
         with self.tracer.start_as_current_span('operational.command',attributes={'source.store':self.home,'command.kind':body.get('command') if body.get('command') in core.COMMANDS else 'unknown'}), self.lock, self.stores[self.home].connect() as c:
+            # Pilot authority pins/expiry are checked in this same local SQL snapshot.
+            # The callback performs no OPA/peer I/O and also guards receipt replays.
+            if validate is not None:validate(c)
             try:uuid.UUID(body.get('request_id',''))
             except (ValueError,TypeError):raise HTTPException(422,'A UUID request_id is required')
             hashed=hashlib.sha256(json.dumps({'scope_id':sid,**body},sort_keys=True).encode()).hexdigest()

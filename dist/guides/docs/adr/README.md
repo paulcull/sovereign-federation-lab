@@ -6,7 +6,7 @@ Retrospective decisions recorded on 11 October 2026; subsequent proposals carry 
 - [ADR-0002: Legal entity is separate from physical placement](ADR-0002.md) — Accepted design; static catalog plus isolated migration implemented
 - [ADR-0003: Deny overrides grants and geographic eligibility](ADR-0003.md) — Accepted and implemented in fixture policies
 - [ADR-0004: Minimal global party identity and scoped relationship graphs](ADR-0004.md) — Accepted; normalized example implemented
-- [ADR-0005: One local ACID business boundary](ADR-0005.md) — Accepted; local harness transaction implemented, existing-service integration is pilot work
+- [ADR-0005: One local ACID business boundary](ADR-0005.md) — Accepted; local harness and independent servicing adapter implemented in synthetic pilot
 - [ADR-0006: Outbox now, regional CDC and durable bus later](ADR-0006.md) — Accepted; SQL polling/journal implemented, CDC/Kafka proposed
 - [ADR-0007: OPA rules with trusted current facts](ADR-0007.md) — Accepted; local OPA calls implemented, signed distribution proposed
 - [ADR-0008: Audit evidence and OpenTelemetry are distinct](ADR-0008.md) — Accepted; SQL audit and OTLP logs container gates passed
@@ -20,3 +20,5 @@ Retrospective decisions recorded on 11 October 2026; subsequent proposals carry 
 - [ADR-0016: A development gateway with explicit production boundary](ADR-0016.md) — Accepted; local HTTP gateway implemented
 - [ADR-0017: Existing business services with governed peer integration and routing](ADR-0017.md) — Accepted bounded synthetic integration; regional production deployment and distributed authority remain pilot work
 - [ADR-0018: A base customer MDM with system and experience APIs](ADR-0018.md) — Implemented synthetic single-host integration; bank pilot approval remains separate
+- [ADR-0019: Bounded integration foundations before regional production](ADR-0019.md) — Implemented synthetic foundations; regional production gates remain open
+- [ADR-0020: Separate cluster operations from environment and business controls](ADR-0020.md) — Accepted for the trusted development lab; production lifecycle automation proposed

@@ -18,6 +18,40 @@ Both `./lab up` and `./lab test` run this gate. Ordinary API health checks do no
 depend on telemetry delivery. A telemetry gate failure requires investigation;
 it must not be reported as a successful logging deployment.
 
+## Pinned releases and upgrades
+
+The 16 October 2026 release check selects Grafana **13.2.4**, Loki **3.7.8**
+and OpenTelemetry Collector **0.163.1**, with immutable manifest digests in
+`compose.yaml`. Loki 3.6.18 has a later publication date but is a patch on the
+older 3.6 line; this upgrade retains the latest stable 3.7 release.
+
+Grafana 13 is a major-version upgrade. Before starting it against an existing
+Grafana volume, stop the Grafana service and copy its complete persisted state
+into a private rollback directory. The local validation keeps that stopped-service
+copy under ignored artifacts. Rolling back requires the previous image together
+with its pre-upgrade state, rather than opening a migrated database with the old
+binary. Grafana UI metadata is separate from CockroachDB business and audit data.
+
+The gateway resolves Docker service names again when their addresses change.
+`python3 poc/tests/gateway_dns_acceptance.py` moves the real Grafana container to
+a different address, verifies access through the unchanged gateway process, and
+restores its original network attachment. Run it after startup and separately from mutable
+fault suites. This protects image replacements from stale upstream-address 502s.
+
+A newer version does not establish a security pass. The Collector candidate scan
+removes its four previously blocking findings, while Grafana 13 includes bundled
+plugin binaries with additional findings. The complete image audit and
+[dependency-security disposition](DEPENDENCY_SECURITY.md) govern the remaining
+exceptions; no additional acceptance follows from an image upgrade.
+
+Allow additional disk headroom for a major image upgrade with Docker's VFS
+driver. The recorded workspace pull first failed with insufficient extraction
+space, then succeeded after superseded images were removed. Its final roughly
+2.10 GB free remains below the native recovery rehearsal's 2.70 GB requirement;
+that local gate remains blocked rather than lowering the existing 8% guard.
+The complete native recovery gate remains mandatory in GitHub Actions. See the
+[upgrade evidence](security/observability-upgrade-2026-10-16.json).
+
 ## Signal paths
 
 | Signal | Implemented path | Storage / limits |
@@ -83,6 +117,43 @@ not demonstrate sovereign regional telemetry isolation. A pilot must deploy sink
 inside each approved residency boundary, introduce authentication/TLS, harden and
 scan image pins, set quotas and retention, review correlation identifiers, and
 separately prove audit completeness. No Docker socket is mounted for log scraping.
+
+## Production measurements and alert acceptance
+
+The following signals and alerts are release requirements, not dashboards already
+provisioned by this lab. Agree the numerical thresholds with each service owner
+before a regional load/failure run; the small fixture supplies no production SLO.
+
+| Signal | Separate measurements | Required failure drill |
+|---|---|---|
+| Request service | Attempted requests, success/error counts and p50/p95/p99 by bounded operation and cell; rejected/time-out requests remain in the denominator | Pause a peer while issuing unrelated owner traffic; demonstrate bounded impact and recovery |
+| Authority | Dependency availability, revision/fence age and time from accepted restriction to enforced recipient guard | Partition authority; verify scoped fail-closed behaviour and alert before the agreed deadline |
+| Delivery | Oldest pending age, bytes, attempts, quarantines and recipient acknowledgements | Stall one destination, exceed one worker batch, and verify healthy destinations progress |
+| Reconciliation/purge | Checkpoint age, work remaining, deadline and actual physical-row confirmation | Stop/restart reconciliation; read denial must not report physical deletion complete |
+| SQL/audit | Transaction retries, contention, commit failures, audit reconciliation gaps and disk headroom | Exhaust a bounded dependency budget; mandatory audit failure must prevent its business commit |
+| Infrastructure/identity | Certificate expiry, identity revocation failures, policy/schema incompatibility, node health and storage | Rotate keys, introduce incompatible versions and fail a node; exercise the responsible runbook |
+| Diagnostic pipeline | Queue saturation, dropped/export-failed logs and sink capacity | Stop Collector/Loki; business/audit durability remains independent and lost diagnostics are reported |
+
+Keep metric labels bounded: operation, cell, work class and outcome. Customer,
+party, relationship, request-reference and raw URL values do not belong in metric
+labels. Customer-linked audit and protocol receipts require approved regional
+storage and retention even when payload fields have been removed. Hashing such
+identifiers does not establish anonymity or an unrestricted export right.
+
+An alert is accepted only after an injected fault reaches its assigned on-call
+route and the operator executes a reviewed recovery procedure. Record the
+acknowledgement and recovery time, not merely a screenshot of a firing rule.
+Measure recovery headroom while foreground traffic continues; a draining backlog
+after all business traffic stops does not establish a sustainable operating point.
+See the [production release matrix](PRODUCTION_READINESS.md) for required inputs
+and [work isolation](../WORK_ISOLATION.md) for the proposed capacity boundaries.
+
+Retain SQL audit independently from diagnostic logs. Production needs protected
+regional retention and an independent reconciliation of accepted requests,
+committed mutations, delivery/fence receipts and applicable disposal evidence.
+The same database account being able to alter both business and audit tables is
+not tamper-resistant evidence. None of Loki retention, sampled traces or an
+application success counter substitutes for that reconciliation.
 
 ## Verification and cloud development handoff
 

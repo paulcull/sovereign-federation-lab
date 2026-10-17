@@ -1,7 +1,9 @@
 {
   "services": {
     "tools": {
-      "volumes": ["telemetry:/pilot-telemetry:ro"]
+      "volumes": [
+        "telemetry:/pilot-telemetry:ro"
+      ]
     },
     "monitor": {
       "image": "sovereign-federation-pilot:local",
@@ -154,7 +156,8 @@
         "no_proxy": "*",
         "PILOT_DSN": "postgresql://root@db-uk:26257/defaultdb?sslmode=disable",
         "PILOT_OPA": "http://opa-uk:8181",
-        "TELEMETRY_DIR": "/app/telemetry"
+        "TELEMETRY_DIR": "/app/telemetry",
+        "SERVICING_PROJECTION_DSN": "postgresql://sfl_case_projection@db-uk:26257/defaultdb?sslmode=disable"
       },
       "volumes": [
         "./.pilot/peer-uk:/run/pilot:ro",
@@ -239,7 +242,7 @@
       }
     },
     "pilot-authority": {
-      "image": "nginx:1.28.0-alpine",
+      "image": "nginx:1.30.6-alpine@sha256:ff8328b4279ec385af48cde9ef486e7165ad74b7065cb3cd86c377384e2e2dd5",
       "volumes": [
         "./infra/nginx.pilot-authority.conf:/etc/nginx/conf.d/default.conf:ro",
         "./.pilot/authority:/run/pilot:ro"
@@ -282,6 +285,60 @@
         "interval": "5s",
         "timeout": "3s",
         "retries": 12
+      }
+    },
+    "pilot-servicing": {
+      "image": "sovereign-federation-pilot:local",
+      "command": [
+        "uvicorn",
+        "servicing_service:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8443",
+        "--workers",
+        "1",
+        "--no-access-log",
+        "--ssl-certfile",
+        "/run/pilot/tls.crt",
+        "--ssl-keyfile",
+        "/run/pilot/tls.key",
+        "--ssl-ca-certs",
+        "/run/pilot/ca.crt",
+        "--ssl-cert-reqs",
+        "2"
+      ],
+      "restart": "unless-stopped",
+      "environment": {
+        "PILOT_CONFIG": "/run/pilot/config.json",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4318",
+        "OTEL_TRACES_SAMPLER": "always_on",
+        "NO_PROXY": "*",
+        "no_proxy": "*",
+        "TELEMETRY_DIR": "/app/telemetry",
+        "SERVICING_DSN": "postgresql://sfl_servicing@db-sg:26257/defaultdb?sslmode=disable",
+        "SERVICING_OPA": "http://opa-sg:8181"
+      },
+      "volumes": [
+        "./.pilot/servicing:/run/pilot:ro",
+        "telemetry:/app/telemetry"
+      ],
+      "depends_on": {
+        "pilot-api": {
+          "condition": "service_healthy"
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "from pilot_common import configuration,tls_client; c=tls_client(configuration()); c.get('https://pilot-servicing:8443/readyz').raise_for_status()"
+        ],
+        "interval": "5s",
+        "timeout": "12s",
+        "retries": 24,
+        "start_period": "20s"
       }
     }
   }

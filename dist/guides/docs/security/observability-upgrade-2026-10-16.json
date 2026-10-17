@@ -1,0 +1,228 @@
+{
+  "recorded_on": "2026-10-16",
+  "release_checks": {
+    "checked_at": "2026-10-16T20:02:37.182224+00:00",
+    "releases": [
+      {
+        "repo": "grafana/grafana",
+        "latest_release_url": "https://github.com/grafana/grafana/releases/tag/v13.2.4"
+      },
+      {
+        "repo": "grafana/loki",
+        "latest_release_url": "https://github.com/grafana/loki/releases/tag/v3.7.8"
+      },
+      {
+        "repo": "open-telemetry/opentelemetry-collector-releases",
+        "latest_release_url": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.163.1"
+      }
+    ],
+    "selected_images": {
+      "otel-collector": "otel/opentelemetry-collector:0.163.1@sha256:f0e23036dce3db3f9cb80d907c75a0d034cd32e93511a1943482d46129b9ae9c",
+      "loki": "grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193",
+      "grafana": "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f"
+    }
+  },
+  "audit": {
+    "commit": "72b2acaec32dd1d132dd5be2ce573b24410689a9",
+    "working_tree_dirty": true,
+    "finished_at": "2026-10-16T20:20:53.227096+00:00",
+    "status": "failed",
+    "configured_image_count": 11,
+    "accepted_high_critical": 34,
+    "unaccepted_fixable_high_critical": 64,
+    "errors": [],
+    "trivy": {
+      "Version": "0.76.0",
+      "VulnerabilityDB": {
+        "Version": 2,
+        "NextUpdate": "2026-10-17T01:13:54.947090202Z",
+        "UpdatedAt": "2026-10-16T01:13:54.947090392Z",
+        "DownloadedAt": "2026-10-16T14:05:48.177134821Z"
+      }
+    },
+    "python": {
+      "report": "run-1209a1ef272549cf9648e6d8f21e23ff/python.json",
+      "advisory_records": 0,
+      "skipped_packages": []
+    }
+  },
+  "selected_image_results": [
+    {
+      "image_id": "sha256:45900b2eda7da0cbda80b9025e446147d9085fee71675ba86a48a1cad34e4c8a",
+      "tags": [
+        "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f"
+      ],
+      "repo_digests": [
+        "grafana/grafana@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f"
+      ],
+      "counts": {
+        "MEDIUM": 162,
+        "HIGH": 60,
+        "UNKNOWN": 18,
+        "LOW": 13
+      },
+      "fixable_high_critical": 60,
+      "accepted_high_critical": 0,
+      "unaccepted_fixable_high_critical": 60
+    },
+    {
+      "image_id": "sha256:ceccdbc45e274f08eb23d6ca6e0b648921d580c592ab47b4304225c0f17a406a",
+      "tags": [
+        "grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193"
+      ],
+      "repo_digests": [
+        "grafana/loki@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193"
+      ],
+      "counts": {
+        "MEDIUM": 14,
+        "LOW": 5,
+        "UNKNOWN": 2,
+        "HIGH": 4
+      },
+      "fixable_high_critical": 4,
+      "accepted_high_critical": 0,
+      "unaccepted_fixable_high_critical": 4
+    },
+    {
+      "image_id": "sha256:8aea5f9933381bcc916abd9c102f38d927e3812e4d5e19cfc3f21d72af2c757a",
+      "tags": [
+        "otel/opentelemetry-collector:0.163.1@sha256:f0e23036dce3db3f9cb80d907c75a0d034cd32e93511a1943482d46129b9ae9c"
+      ],
+      "repo_digests": [
+        "otel/opentelemetry-collector@sha256:f0e23036dce3db3f9cb80d907c75a0d034cd32e93511a1943482d46129b9ae9c"
+      ],
+      "counts": {
+        "UNKNOWN": 1
+      },
+      "fixable_high_critical": 0,
+      "accepted_high_critical": 0,
+      "unaccepted_fixable_high_critical": 0
+    }
+  ],
+  "configuration_sha256": {
+    "compose.yaml": "8c0b18347271afaa5353551add16dd31d428ab5c853204e8dd2be9cd55eee106",
+    "infra/nginx.conf": "7bcd7916582b542154d71bfd54505197d1e45e2748d3535e0f8e691159f61b51",
+    "poc/otel-collector.yaml": "0c321d3e01b93ad95eb99f52e0cf6cad6a402f78f8ba98ec60ff7fc02637ef37",
+    "infra/loki.yaml": "76cdea5b618e07e4485e34374e1aec90fc58a38f055a1dc2a6acaa8337e7798f"
+  },
+  "validation": {
+    "audit_regressions": "passed: 30 tests",
+    "gateway_real_address_change": "passed: real Grafana receives a different dynamically allocated Docker address without restarting gateway; temporary address reservations removed and original network attachment restored",
+    "api_collector_loki_grafana": "passed: actual API span/log/header trace correlation and provisioned dashboard through gateway",
+    "mdm_foundations": "passed: real SQL/OPA/system/experience/servicing acceptance",
+    "pilot_faults": "passed: actual peer, OPA and Collector outages, restart recovery, trace correlation and independent owner reads",
+    "base_container_suite": "passed: federation/exclusions, normalized operational graphs, India snapshot/catch-up/validation/fencing/cutover/stale-write rejection/cleanup, restart authority, Collector span receipt and trace-correlated Loki/Grafana",
+    "cluster_native_recovery": "blocked/failed locally: insufficient_disk_headroom before canary creation; 2.10 GB available, 2.70 GB required by unchanged 8% guard; mandatory CI gate retained",
+    "base_faults": "passed: actual source OPA and Collector outages, durable SQL audit, outbox/recovery and log correlation",
+    "browser_generator_migration_grafana": "passed: real generator/movement, India migration, responsive monitor and rendered provisioned Grafana dashboard",
+    "browser_mdm": "passed: actual system/experience commands, routed owner update, US minimal party and exclusion",
+    "browser_microsite": "passed: real gateway reader journey, 28 design pages, glossary and mobile navigation",
+    "controller_units": "passed: 9 tests",
+    "browser_cluster_control": "blocked/failed locally at the disabled recovery button under the unchanged disk guard; health/retry interactions executed before that point; mandatory CI browser retained",
+    "cluster_actual_india_sql_outage": "passed: actual India SQL pause, honest unavailability and independent UK operation, then unpause/recovery",
+    "site": "passed: 57 HTML pages, 1642 local links/assets/fragments, Python syntax and 20 ADRs",
+    "live_versions": "passed: Grafana health 13.2.4/database ok, otelcol --version 0.163.1 and Loki buildinfo 3.7.8",
+    "gateway_config": "passed: running Nginx configuration SHA-256 matches source",
+    "startup_doctor": "passed: Docker/Compose and resolved configuration"
+  },
+  "local_environment": {
+    "docker": "28.4.0",
+    "compose": "2.40.3",
+    "cpus": 5,
+    "memory_bytes": 18882699264,
+    "storage_driver": "vfs",
+    "volume_policy": "No SQL, Grafana, Loki or trace volumes deleted. Stopped Grafana state backed up privately under ignored local artifacts before the major upgrade.",
+    "observed_failures": [
+      "Grafana pull failed extracting its last layer with no space left on device; removing superseded images reclaimed about 8 GB and the pull succeeded.",
+      "Gateway returned 502 after Grafana address changed; corrected Docker DNS re-resolution and passed real-address-change regression.",
+      "Buildx could not write its activity file in read-only Docker config; used BUILDX_CONFIG=/tmp/sfl-observability-buildx while retaining registry configuration.",
+      "The first clean CI startup passed, but the new DNS regression used a static address rejected by GitHub default Docker IPAM. Corrected the fixture to use ordinary dynamic allocation with temporary sleep-only address reservations from the already-audited gateway image; strict different-address/unchanged-gateway assertions remain."
+    ],
+    "recovery_headroom_snapshot": [
+      {
+        "region": "sg",
+        "status": "healthy",
+        "recovery_ready": false,
+        "nodes": [
+          {
+            "disk_available_bytes": 2103099392,
+            "disk_capacity_bytes": 33770192896,
+            "required_headroom_bytes": 2701615431.68
+          }
+        ]
+      },
+      {
+        "region": "uk",
+        "status": "healthy",
+        "recovery_ready": false,
+        "nodes": [
+          {
+            "disk_available_bytes": 2103091200,
+            "disk_capacity_bytes": 33770192896,
+            "required_headroom_bytes": 2701615431.68
+          }
+        ]
+      },
+      {
+        "region": "us",
+        "status": "healthy",
+        "recovery_ready": false,
+        "nodes": [
+          {
+            "disk_available_bytes": 2103095296,
+            "disk_capacity_bytes": 33770192896,
+            "required_headroom_bytes": 2701615431.68
+          }
+        ]
+      },
+      {
+        "region": "in",
+        "status": "healthy",
+        "recovery_ready": false,
+        "nodes": [
+          {
+            "disk_available_bytes": 2103095296,
+            "disk_capacity_bytes": 33770192896,
+            "required_headroom_bytes": 2701615431.68
+          }
+        ]
+      }
+    ]
+  },
+  "risk_acceptance": "Historical upgrade-audit disposition before the later user approval: Existing 34 CockroachDB scopes unchanged; no non-Cockroach acceptance active. Current pending requests cover 64 instances / 23 exact package scopes / 11 CVEs.",
+  "artifact_directory": "artifacts/latest-observability-2026-10-16/ (ignored locally); CI publishes lab-evidence from the exact workflow run",
+  "limitations": "Single-host synthetic lab only; no production, regional HA/residency, performance or backup-erasure claim. New CI result must be read from its actual run.",
+  "startup_commands": [
+    "./lab doctor",
+    "./lab up",
+    "./lab test",
+    "./lab pilot-up",
+    "./lab pilot-test"
+  ],
+  "ui_on_docker_host": {
+    "grafana": "http://localhost:8080/grafana/d/sovereign-logs",
+    "clusters": "http://localhost:8080/clusters/",
+    "mdm": "http://localhost:8081/"
+  },
+  "ci_history": [
+    {
+      "run_id": 38961640733,
+      "commit": "1ce8a07508ead70bd4e75f7d53a9f020136e781b",
+      "startup": "passed",
+      "gateway_dns": "failed: static address unsupported on default automatic subnet",
+      "later_gates": "not executed; no pass claimed"
+    }
+  ],
+  "subsequent_risk_decision": {
+    "status": "approved_and_registered",
+    "date": "2026-10-16",
+    "inventory": "docs/security/non-cockroach-exception-requests-2026-10-16.json",
+    "register": "docs/security/risk-acceptances.json",
+    "additional_exact_scopes": 23,
+    "additional_finding_instances": 64,
+    "context": "synthetic-lab",
+    "owner": "paulcull",
+    "expires_at": "2026-11-15T00:00:00Z",
+    "note": "This later approval changes the risk disposition, not the scanner output or the historical functional/security results above."
+  }
+}
