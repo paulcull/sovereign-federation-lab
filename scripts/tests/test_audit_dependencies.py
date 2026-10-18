@@ -90,6 +90,10 @@ class AuditTests(unittest.TestCase):
         # scan batch. This assertion also protects against command failure reuse.
         self.assertFalse(report.exists())
         if command[0] == 'pip-audit':
+            locked = {str(path.relative_to(AUDIT.ROOT)) for path in
+                      map(Path, [command[i + 1] for i, part in enumerate(command) if part == '-r'])}
+            self.assertEqual(locked, {'poc/requirements.txt', 'scale/requirements.txt',
+                                     'requirements-dev.txt', 'requirements-admin.txt'})
             if self.python_report is not None:
                 report.write_text(json.dumps(self.python_report))
             return SimpleNamespace(returncode=self.python_code)

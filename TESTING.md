@@ -1,5 +1,32 @@
 # Unified lab verification — edition 09
 
+## Logical admin terminal
+
+Install the optional hash-locked dependencies as described in
+[the admin runbook](docs/ADMIN_TUI.md), then run:
+
+```bash
+.venv-admin/bin/python -m unittest discover -s admin/tests -p 'test_*.py' -v
+python3 admin/tests/live_health_acceptance.py --compact
+```
+
+The first command covers real local file persistence/concurrent processes,
+revision and UUID replay, failed/uncertain atomic writes, invalid requests,
+controlled HTTP boundary cases, the Textual driver and a real terminal PTY.
+It is not CockroachDB integration evidence. The second reads the running
+compact lab's actual SQL/OPA gateway checks and confirms new Germany nodes stay
+unassigned. Omit `--compact` for the full four-store lab. Neither command replaces
+`./lab test`, pilot gates or native cluster recovery acceptance.
+
+For sequential actual UK OPA and gateway outages with trap-based restoration,
+run `bash scripts/admin_health_faults.sh`. Prefix
+`LAB_PILOT=1 LAB_COMPACT=1` for the compact profile. CI records full and compact
+health alongside the preserved existing container gates; the separate admin job
+runs terminal tests. All four Python lock files are covered by the security gate.
+
+See [executed evidence and limits](docs/ADMIN_TUI_ACCEPTANCE.md) and
+[the A1–A12 specification](docs/ADMIN_TUI_SPEC.md).
+
 ## CockroachDB cluster control
 
 `LAB_PILOT=1 ./lab cluster-test` verifies live cluster identities, guarded
