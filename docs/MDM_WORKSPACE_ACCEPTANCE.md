@@ -61,6 +61,13 @@ Ignored evidence is under `artifacts/mdm-workspace/` and
 - A browser outage recovery initially used full Compose and restarted suspended
   dependencies. It now uses the selected compact override; CI checks the actual
   service inventory after recovery and compares volume inventories.
+- Review found that a timestamp cutoff could omit renewed receipt-conflict
+  intents from startup drain. The wait now counts all active pending work; a real
+  SQL regression pauses the actual relay and checks atomic replacement stays
+  pending while suspended US work remains untouched.
+- Rejected configuration promises are cleared for later retry. Browser checks
+  cover transient failure followed by live recovery and minimum 4.5:1 contrast
+  for essential profile labels, identifiers and form guidance.
 
 ## Complete acceptance and remaining limits
 

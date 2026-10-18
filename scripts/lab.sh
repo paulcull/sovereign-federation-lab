@@ -141,6 +141,13 @@ case "${1:-help}" in
     ready
     compact_services
     dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/mdm_workspace_acceptance.py --compact
+    dc run --rm --no-deps --user "$(id -u):$(id -g)" -e LAB_FOOTPRINT=mdm-compact tools poc/tests/pilot_reconcile_wait.py --drain
+    (
+      trap 'dc unpause monitor >/dev/null 2>&1 || :' EXIT
+      dc pause monitor
+      dc run --rm --no-deps --user "$(id -u):$(id -g)" -e LAB_FOOTPRINT=mdm-compact tools poc/tests/pilot_reconcile_wait.py
+    )
+    ready
     ;;
   pilot-compact-status)
     export LAB_PILOT=1 LAB_COMPACT=1

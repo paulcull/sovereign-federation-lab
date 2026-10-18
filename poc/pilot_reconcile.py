@@ -67,6 +67,23 @@ def enqueue_page(connection, after=None, limit=10, through=None):
     return dict(after=str(rows[-1][0]) if rows else after, examined=len(rows), queued=queued)
 
 
+def wait_active(dsn, timeout):
+    """Drain active pending work, including renewed identities after receipt conflicts."""
+    deadline = time.monotonic() + timeout
+    destinations = [entity['id'] for entity in ENTITIES.values()
+                    if entity['store_id'] in enabled_store_ids()]
+    while True:
+        with psycopg.connect(dsn, connect_timeout=3) as connection:
+            pending = connection.execute(
+                "SELECT count(*) FROM sovereignty.outbox WHERE status IN ('queued','retry') "
+                'AND destination_entity_id=ANY(%s)', (destinations,)).fetchone()[0]
+        if pending == 0:
+            return
+        if time.monotonic() >= deadline:
+            raise SystemExit('Active startup reconciliation is still pending; startup did not complete. Check peers and policies, then retry.')
+        time.sleep(1)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dsn-env', default='PILOT_OWNER_DSN')
@@ -100,20 +117,7 @@ def main():
             if page['examined'] < args.batch_size:
                 break
     if args.wait_active:
-        cutoff, deadline = time.time(), time.monotonic() + args.wait_active
-        destinations = [entity['id'] for entity in ENTITIES.values()
-                        if entity['store_id'] in enabled_store_ids()]
-        while True:
-            with psycopg.connect(dsn, connect_timeout=3) as connection:
-                pending = connection.execute(
-                    "SELECT count(*) FROM sovereignty.outbox WHERE status IN ('queued','retry') "
-                    'AND destination_entity_id=ANY(%s) AND created_at<=%s',
-                    (destinations, cutoff)).fetchone()[0]
-            if pending == 0:
-                break
-            if time.monotonic() >= deadline:
-                raise SystemExit('Active startup reconciliation is still pending; startup did not complete. Check peers and policies, then retry.')
-            time.sleep(1)
+        wait_active(dsn, args.wait_active)
     print(json.dumps(dict(scopes_examined=examined, intents_queued=queued, complete=True,
                          active_startup_drained=bool(args.wait_active))))
 

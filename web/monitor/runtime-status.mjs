@@ -7,7 +7,7 @@ export function readDeployment() {
     const config=await response.json();
     if(!['live','simulation'].includes(config.mode)||(config.mode==='live'&&config.database!=='cockroach'))throw Error('Deployment mode could not be verified');
     return config;
-  })();
+  })().catch(error=>{deployment=undefined;throw error;});
   return deployment;
 }
 export function showRuntime(target,state,title,detail) {

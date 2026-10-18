@@ -76,8 +76,8 @@ two-node distributed database, or remove retained data. Work for suspended
 destinations stays durable and is excluded from the active relay batch so it
 cannot starve UK work.
 
-Compact startup waits up to four minutes for its startup reconciliation intents
-to active stores to drain. It fails explicitly if they remain pending, rather
+Compact startup waits up to four minutes for all pending intents to active stores
+to drain, including replacement intents after a receipt conflict. It fails explicitly if they remain pending, rather
 than opening a demo behind a retained-data backlog. New writes still replicate
 asynchronously; use the returned scope version to check a particular read.
 
