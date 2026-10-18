@@ -40,6 +40,8 @@ jobs:
         run: python3 poc/tests/browser_acceptance.py 2>&1 | tee artifacts/browser.log
       - name: Microsite reader journey
         run: python3 design/tests/reader_browser.py 2>&1 | tee artifacts/reader-guide.log
+      - name: Explicit MDM browser preview and failed-mode boundaries
+        run: python3 poc/tests/mdm_preview_browser.py 2>&1 | tee artifacts/mdm-preview.log
       - name: Wire synthetic customer MDM pilot
         run: ./lab pilot-up 2>&1 | tee artifacts/pilot-startup.log
       - name: System, experience and foundation SQL/OPA acceptance
@@ -53,6 +55,25 @@ jobs:
           LAB_PILOT=1 ./lab cluster-test 2>&1 | tee artifacts/cluster-control.log
           LAB_PILOT=1 ./lab cluster-faults 2>&1 | tee artifacts/cluster-control-faults.log
           python3 poc/tests/cluster_control_browser.py 2>&1 | tee artifacts/cluster-control-browser.log
+      - name: Real two-store MDM footprint and restart acceptance
+        run: |
+          docker volume ls --format '{{.Name}}' | sort > artifacts/volumes-before-compact.txt
+          ./lab pilot-compact-up 2>&1 | tee artifacts/compact-startup.log
+          ./lab pilot-compact-test 2>&1 | tee artifacts/compact-acceptance.log
+          docker compose -f compose.yaml -f compose.pilot.yaml -f infra/compose.mdm-compact.yaml restart monitor pilot-api
+          docker compose -f compose.yaml -f compose.pilot.yaml -f infra/compose.mdm-compact.yaml up -d --wait --wait-timeout 240
+          LAB_PILOT=1 LAB_COMPACT=1 docker compose -f compose.yaml -f compose.pilot.yaml -f infra/compose.mdm-compact.yaml run --rm --no-deps tools poc/tests/mdm_workspace_acceptance.py --compact --restart 2>&1 | tee artifacts/compact-restart.log
+          python3 poc/tests/pilot_browser.py --compact 2>&1 | tee artifacts/compact-browser.log
+          ./lab pilot-compact-status 2>&1 | tee artifacts/compact-status-after-browser.log
+          docker volume ls --format '{{.Name}}' | sort > artifacts/volumes-after-compact.txt
+          diff -u artifacts/volumes-before-compact.txt artifacts/volumes-after-compact.txt
+      - name: Restore full footprint after the compact demonstration
+        run: |
+          ./lab pilot-up 2>&1 | tee artifacts/full-restored-startup.log
+          docker compose -f compose.yaml -f compose.pilot.yaml run --rm --no-deps tools poc/tests/mdm_workspace_acceptance.py --restart 2>&1 | tee artifacts/full-restored-mdm.log
+          LAB_PILOT=1 ./lab telemetry 2>&1 | tee artifacts/full-restored-telemetry.log
+          docker volume ls --format '{{.Name}}' | sort > artifacts/volumes-after-full-restore.txt
+          diff -u artifacts/volumes-before-compact.txt artifacts/volumes-after-full-restore.txt
       - name: Audit locked dependencies and built container images
         env:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
@@ -78,3 +99,38 @@ jobs:
         if: always()
         run: |
           if [ -f .pilot/ready.json ]; then ./lab pilot-down; else ./lab down; fi
+  compact-cold-start:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install locked browser tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --require-hashes -r requirements-dev.txt
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          .venv/bin/python -m playwright install --with-deps chromium
+      - name: Start compact MDM on an empty Docker host
+        run: |
+          mkdir -p artifacts
+          ./lab pilot-compact-up 2>&1 | tee artifacts/compact-cold-startup.log
+          ./lab pilot-compact-test 2>&1 | tee artifacts/compact-cold-acceptance.log
+          python3 poc/tests/pilot_browser.py --compact 2>&1 | tee artifacts/compact-cold-browser.log
+          ./lab pilot-compact-status 2>&1 | tee artifacts/compact-cold-status-after-browser.log
+      - name: Collect compact diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts
+          docker compose -f compose.yaml -f compose.pilot.yaml -f infra/compose.mdm-compact.yaml ps --all > artifacts/compact-containers.txt
+          docker compose -f compose.yaml -f compose.pilot.yaml -f infra/compose.mdm-compact.yaml logs --no-color > artifacts/compact-containers.log
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: compact-cold-evidence
+          path: artifacts/
+      - name: Stop compact MDM
+        if: always()
+        run: ./lab pilot-down

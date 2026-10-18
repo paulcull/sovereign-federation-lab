@@ -12,6 +12,20 @@ it does not treat a passing synthetic suite as production approval. See
 [foundation acceptance](FOUNDATIONS_ACCEPTANCE.md) for the isolation, identity,
 protocol and second-service revision's executed results.
 
+## Customer workspace and runtime modes
+
+The modern [customer workspace](MDM_WORKSPACE.md) provides source-qualified search,
+customer profiles, relationship/consent views, a guided demonstration and actual
+HTTP/trace evidence. Its connection strip distinguishes an explicit read-only
+browser preview from authenticated live services and failed/unverified connections.
+It never substitutes preview fixtures for a failed live request.
+
+Use `./lab pilot-compact-up` for two independent SG/UK CockroachDB stores, with US,
+India, migration and telemetry suspended. Use `./lab pilot-up` to restore the full
+four-store lab. Both retain all data volumes and mandatory transactional audit.
+Only the full footprint can supply complete US exclusion, migration and telemetry
+acceptance; compact is a separate, labelled configuration.
+
 ## Start and test
 
 The original lab still runs with `./lab up`. The additive pilot also requires
@@ -97,6 +111,7 @@ The `crm-sg` identity writes only SG-owned synthetic records through these APIs:
 
 | Method / endpoint | Contract |
 |---|---|
+| `GET /pilot/system/v1/customers` | Owner/source-qualified search (q up to 80 characters), keyset after, limit 1–50; default 25. No recipient enumeration. |
 | `PUT /pilot/system/v1/customers/{reference}` | Create at expected version 0 or update an existing version. UUID request ID; `Synthetic ` display name; `PERSON` or `ORGANISATION`. |
 | `GET /pilot/system/v1/customers/{reference}` | Owner source reference, party identity and current party-scope version. |
 | `POST /pilot/system/v1/customers/{reference}/relationships` | Add a personal-banking relationship, shared contact, consent/preference and scoped bindings. Separate UUID request ID and expected customer version. |
@@ -120,6 +135,7 @@ lists and caller-supplied owner identities are not accepted.
 
 | Method / endpoint | Contract |
 |---|---|
+| `GET /pilot/api/v1/runtime` | Authenticated, observed SQL/OPA/peer readiness and active/suspended footprint; no customer data or credentials. |
 | `GET /pilot/api/v1/context` | Authenticated test entity, registered processing country and permitted actions; no customer enumeration. |
 | `GET /pilot/experience/v1/customers/{global_party_id}` | Assemble only permitted party/relationship views; omitted relationships have no disclosed denial list or count. |
 | `GET /pilot/experience/v1/relationships/{scope_id}` | Approved recipient graph, current authority/placement versions, actual data version and serving source. |

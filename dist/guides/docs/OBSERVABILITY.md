@@ -190,3 +190,14 @@ load capacity or retained-data erasure from this single-host synthetic lab.
 The pinned SDK is 1.36.0 and uses its `sdk._logs.LoggingHandler`; newer documentation
 may use the separate logging-instrumentation package. Image pins are reproducible
 lab choices, not a claim that they are the latest security-approved releases.
+
+
+## Optional compact MDM footprint
+
+`./lab pilot-compact-up` suspends Grafana, Loki and the Collector, and disables
+local trace-file exporters for active business services. The UI explicitly says
+telemetry is suspended. CockroachDB business audit and idempotent command/outbox
+transactions remain mandatory; a successful compact command is not evidence of
+a working logs pipeline. Use `./lab pilot-up` to restore the full footprint before
+running telemetry acceptance. Named Grafana/Loki/telemetry volumes are retained.
+See [workspace footprints](MDM_WORKSPACE.md#choose-the-footprint).

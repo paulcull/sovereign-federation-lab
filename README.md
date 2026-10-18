@@ -47,10 +47,14 @@ separate mTLS recipient peers to the real stores and OPA:
 ./lab pilot-up
 ./lab pilot-test
 ./lab pilot-faults
-# Operator console: http://localhost:8081/
+# Customer workspace: http://localhost:8081/
 # OpenAPI: http://localhost:8081/pilot/api-docs
 ./lab pilot-token crm-sg
 ```
+
+For a lighter, two-store MDM demonstration, run `./lab pilot-compact-up`.
+The [customer workspace guide](docs/MDM_WORKSPACE.md) explains the connection
+strip, read-only browser preview, guided walkthrough and restoring the full lab.
 
 This optional profile needs host Python 3/OpenSSL for private synthetic identities.
 It is a single-host integration pilot; bank identity, regional infrastructure,

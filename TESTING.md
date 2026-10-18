@@ -178,3 +178,25 @@ checks recovery. It is included in `./lab pilot-faults`. Run these mutable suite
 sequentially. See [foundation acceptance](docs/FOUNDATIONS_ACCEPTANCE.md) for
 executed results and [production gates](docs/PRODUCTION_READINESS.md) for work
 that remains unproven.
+
+
+## MDM workspace and explicit deployment modes
+
+The workspace revision adds authenticated SQL source-directory/readiness contracts,
+read-only static preview checks, identity-change cache clearing, actual pilot-API
+outage UI checks and a separate two-store SG/UK acceptance. These gates use
+`poc/tests/mdm_workspace_acceptance.py`, `poc/tests/mdm_preview_browser.py` and
+`poc/tests/pilot_browser.py`. Preview/failure-state browser checks are UI evidence
+only; real CockroachDB/OPA acceptance is executed separately.
+
+The full existing workflow remains mandatory. It runs all original four-store
+federation, policy, migration, restart, telemetry, outage, browser and recovery
+gates before switching to compact, exercising SG/UK commands, restarting the
+coordinator/API, checking persistence and verifying no volume was removed.
+Full acceptance commands reject a compact footprint rather than skipping
+US/India/telemetry assertions. Current results must come from the exact PR commit.
+
+See [customer workspace](docs/MDM_WORKSPACE.md) for reproducible commands and
+[the pilot contract](docs/PILOT.md) for source and experience authorization.
+The [18 October local workspace evidence](docs/MDM_WORKSPACE_ACCEPTANCE.md)
+records executed compact gates and distinguishes full CI acceptance.

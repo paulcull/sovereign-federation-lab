@@ -1,0 +1,30 @@
+{
+  "recorded_on": "2026-10-18",
+  "initial_commit": "a4d474454c04797dc02e215206b92d3c675ac468",
+  "initial_workflow": "https://github.com/paulcull/sovereign-federation-lab/actions/runs/39117184989",
+  "initial_result": "All functional steps and compact cold startup passed; dependency gate failed on newly reported Grafana and Nginx findings.",
+  "gateway_remediation": {
+    "cve": "CVE-2026-77214",
+    "package": "libexpat",
+    "installed_version": "2.8.5-r0",
+    "fixed_version": "2.9.0-r0",
+    "severity": "HIGH",
+    "decision": "Use the official same-version Nginx slim image. Required HTTP/TLS/static/proxy functionality remains; unused image/XML-filter dependencies, including libexpat, are absent.",
+    "image": "nginx:1.30.6-alpine-slim@sha256:3028fc1419f99b95c1c69f844bbaf49dc1b881750c51b497fc721ac4f02a14e6",
+    "focused_scan": "Full Trivy 0.76.0 scan: 21 OS packages, no libexpat, zero fixable HIGH/CRITICAL findings. This is focused evidence; complete CI remains required."
+  },
+  "remaining_block": {
+    "status": "Unapproved; security gate remains blocking",
+    "image": "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f",
+    "binary": "usr/share/grafana/bin/grafana",
+    "cve": "CVE-2026-100349",
+    "package": "github.com/getkin/kin-openapi",
+    "installed_version": "v0.144.0",
+    "fixed_version": "0.146.0",
+    "severity": "HIGH",
+    "reported_effect": "Denial of service through a nil-pointer dereference in response validation",
+    "release_check": "On 18 October, Grafana latest resolved to the same pinned 13.2.4 image. A library fix is available; no newer vendor image was observed.",
+    "proposed_scope_if_approved": "Only this exact image/CVE/package/version/severity, synthetic single-host lab, loopback gateway, existing lab controls, expiry 15 November 2026 00:00 UTC. No production, bank-data or public-preview approval.",
+    "risk_policy_changed": false
+  }
+}

@@ -1,0 +1,33 @@
+# Optional two-store MDM footprint. Omitted services and every volume are retained.
+# Compose 2.24.4+ is required for !override.
+services:
+  monitor:
+    environment:
+      LAB_FOOTPRINT: mdm-compact
+      MIGRATION_ENABLED: "0"
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      LAB_TELEMETRY_ENABLED: "0"
+    depends_on: !override
+      db-sg: {condition: service_healthy}
+      db-uk: {condition: service_healthy}
+      opa-sg: {condition: service_started}
+      opa-uk: {condition: service_started}
+  gateway:
+    depends_on: !override
+      monitor: {condition: service_healthy}
+  pilot-api:
+    environment: {OTEL_EXPORTER_OTLP_ENDPOINT: "", LAB_TELEMETRY_ENABLED: "0"}
+  pilot-peer-sg:
+    environment: {OTEL_EXPORTER_OTLP_ENDPOINT: "", LAB_TELEMETRY_ENABLED: "0"}
+  pilot-peer-uk:
+    environment: {OTEL_EXPORTER_OTLP_ENDPOINT: "", LAB_TELEMETRY_ENABLED: "0"}
+  pilot-servicing:
+    environment: {OTEL_EXPORTER_OTLP_ENDPOINT: "", LAB_TELEMETRY_ENABLED: "0"}
+  db-us: {profiles: [full]}
+  db-in: {profiles: [full]}
+  opa-us: {profiles: [full]}
+  opa-in: {profiles: [full]}
+  pilot-peer-us: {profiles: [full]}
+  grafana: {profiles: [full]}
+  loki: {profiles: [full]}
+  otel-collector: {profiles: [full]}
