@@ -1,4 +1,5 @@
-FROM nginx:1.30.6-alpine@sha256:ff8328b4279ec385af48cde9ef486e7165ad74b7065cb3cd86c377384e2e2dd5
+# Core HTTP/TLS/static/proxy modules suffice; omit unused image/XML filter dependencies.
+FROM nginx:1.30.6-alpine-slim@sha256:3028fc1419f99b95c1c69f844bbaf49dc1b881750c51b497fc721ac4f02a14e6
 COPY infra/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --chmod=644 infra/lab-config.live.json /etc/nginx/lab-config.json
 COPY --chmod=644 infra/lab-config.pilot.json /etc/nginx/lab-config.pilot.json

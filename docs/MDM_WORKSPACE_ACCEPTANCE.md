@@ -28,7 +28,7 @@ CockroachDB stores. This is not a two-node HA cluster.
 | Live compact browser | Passed real creation, source-directory reload, delayed owner response across identity switch, UK contact rendering/version checks, actual stopped API with no demo fallback, recovery and 375/768/1440px layouts. Post-recovery inventory confirms optional services stayed stopped. |
 | Static preview browser | Passed read-only fixtures, zero pilot API calls/storage, 375/768/1440px layout and failed/invalid live configuration without sample-data fallback. This is UI evidence only. |
 | Focused unit regressions | All 37 passed, including explicit full/compact/unknown deployment configuration boundaries. |
-| Site and syntax | Passed 57 HTML pages, 1,666 local references, 20 ADRs, Python/JavaScript/Bash syntax and diff whitespace checks. The 31 external references are inventoried, not uptime-verified. |
+| Site and syntax | Passed 57 HTML pages, 1,667 local references, 20 ADRs, Python/JavaScript/Bash syntax and diff whitespace checks. The 31 external references are inventoried, not uptime-verified. |
 | Full acceptance in compact | Correctly rejected `./lab test`; it does not skip US/India/telemetry assertions. |
 
 Reproducible real restart sequence:
@@ -84,3 +84,12 @@ Existing scoped synthetic-lab CVE acceptances are unchanged. Neither a green
 workflow nor the modern UI establishes bank-data approval, production identity,
 regional isolation, HA, performance at scale, or off-host recovery. See
 [production gates](PRODUCTION_READINESS.md) and the [workspace guide](MDM_WORKSPACE.md).
+
+The initial PR run passed all functional stages, including complete migration,
+outages, telemetry and full/compact/full restoration. Its security gate discovered
+new Nginx and Grafana findings. The gateway now uses the official same-version
+Nginx slim image, omitting the unused vulnerable XML/image-filter dependencies.
+The new Grafana finding remains outside prior exception scopes and blocks the
+gate pending remediation or explicit approval. See the
+[dated security evidence](security/mdm-workspace-2026-10-18.json); the active risk
+register is unchanged by this record.
