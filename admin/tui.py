@@ -371,6 +371,8 @@ class AdminApp(App):
             return
         self.reload_registry()
         if self.registry_valid:
+            if store is not None:
+                store = next(s for s in self.state['stores'] if s['id'] == store['id'])
             self.push_screen(Form(self.registry, store, observability), self.on_plan)
 
     def on_plan(self, plan):

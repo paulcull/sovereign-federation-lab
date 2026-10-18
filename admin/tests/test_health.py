@@ -20,11 +20,28 @@ class HealthTests(unittest.TestCase):
         owner = self
         self.reply, self.status, self.content_type = response(), 200, 'application/json'
         self.redirect = False
+        self.trickle = None
+        self.disconnected = threading.Event()
         self.paths = []
         class Handler(http.server.BaseHTTPRequestHandler):
             def log_message(self, *args):pass
             def do_GET(self):
                 owner.paths.append(self.path)
+                trickle = owner.trickle
+                if trickle:
+                    try:
+                        if trickle == 'headers':
+                            self.connection.sendall(b'HTTP/1.1 200 OK\r\n')
+                        else:
+                            self.send_response(200)
+                            self.send_header('Content-Type', 'application/json')
+                            self.end_headers()
+                        for _ in range(50):
+                            self.connection.sendall(b'X-Drip: x\r\n' if trickle == 'headers' else b' ')
+                            time.sleep(.06)
+                    except (BrokenPipeError, ConnectionResetError):
+                        owner.disconnected.set()
+                    return
                 self.send_response(302 if owner.redirect else owner.status)
                 self.send_header('Content-Type', owner.content_type)
                 if owner.redirect:self.send_header('Location', 'http://example.invalid/private-canary')
@@ -66,6 +83,20 @@ class HealthTests(unittest.TestCase):
         for url in ('http://example.com', 'http://127.0.0.1@evil.example', 'http://user:secret@127.0.0.1',
                     'http://127.0.0.1/?secret=canary', 'file:///etc/passwd', 'http://127.0.0.1/private'):
             with self.assertRaises(ObservationError):GatewayObserver(url)
+
+    def test_total_deadline_kills_and_reaps_trickling_headers_and_body(self):
+        self.observer.timeout = .8
+        for kind in ['headers', 'body']:
+            self.trickle = kind
+            self.disconnected.clear()
+            started = time.monotonic()
+            result = self.observer.poll()
+            self.assertEqual(result.error, 'gateway_deadline_exceeded')
+            self.assertFalse(result.available)
+            self.assertLess(time.monotonic() - started, 2)
+            self.assertTrue(self.disconnected.wait(2), 'Timed-out probe retained its connection')
+            self.trickle = None
+            self.assertTrue(self.observer.poll().available, 'A subsequent refresh must recover')
 
     def test_failure_age_and_out_of_order_success_never_preserve_false_healthy(self):
         health = HealthState(max_age=30)

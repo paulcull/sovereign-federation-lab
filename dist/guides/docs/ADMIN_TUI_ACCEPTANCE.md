@@ -6,11 +6,15 @@ See [A1–A12](ADMIN_TUI_SPEC.md) and [the walkthrough](ADMIN_TUI.md).
 
 ## Executed locally
 
-- Python 3.12, Textual 8.2.8; all **20** registry, health-boundary, Textual and
+- Python 3.12, Textual 8.2.8; all **23** registry, health-boundary, Textual and
   terminal PTY tests passed. The JSON CLI also ran with Python site packages
-  disabled, proving it does not require Textual.
+  disabled, proving it does not require Textual. Real HTTP fixtures trickled headers
+  and bodies beyond the probe deadline: the probe was killed/reaped, its connection
+  closed, and the TUI released polling and recovered on its next refresh.
 - Real temporary files and separate processes exercised concurrent writers,
   revision conflicts, UUID replay, corruption rejection and atomic replacement.
+  A configure form reloads current defaults after an external count change, so
+  changing only state cannot silently undo another operator’s node increase.
   Injected pre-replace failure preserved the old state; an uncertain directory
   fsync after replacement recovered the original receipt by UUID.
 - Real Textual driver exercised Germany registration, review/cancel/save,

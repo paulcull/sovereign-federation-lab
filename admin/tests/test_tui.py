@@ -1,14 +1,19 @@
 """Real Textual driver tests; controlled health responses are UI evidence only."""
+import asyncio
+import http.server
+import json
 import tempfile
+import threading
 import time
 import unittest
 import uuid
 
 from textual.widgets import DataTable, Input, Select, Static, TabbedContent
 
-from admin.health import Observation
+from admin.health import GatewayObserver, Observation
 from admin.registry import Registry
 from admin.tui import AdminApp, Form, Review
+from admin.tests.test_health import response
 
 
 class ControlledObserver:
@@ -137,6 +142,58 @@ class TUITests(unittest.IsolatedAsyncioTestCase):
             await pilot.press('o')
             self.assertEqual(app.screen.query_one('#desired-state', Select).value, 'suspended')
             await pilot.press('escape')
+
+    async def test_configure_uses_latest_store_defaults_after_external_change(self):
+        app = AdminApp(self.registry, ControlledObserver(), auto_health=False)
+        async with app.run_test(size=(140, 42)) as pilot:
+            self.registry.save(self.registry.plan('configure_store', {'id': 'STORE-SG-01',
+                'desired_state': 'enabled', 'node_count': 5}), str(uuid.uuid4()))
+            self.assertEqual(app.state['stores'][0]['node_count'], 1)
+            await pilot.press('e')
+            self.assertEqual(app.screen.query_one('#node-count', Input).value, '5')
+            app.screen.query_one('#desired-state', Select).value = 'suspended'
+            await pilot.click('#review-form')
+            await pilot.click('#save-review')
+            latest = self.registry.read()['stores'][0]
+            self.assertEqual(latest['node_count'], 5)
+            self.assertEqual(latest['desired_state'], 'suspended')
+
+    async def test_actual_worker_deadline_releases_polling_and_next_refresh_recovers(self):
+        class Handler(http.server.BaseHTTPRequestHandler):
+            slow = True
+            def log_message(self, *args):pass
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                try:
+                    if Handler.slow:
+                        for _ in range(60):
+                            self.wfile.write(b' ')
+                            self.wfile.flush()
+                            time.sleep(.05)
+                    else:
+                        self.wfile.write(json.dumps(response()).encode())
+                except (BrokenPipeError, ConnectionResetError):pass
+        server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        app = AdminApp(self.registry, GatewayObserver('http://127.0.0.1:' + str(server.server_port), timeout=1), auto_health=False)
+        async with app.run_test(size=(140, 42)) as pilot:
+            app.action_refresh_health()
+            deadline = time.monotonic() + 5
+            while app.polling and time.monotonic() < deadline:
+                await asyncio.sleep(.05)
+            self.assertFalse(app.polling)
+            self.assertEqual(app.health.latest.error, 'gateway_deadline_exceeded')
+            Handler.slow = False
+            app.action_refresh_health()
+            deadline = time.monotonic() + 5
+            while app.polling and time.monotonic() < deadline:
+                await asyncio.sleep(.05)
+            self.assertFalse(app.polling)
+            self.assertTrue(app.health.snapshot(app.state['stores'])['current'])
 
 
 if __name__ == '__main__':unittest.main()

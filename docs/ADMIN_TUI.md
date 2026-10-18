@@ -76,6 +76,9 @@ The observer accepts a loopback origin only, e.g.
 `./lab admin --gateway http://127.0.0.1:8080 status`. It checks the fixed readiness
 route without private pilot credentials. For a remote lab, establish an SSH
 forward and use its loopback port. It rejects redirects and arbitrary URLs.
+Each request uses an isolated Python probe with an eight-second total deadline;
+expiry kills and reaps it, including a connection that keeps trickling bytes.
+The next refresh can run normally. No shell or arbitrary command runs.
 
 ## Meaning of health
 

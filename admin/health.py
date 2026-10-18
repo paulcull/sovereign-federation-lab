@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 import time
 from urllib.error import HTTPError
 from urllib.parse import urlsplit
@@ -48,6 +50,38 @@ class GatewayObserver:
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
     def poll(self):
+        """One disposable probe; a total deadline also bounds trickling headers/body.
+
+        A socket inactivity timeout cannot provide that guarantee. Terminating
+        and reaping the probe closes its socket without leaving a blocked thread.
+        No shell or arbitrary executable is involved.
+        """
+        checked_at = time.time()
+        deadline = time.monotonic() + self.timeout
+        try:
+            process = subprocess.Popen([sys.executable, '-I',
+                str(Path(__file__).with_name('health_probe.py')), self.origin, str(self.timeout)],
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            try:
+                raw, _ = process.communicate(timeout=max(0, deadline - time.monotonic()))
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.communicate()
+                return Observation(checked_at, False, error='gateway_deadline_exceeded')
+            except BaseException:
+                process.kill()
+                process.communicate()
+                raise
+            if process.returncode or len(raw) > 8192:
+                raise ObservationError('gateway_probe_failed')
+            result = Observation(**json.loads(raw))
+            result.checked_at = checked_at
+            return result
+        except Exception:
+            return Observation(checked_at, False, error='gateway_probe_failed')
+
+    def _poll_once(self):
+        """Only called in the disposable deadline-bound probe process."""
         checked_at = time.time()
         try:
             try:

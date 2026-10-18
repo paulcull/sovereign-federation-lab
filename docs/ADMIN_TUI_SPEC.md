@@ -67,6 +67,10 @@ infrastructure. A stale review asks the operator to refresh and review again.
 Text rendering treats labels as text, never Rich markup or terminal escapes.
 
 Health polls in a background worker with bounded timeouts and no overlap. The
+worker owns a short-lived, isolated Python probe process for each request. A
+monotonic total deadline covers headers and body; expiry kills and reaps that
+process, closes its connection and releases the polling slot. A socket inactivity
+timeout alone cannot provide this bound. No shell or arbitrary command runs. The
 operator can pause auto-refresh without stopping applications or observability.
 Latest completion order is fenced. UI timestamps and health expiry prevent an
 old success from being shown as current. HTTP errors, malformed/oversized JSON,
