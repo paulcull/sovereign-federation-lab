@@ -113,7 +113,8 @@ def change(value, action, payload):
                  'desired_state': 'enabled', 'nodes': []}
         value['stores'].append(store)
         summary = 'Registered logical store ' + sid
-        changes = ('Register ' + sid + ' / ' + country, 'Create stable logical node identities',
+        changes = ('Register ' + sid + ' / ' + name + ' / intended country ' + country,
+                   f'Desired state: enabled; create {count} stable logical node identities',
                    'Backend unassigned; data placement unavailable')
     elif action == 'configure_store':
         if set(payload) != {'id', 'desired_state', 'node_count'}:

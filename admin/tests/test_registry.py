@@ -34,6 +34,10 @@ class RegistryTests(unittest.TestCase):
         return self.registry.save(self.registry.plan(action, payload), str(uuid.uuid4()))
 
     def test_registration_persists_nodes_and_management_receipt(self):
+        plan = self.registry.plan('register_store', self.payload)
+        review = '\n'.join(plan.changes)
+        for field in ['Germany', 'STORE-DE-01', 'intended country DE', 'create 3', 'enabled', 'Backend unassigned']:
+            self.assertIn(field, review)
         receipt = self.save('register_store', self.payload)
         current = Registry(self.folder.name).read()
         self.assertEqual(current['revision'], 1)
