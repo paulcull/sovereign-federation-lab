@@ -109,6 +109,14 @@ class TUITests(unittest.IsolatedAsyncioTestCase):
             await pilot.pause()
             self.assertIn('UNVERIFIED', str(app.query_one('#health-note', Static).render()))
             self.assertEqual(self.registry.read()['revision'], 3)
+        # Timers/worker completions queued at shutdown must not query widgets
+        # after Textual has pruned the screen, or mutate the retained observation.
+        last = app.health.latest
+        app.clock_tick()
+        app.auto_refresh()
+        app.action_refresh_health()
+        app.accept_health(ControlledObserver().poll())
+        self.assertIs(app.health.latest, last)
 
     async def test_minimum_terminal_forms_and_actual_tab_navigation(self):
         app = AdminApp(self.registry, ControlledObserver(), auto_health=False)

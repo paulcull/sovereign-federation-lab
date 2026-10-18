@@ -272,7 +272,7 @@ class AdminApp(App):
         self.query_one('#resize-note', Static).update('Please resize to at least 80 × 24. Saved configuration is retained.')
 
     def on_resize(self, event):
-        if self.is_mounted:
+        if self.is_running and self.is_mounted:
             self.set_classes_for_size(event.size.width, event.size.height)
 
     def reload_registry(self):
@@ -288,6 +288,8 @@ class AdminApp(App):
         self.render_state()
 
     def render_state(self):
+        if not self.is_running:
+            return
         snapshot = self.health.snapshot(self.state['stores'])
         observations = {row['id']: row for row in snapshot['stores']}
         query = self.query_one('#store-search', Input).value.lower()
@@ -332,6 +334,8 @@ class AdminApp(App):
             nodes.add_row(node['id'], node['desired_state'], 'Unassigned')
 
     def update_status(self, snapshot=None):
+        if not self.is_running:
+            return
         snapshot = snapshot or self.health.snapshot(self.state['stores'])
         healthy = sum(row['status'] == 'SQL + OPA healthy' for row in snapshot['stores'])
         unassigned = sum(row['backend_assignment'] == 'unassigned' for row in snapshot['stores'])
@@ -346,13 +350,13 @@ class AdminApp(App):
 
     @on(Input.Changed, '#store-search')
     def search_changed(self):
-        if self.is_mounted and self.query_one('#store-table', DataTable).columns:
+        if self.is_running and self.is_mounted and self.query_one('#store-table', DataTable).columns:
             self.render_state()
 
     @on(DataTable.RowHighlighted, '#store-table')
     def selected_row(self, event):
         # Queued cursor events can arrive while the default screen unmounts.
-        if self.query('#detail-title') and event.row_key.value and any(s['id'] == event.row_key.value for s in self.state['stores']):
+        if self.is_running and self.query('#detail-title') and event.row_key.value and any(s['id'] == event.row_key.value for s in self.state['stores']):
             self.selected = event.row_key.value
             self.render_detail()
 
@@ -392,11 +396,11 @@ class AdminApp(App):
         self.query_one('#store-search', Input).focus()
 
     def auto_refresh(self):
-        if self.auto_health:
+        if self.is_running and self.auto_health:
             self.action_refresh_health()
 
     def clock_tick(self):
-        if len(self.screen_stack) > 1:
+        if not self.is_running or len(self.screen_stack) > 1:
             return
         current = self.health.snapshot(self.state['stores'])['current']
         if current != self.last_current:
@@ -405,7 +409,7 @@ class AdminApp(App):
             self.update_status()
 
     def action_refresh_health(self):
-        if self.polling:
+        if not self.is_running or self.polling:
             return
         self.polling = True
         self.reload_registry()
@@ -421,6 +425,8 @@ class AdminApp(App):
 
     def accept_health(self, result):
         self.polling = False
+        if not self.is_running:
+            return
         self.health.record(result)
         self.render_state()
 

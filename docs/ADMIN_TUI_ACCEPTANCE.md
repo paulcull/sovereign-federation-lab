@@ -15,12 +15,12 @@ See [A1–A12](ADMIN_TUI_SPEC.md) and [the walkthrough](ADMIN_TUI.md).
   fsync after replacement recovered the original receipt by UUID.
 - Real Textual driver exercised Germany registration, review/cancel/save,
   retained logical node IDs, observability intent, tabs, filtering, stale review,
-  background health during review, restart and 140×42/80×24 layouts. A Unix PTY
+  background health during review, shutdown callbacks, restart and 140×42/80×24 layouts. A Unix PTY
   launched `./lab admin`, opened help, quit and restored terminal modes/screen.
 - **37** existing audit-orchestration tests passed. Coverage now includes the
   admin dependency lock alongside the existing three locks.
 - `pip-audit --require-hashes -r requirements-admin.txt`: **9 dependencies, zero
-  known advisories**. This is a Python dependency result, not a container scan.
+  known advisories**. A combined audit of all four Python locks also passed: **68 packages, zero known advisories**. These are Python dependency results, not container scans.
 
 ## Actual running lab evidence
 
