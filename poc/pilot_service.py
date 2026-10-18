@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 import psycopg
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request, Query
 from fastapi.responses import JSONResponse
 from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
@@ -32,8 +32,9 @@ from seed import ENTITIES, STORE_INFO
 CONFIG = configuration()
 ROLE = CONFIG['role']
 provider = TracerProvider(resource=Resource.create({'service.name': 'sovereign-pilot-' + ROLE}))
-provider.add_span_processor(BatchSpanProcessor(PilotTraceEvidence(ROLE, CONFIG.get('store_id','')),
-                                               schedule_delay_millis=1000))
+if os.getenv('LAB_TELEMETRY_ENABLED','1')=='1':
+    provider.add_span_processor(BatchSpanProcessor(PilotTraceEvidence(ROLE, CONFIG.get('store_id','')),
+                                                   schedule_delay_millis=1000))
 if os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'):
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
@@ -99,6 +100,20 @@ def call_owner(endpoint, name, **body):
 
 
 if ROLE == 'api':
+    @app.get('/pilot/api/v1/runtime')
+    def runtime_status(authorization: str | None = Header(None)):
+        name, identity = principal(authorization)
+        result = call_owner('runtime', name)
+        return JSONResponse(result, status_code=200 if result['status']=='ready' else 503)
+
+    @app.get('/pilot/system/v1/customers', tags=['System APIs'])
+    def system_directory(q: str = Query('', max_length=80), after: str = Query('', max_length=68),
+                         limit: int = Query(25, ge=1, le=50), authorization: str | None = Header(None)):
+        name, identity = principal(authorization)
+        if 'system' not in identity['actions']:
+            raise HTTPException(403, 'System authority required')
+        return bound(call_owner('system', name, operation='directory', query=q, after=after, limit=limit))
+
     @app.get('/pilot/api/v1/context')
     def context(authorization: str | None = Header(None)):
         name, identity = principal(authorization)

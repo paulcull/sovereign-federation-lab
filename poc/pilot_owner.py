@@ -7,6 +7,7 @@ from fastapi import APIRouter, Header, HTTPException
 
 import operational_core as core
 from customer_mdm import CustomerMDM
+from deployment import enabled_store_ids, description
 from pilot_common import (authenticated, digest, remote, tls_client, uuid_text,
                           live_configuration, registered_principal, require_command, processing_countries)
 from pilot_projection import envelope
@@ -46,15 +47,19 @@ class PilotOwner:
                 if expired != s['expired_seen']:
                     s['expired_seen'] = expired; s['decision_revision'] += 1
                     self.runtime.write_scope(c,s); self.runtime.enqueue(c,s)
+            active_destinations=[entity['id'] for entity in self.runtime.entities.values()
+                                 if entity['store_id'] in enabled_store_ids()]
             tasks = c.execute("SELECT id,scope_id,destination_entity_id,created_at FROM "
                 "(SELECT id,scope_id,destination_entity_id,created_at,attempts,ROW_NUMBER() OVER "
                 "(PARTITION BY scope_id,destination_entity_id ORDER BY created_at DESC,id DESC) AS priority "
-                "FROM sovereignty.outbox WHERE status IN ('queued','retry')) "
-                "WHERE priority=1 ORDER BY attempts,created_at,id LIMIT 15").fetchall()
+                "FROM sovereignty.outbox WHERE status IN ('queued','retry') AND destination_entity_id=ANY(%s)) "
+                "WHERE priority=1 ORDER BY attempts,created_at,id LIMIT 15",(active_destinations,)).fetchall()
         unavailable = set()
         for event, sid, destination, cutoff in tasks:
             try:
                 binding = self.runtime.entities[destination]['store_id']
+                if binding not in enabled_store_ids():
+                    continue  # Retain durable work for resumption; never claim delivery/purge.
                 if binding in unavailable:
                     # One failed transport probe per store/batch. Keep every intent
                     # durable and rotate deferred processing attempts as retries.
@@ -286,6 +291,32 @@ def owner_router(owner):
             raise HTTPException(403, 'Workload role rejected')
         return value
 
+    @router.post('/runtime')
+    def runtime_status(body: dict, authorization: str | None = Header(None)):
+        from concurrent.futures import ThreadPoolExecutor
+        from lab_health import dependency_status
+        identity(authorization, 'api')
+        owner.principal(body.get('principal_id'))  # Reload revocation/expiry on every check.
+        status = dependency_status()
+        components = [dict(id=check['region']+'-'+kind, label=check['region']+' '+label,
+                           kind=kind, state='ready' if check[kind] else 'unavailable')
+                      for check in status['stores'] for kind,label in
+                      [('database','CockroachDB'),('policy','OPA')]]
+        config = live_configuration(owner.config)
+        def check_peer(item):
+            store, peer = item
+            try:
+                response=owner.http.get(peer['url']+'/readyz')
+                value=response.json()
+                ok=response.status_code==200 and value.get('status')=='ready' and value.get('database')=='cockroach' and value.get('store_id')==store
+            except Exception:ok=False
+            return dict(id=store+'-peer', label=owner.runtime.store_info[store]['region']+' recipient peer', kind='peer', state='ready' if ok else 'unavailable')
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            components += list(pool.map(check_peer, [(k,v) for k,v in config['peers'].items()
+                                                    if k in enabled_store_ids()]))
+        return dict(mode='live', database='cockroach', status='ready' if all(c['state']=='ready' for c in components) else 'not-ready',
+                    components=components, **description())
+
     @router.post('/system')
     def system(body: dict, authorization: str | None = Header(None)):
         identity(authorization, 'api')
@@ -296,6 +327,8 @@ def owner_router(owner):
         source = principal['source_system']
         operation = body.get('operation')
         reference = body.get('reference')
+        if operation == 'directory':
+            return owner.mdm.directory(source, body.get('query',''), body.get('after',''), body.get('limit',25))
         if operation == 'get':
             return owner.mdm.get(source, reference)
         if operation == 'upsert':

@@ -61,14 +61,16 @@ class CustomerMDM:
         return value
 
     def customer(self, c, source, reference):
-        row = c.execute('SELECT p.id,p.global_party_id,p.party_type,p.display_name,s.data_version,s.id '
+        row = c.execute('SELECT p.id,p.global_party_id,p.party_type,p.display_name,s.data_version,s.id,s.doc '
             'FROM mdm.source_reference r JOIN business.party p ON p.owner_entity_id=r.owner_entity_id AND p.id=r.party_id '
             "JOIN sovereignty.scope s ON s.owner_entity_id=p.owner_entity_id AND s.root_type='party' AND s.root_id=p.id "
             'WHERE r.owner_entity_id=%s AND r.source_system=%s AND r.external_reference=%s',
             (core.SPEC['owner_entity_id'], source, self.reference(reference))).fetchone()
         if not row:
             raise HTTPException(404, 'Source reference not found')
-        return dict(party_id=str(row[0]), global_party_id=str(row[1]), party_type=row[2],
+        policy=row[6]['policy']
+        profile='owner_only' if not policy['grants'] else 'global_minimum_no_us' if 'US' in policy['denied_countries'] else 'global_minimum'
+        return dict(party_id=str(row[0]), global_party_id=str(row[1]), party_type=row[2], identity_profile=profile,
                     display_name=row[3], version=row[4], party_scope_id=str(row[5]),
                     owner_entity_id=core.SPEC['owner_entity_id'], source_system=source,
                     external_reference=reference)
@@ -76,6 +78,28 @@ class CustomerMDM:
     def get(self, source, reference):
         with self.runtime.stores[self.runtime.home].connect() as c:
             return self.customer(c, source, reference)
+
+    def directory(self, source, query='', after='', limit=25):
+        """Bounded, source-qualified owner directory; never an experience search."""
+        if (not isinstance(query, str) or len(query) > 80 or not isinstance(after, str)
+                or type(limit) is not int or not 1 <= limit <= 50):
+            raise HTTPException(422, 'Invalid bounded customer directory query')
+        if after:self.reference(after)
+        with self.runtime.stores[self.runtime.home].connect() as c:
+            rows = c.execute('SELECT r.external_reference,p.global_party_id,p.display_name,'
+                'p.party_type,s.data_version FROM mdm.source_reference r '
+                'JOIN business.party p ON p.owner_entity_id=r.owner_entity_id AND p.id=r.party_id '
+                "JOIN sovereignty.scope s ON s.owner_entity_id=p.owner_entity_id AND s.root_type='party' AND s.root_id=p.id "
+                'WHERE r.owner_entity_id=%s AND r.source_system=%s AND r.external_reference>%s '
+                'AND (strpos(lower(r.external_reference),lower(%s))>0 '
+                'OR strpos(lower(p.display_name),lower(%s))>0) '
+                'ORDER BY r.external_reference LIMIT %s',
+                (core.SPEC['owner_entity_id'], source, after, query, query, limit + 1)).fetchall()
+        items = [dict(external_reference=r[0], global_party_id=str(r[1]), display_name=r[2],
+                      party_type=r[3], version=r[4], owner_entity_id=core.SPEC['owner_entity_id'])
+                 for r in rows[:limit]]
+        return dict(items=items, next_cursor=items[-1]['external_reference'] if len(rows)>limit else None,
+                    limit=limit, source_system=source)
 
     def transaction(self, operation, body, action):
         request_id = uuid_text(body.get('request_id'))

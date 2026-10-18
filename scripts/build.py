@@ -66,6 +66,22 @@ for source, destination in [('MIGRATION.md','migration/migration-guide.md'),
 (OUT/'lab-config.json').write_text('{"mode":"simulation","edition":9}\n')
 shutil.copy2(ROOT/'web/lab.css',OUT/'lab.css')
 shutil.copytree(ROOT/'web/clusters',OUT/'clusters',dirs_exist_ok=True)
+shutil.copytree(ROOT/'web/mdm',OUT/'mdm',dirs_exist_ok=True)
 for src,dest in [('web/portal.html','index.html'),('web/development.html','design/development-lab.html'),('web/pilot.html','pilot.html')]:
-    (OUT/dest).write_text(page('Sovereign Federation Lab', (ROOT/src).read_text()))
+    source=(ROOT/src).read_text()
+    (OUT/dest).write_text(portable(source) if source.lstrip().lower().startswith('<!doctype') else page('Sovereign Federation Lab',source))
+# A shared status strip is deliberately limited to executable application surfaces.
+# Architecture, capacity and isolation models are not relabelled as live services.
+for name in ['index.html','monitor.html','migration.html','clusters/index.html']:
+    path=OUT/name;text=path.read_text()
+    banner='<link rel="stylesheet" href="/runtime-status.css"><script type="module" src="/runtime-status.mjs"></script>'
+    text=text.replace('</head>',banner+'</head>',1)
+    strip='<div class="runtime-status" data-runtime-status="lab" data-state="checking" role="status"><span class="runtime-light"></span><div><strong>CHECKING DEPLOYMENT</strong><span>Verifying the backend connection or browser-demo configuration.</span></div></div>'
+    if name=='index.html':text=text.replace('<main>','<main>'+strip,1)
+    else:
+        # Keep the strip inside the workspace so fixed navigation does not cover it.
+        text=text.replace('</header>','</header>'+strip,1)
+    if name=='index.html':text=text.replace('data-runtime-status="lab"','data-runtime-status="lab" data-runtime-context="portal"',1)
+    elif name=='clusters/index.html':text=text.replace('data-runtime-status="lab"','data-runtime-status="lab" data-runtime-context="cluster"',1)
+    path.write_text(text)
 print(f'Built portable lab: monitor, 28 component pages, {len(adrs)} ADRs, register, deployment guide and portal.')

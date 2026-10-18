@@ -5,7 +5,8 @@ cd "$ROOT"
 dc() {
   local files=(-f "$ROOT/compose.yaml")
   if [ -n "${LAB_BUILD_CA:-}" ]; then files+=(-f "$ROOT/infra/compose.build-ca.yaml"); fi
-  if [ "${LAB_PILOT:-0}" = 1 ]; then files+=(-f "$ROOT/compose.pilot.yaml"); fi
+  if [ "${LAB_PILOT:-0}" = 1 ] || [ "${LAB_COMPACT:-0}" = 1 ]; then files+=(-f "$ROOT/compose.pilot.yaml"); fi
+  if [ "${LAB_COMPACT:-0}" = 1 ]; then files+=(-f "$ROOT/infra/compose.mdm-compact.yaml"); fi
   docker compose --project-directory "$ROOT" "${files[@]}" "$@"
 }
 doctor() {
@@ -22,6 +23,19 @@ build() {
   dc run --rm --no-deps --user "$(id -u):$(id -g)" tools scripts/verify.py
 }
 ready() { dc exec -T monitor python health_probe.py; }
+require_full() {
+  dc exec -T monitor python -c 'import json,urllib.request; d=json.load(urllib.request.urlopen("http://127.0.0.1:8000/api/health/ready")); assert d.get("footprint","full")=="full", "Full acceptance requires ./lab pilot-up; the compact footprint is not a substitute."'
+}
+compact_services() {
+  local running service
+  running=$(LAB_COMPACT=0 dc ps --services --status running)
+  for service in db-sg db-uk; do
+    [[ $'\n'"$running"$'\n' == *$'\n'"$service"$'\n'* ]] || { echo "Required compact store $service is not running." >&2; return 1; }
+  done
+  for service in db-us db-in opa-us opa-in pilot-peer-us grafana loki otel-collector; do
+    [[ $'\n'"$running"$'\n' != *$'\n'"$service"$'\n'* ]] || { echo "Suspended service $service is unexpectedly running in compact mode." >&2; return 1; }
+  done
+}
 faults() (
   # Restore actual dependencies even when a fault assertion fails.
   trap 'dc start opa-sg otel-collector >/dev/null' EXIT
@@ -47,36 +61,52 @@ read_isolation() (
   dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_read_isolation.py recovered
 )
 case "${1:-help}" in
-  pilot-up)
+  pilot-up|pilot-compact-up)
+    compact=0
+    if [ "$1" = pilot-compact-up ]; then
+      compact=1
+      LAB_PILOT=1 LAB_COMPACT=0 dc stop grafana loki otel-collector pilot-peer-us opa-us opa-in db-us db-in
+    fi
     python3 "$ROOT/scripts/pilot_setup.py"
     export LAB_PILOT=1
+    export LAB_COMPACT="$compact"
     doctor; build
-    dc up -d --wait --wait-timeout 240 db-sg db-uk db-us db-in opa-sg opa-uk opa-us opa-in
+    stores=(db-sg db-uk opa-sg opa-uk)
+    policies=(opa-sg opa-uk)
+    if [ "$compact" = 0 ]; then stores+=(db-us db-in opa-us opa-in); policies+=(opa-us opa-in); fi
+    dc up -d --wait --wait-timeout 240 "${stores[@]}"
     # OPA loads mounted bundles at process start; include new service policy on upgrades.
-    dc restart opa-sg opa-uk opa-us opa-in
+    dc restart "${policies[@]}"
     dc run --rm --no-deps --user "$(id -u):$(id -g)" -e SERVICING_ADMIN_DSN=postgresql://root@db-sg:26257/defaultdb?sslmode=disable tools poc/servicing_bootstrap.py source
     dc run --rm --no-deps --user "$(id -u):$(id -g)" -e SERVICING_ADMIN_DSN=postgresql://root@db-uk:26257/defaultdb?sslmode=disable tools poc/servicing_bootstrap.py recipient
     dc up --build -d --wait --wait-timeout 240
     ready
-    dc exec -T monitor python pilot_reconcile.py --dsn-env DB_SG
+    reconcile_options=()
+    if [ "$compact" = 1 ]; then reconcile_options+=(--wait-active 240); fi
+    dc exec -T monitor python pilot_reconcile.py --dsn-env DB_SG "${reconcile_options[@]}"
+    if [ "$compact" = 1 ]; then echo 'COMPACT MDM: two independent stores (SG + UK). US, India, migration and monitoring stack suspended. All data volumes retained. Restore the full lab with ./lab pilot-up.'; fi
     echo 'Synthetic pilot: http://localhost:8081 (PILOT_PORT overrides). Get a test credential with ./lab pilot-token crm-sg or uk-servicing.'
     ;;
   pilot-test)
     export LAB_PILOT=1
+    require_full
     ready
     dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_acceptance.py
     dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_review_acceptance.py
+    dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/mdm_workspace_acceptance.py
     for test in security_test.py pilot_scope_query_acceptance.py pilot_protocol_acceptance.py pilot_security_acceptance.py service_integration.py; do
       dc run --rm --no-deps --user "$(id -u):$(id -g)" tools "poc/tests/$test"
     done
     ;;
   pilot-isolation)
     export LAB_PILOT=1
+    require_full
     ready
     read_isolation
     ;;
   pilot-faults)
     export LAB_PILOT=1
+    require_full
     (
       trap 'dc start pilot-peer-uk opa-sg opa-uk otel-collector >/dev/null' EXIT
       dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_fault_acceptance.py setup
@@ -106,6 +136,19 @@ case "${1:-help}" in
     shift
     dc exec -T monitor python pilot_reconcile.py --dsn-env DB_SG "$@"
     ;;
+  pilot-compact-test)
+    export LAB_PILOT=1 LAB_COMPACT=1
+    ready
+    compact_services
+    dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/mdm_workspace_acceptance.py --compact
+    ;;
+  pilot-compact-status)
+    export LAB_PILOT=1 LAB_COMPACT=1
+    compact_services
+    dc ps
+    ready
+    echo 'Verified compact footprint: SG and UK active; US/India and monitoring suspended.'
+    ;;
   pilot-identity)
     shift
     python3 "$ROOT/scripts/pilot_setup.py" "$@"
@@ -118,6 +161,7 @@ case "${1:-help}" in
     dc down --remove-orphans
     ;;
   cluster-test)
+    require_full
     ready
     dc exec -T monitor python -m unittest discover -s tests -p cluster_control_unit.py
     dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/cluster_control_acceptance.py
@@ -126,6 +170,7 @@ case "${1:-help}" in
     dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/cluster_control_acceptance.py --phase restart
     ;;
   cluster-faults)
+    require_full
     ready
     (
       trap 'dc unpause db-in >/dev/null 2>&1 || :' EXIT
@@ -145,10 +190,11 @@ case "${1:-help}" in
     echo 'Ready. Default portal: http://localhost:8080 (LAB_PORT in .env overrides the port).'
     ;;
   status) dc ps; ready ;;
-  smoke) dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/lab_acceptance.py --smoke ;;
-  telemetry) dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/logging_integration.py ;;
-  faults) ready; faults ;;
+  smoke) require_full; dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/lab_acceptance.py --smoke ;;
+  telemetry) require_full; dc exec -T -e POC_URL=http://gateway:8080 monitor python tests/logging_integration.py ;;
+  faults) require_full; ready; faults ;;
   test)
+    require_full
     ready
     dc run --rm --no-deps --user "$(id -u):$(id -g)" tools scripts/verify.py
     dc run --rm --no-deps tools design/tests/check_links.py
@@ -202,6 +248,9 @@ case "${1:-help}" in
   help|--help|-h)
     cat <<'HELP'
 Sovereign Federation Lab — CockroachDB only
+  ./lab pilot-compact-up   Two-store MDM: SG/UK; US/India and telemetry suspended
+  ./lab pilot-compact-test Verify the compact MDM footprint against real SQL/OPA
+  ./lab pilot-compact-status Check actual running and suspended services
   ./lab doctor       Check Docker/Compose and configuration
   ./lab up           Build docs/images, start and wait for SQL + OPA readiness
   ./lab status       Container and dependency health

@@ -32,8 +32,10 @@ class OperationalRuntime:
         self.stores=stores;self.entities=entities;self.store_info=store_info;self.lock=lock;self.paused=paused;self.tracer=tracer
         self.home=entities[core.SPEC['owner_entity_id']]['store_id']
     def initialize(self):
+        from deployment import enabled_store_ids
         ddl=(Path(__file__).with_name('operational_schema.sql')).read_text()
         for store in self.stores.values():
+            if store.id not in enabled_store_ids():continue
             with store.connect() as c:
                 for sql in ddl.split(';'):
                     if sql.strip():c.execute(sql)

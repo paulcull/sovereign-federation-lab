@@ -6,6 +6,7 @@ import httpx, psycopg
 from psycopg.types.json import Jsonb
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -14,6 +15,7 @@ from opentelemetry.sdk.resources import Resource
 from observability import ApplicationLogs, RequestTelemetry
 from cluster_control import ClusterControl
 from seed import make_record, SCENARIOS, REGIONS, CATALOG, ENTITIES, STORE_INFO, placement
+from deployment import footprint, enabled_store_ids
 
 LOCK = threading.RLock()  # Single harness serializes policy edits and delivery. Not a distributed fence.
 CLUSTER_CONTROL = ClusterControl()
@@ -28,7 +30,7 @@ class LocalTraceExporter(SpanExporter):
                 f.write(json.dumps({"trace_id": f"{s.context.trace_id:032x}", "span": s.name, "attributes": dict(s.attributes or {}), "duration_ms": (s.end_time-s.start_time)/1e6}) + "\n")
         return SpanExportResult.SUCCESS
 provider = TracerProvider(resource=Resource.create({"service.name": "sovereign-poc-harness"}))
-provider.add_span_processor(SimpleSpanProcessor(LocalTraceExporter()))
+if os.getenv('LAB_TELEMETRY_ENABLED','1')=='1':provider.add_span_processor(SimpleSpanProcessor(LocalTraceExporter()))
 if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -159,7 +161,7 @@ def tick():
 def worker():
     while not STOP.is_set():
         try:
-            tick()
+            if footprint() == 'full':tick()
             OPERATIONAL.tick()
         except Exception:LOGS.emit('worker.retry', level=logging.WARNING)
         STOP.wait(.8)
@@ -167,7 +169,8 @@ def worker():
 async def lifespan(app):
     for attempt in range(60):
         try:
-            for s in STORES.values():s.initialize()
+            for s in STORES.values():
+                if s.id in enabled_store_ids():s.initialize()
             break
         except Exception:
             if attempt==59:raise
@@ -175,6 +178,7 @@ async def lifespan(app):
     with LOCK:
         count=0
         for s in STORES.values():
+            if s.id not in enabled_store_ids():continue
             with s.connect() as c:
                 existing=[r[0] for r in c.execute('SELECT doc FROM fe_masters')]
                 count+=len(existing)
@@ -182,7 +186,7 @@ async def lifespan(app):
                     e=ENTITIES[d['owner_entity_id']]
                     if d.get('home_store_id')!=s.id or e['store_id']!=s.id or d.get('owner_placement_version')!=e['placement_version']:
                         raise RuntimeError('Existing owner placement changed. Controlled migration required; refusing startup.')
-        if not count:
+        if not count and footprint() == 'full':
             for i in range(33):create(make_record(i))
             # One person, two authoritative entity relationships: distinct data and policy.
             first=make_record(101,'home-only','LE-GB-01');create(first)
@@ -191,15 +195,22 @@ async def lifespan(app):
     if PILOT is not None:PILOT.mdm.initialize()
     if MIGRATION is not None:MIGRATION.initialize()
     STOP.clear();thread=threading.Thread(target=worker,daemon=True);thread.start()
-    CLUSTER_CONTROL.start()
+    if footprint() == 'full':CLUSTER_CONTROL.start()
     LOGS.emit('service.started')
     try:
         yield
     finally:
         STOP.set();thread.join(timeout=5)
-        CLUSTER_CONTROL.shutdown()
+        if footprint() == 'full':CLUSTER_CONTROL.shutdown()
         LOGS.emit('service.stopped');LOGS.shutdown();provider.shutdown()
 app=FastAPI(title='Sovereign Federation Lab · CockroachDB',lifespan=lifespan,docs_url='/api-docs',redoc_url=None)
+async def footprint_boundary(request, call_next):
+    path=request.scope.get('path','')
+    if (footprint()=='mdm-compact' and path.startswith('/api/')
+            and not path.startswith(('/api/health/','/api/pilot/internal/'))):
+        return JSONResponse(status_code=503,content={'detail':'The federation monitor, migration and cluster controls are suspended in compact MDM. Use the customer workspace on port 8081, or restore the full lab with ./lab pilot-up.'})
+    return await call_next(request)
+if footprint()=='mdm-compact':app.middleware('http')(footprint_boundary)
 app.add_middleware(RequestTelemetry, logs=LOGS, tracer=TRACER)
 app.include_router(CLUSTER_CONTROL.router())
 from lab_health import router as health_router
@@ -307,4 +318,6 @@ from migration import MigrationRuntime,make_router
 if os.getenv('MIGRATION_STORAGE','cockroach')!='cockroach':raise RuntimeError('The development service requires CockroachDB; no SQLite fallback is permitted')
 MIGRATION=MigrationRuntime(mode='cockroach',tracer=TRACER) if os.getenv('MIGRATION_ENABLED')=='1' else None
 if MIGRATION is not None:app.include_router(make_router(MIGRATION))
+if footprint()=='mdm-compact' and (PILOT is None or MIGRATION is not None):
+    raise RuntimeError('Compact MDM requires pilot identities and suspended migration; use ./lab pilot-compact-up')
 app.mount('/',StaticFiles(directory=os.getenv('UI_DIR',str(Path(__file__).resolve().parents[1]/'dist')),html=True),name='monitor')

@@ -15,6 +15,7 @@ from psycopg.types.json import Jsonb
 
 import operational_core as core
 from seed import ENTITIES
+from deployment import enabled_store_ids
 
 
 PENDING_LOOKUP_SQL = (
@@ -70,12 +71,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dsn-env', default='PILOT_OWNER_DSN')
     parser.add_argument('--batch-size', type=int, default=10)
+    parser.add_argument('--wait-active', type=int, default=0,
+                        help='Wait up to this many seconds for startup intents to active stores')
     args = parser.parse_args()
     dsn = os.getenv(args.dsn_env)
     if not dsn:
         parser.error('The selected database environment variable is required')
     if not 1 <= args.batch_size <= 50:
         parser.error('Batch size must be between 1 and 50')
+    if not 0 <= args.wait_active <= 600:
+        parser.error('Active reconciliation wait must be between 0 and 600 seconds')
     after, examined, queued = None, 0, 0
     with psycopg.connect(dsn, connect_timeout=3) as connection:
         last = connection.execute('SELECT id FROM sovereignty.scope WHERE owner_entity_id=%s ORDER BY id DESC LIMIT 1',
@@ -94,7 +99,23 @@ def main():
             after = page['after']; examined += page['examined']; queued += page['queued']
             if page['examined'] < args.batch_size:
                 break
-    print(json.dumps(dict(scopes_examined=examined, intents_queued=queued, complete=True)))
+    if args.wait_active:
+        cutoff, deadline = time.time(), time.monotonic() + args.wait_active
+        destinations = [entity['id'] for entity in ENTITIES.values()
+                        if entity['store_id'] in enabled_store_ids()]
+        while True:
+            with psycopg.connect(dsn, connect_timeout=3) as connection:
+                pending = connection.execute(
+                    "SELECT count(*) FROM sovereignty.outbox WHERE status IN ('queued','retry') "
+                    'AND destination_entity_id=ANY(%s) AND created_at<=%s',
+                    (destinations, cutoff)).fetchone()[0]
+            if pending == 0:
+                break
+            if time.monotonic() >= deadline:
+                raise SystemExit('Active startup reconciliation is still pending; startup did not complete. Check peers and policies, then retry.')
+            time.sleep(1)
+    print(json.dumps(dict(scopes_examined=examined, intents_queued=queued, complete=True,
+                         active_startup_drained=bool(args.wait_active))))
 
 
 if __name__ == '__main__':
