@@ -6,7 +6,7 @@ See [A1–A12](ADMIN_TUI_SPEC.md) and [the walkthrough](ADMIN_TUI.md).
 
 ## Executed locally
 
-- Python 3.12, Textual 8.2.8; all **19** registry, health-boundary, Textual and
+- Python 3.12, Textual 8.2.8; all **20** registry, health-boundary, Textual and
   terminal PTY tests passed. The JSON CLI also ran with Python site packages
   disabled, proving it does not require Textual.
 - Real temporary files and separate processes exercised concurrent writers,

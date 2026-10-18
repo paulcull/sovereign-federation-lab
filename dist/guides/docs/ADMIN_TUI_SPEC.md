@@ -51,7 +51,7 @@ terminal requests resizing while preserving configuration. Screens:
    detail and stable node rows. Add store opens a form; configure selected store
    changes desired state/count. Country is immutable after registration.
 2. **Environment**: independent observability intent, actual gateway footprint,
-   last successful health time and bounded local disk/memory observations where
+   last valid observation time and bounded local disk/memory observations where
    available. Shared host resources are labelled as shared.
 3. **Health**: actual SQL/OPA checks by known store, unavailable/suspended/unknown
    states and source age. Failed refresh invalidates current healthy claims;

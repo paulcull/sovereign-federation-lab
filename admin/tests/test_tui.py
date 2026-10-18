@@ -97,14 +97,38 @@ class TUITests(unittest.IsolatedAsyncioTestCase):
             await pilot.click('#review-form')
             await pilot.click('#save-review')
             self.assertEqual(self.registry.read()['observability']['desired_state'], 'suspended')
-            app.query_one('#tabs', TabbedContent).active = 'activity-tab'
+            await pilot.click('#--content-tab-activity-tab')
             await pilot.pause()
+            self.assertEqual(app.query_one('#tabs', TabbedContent).active, 'activity-tab')
+            self.assertTrue(app.query_one('#activity-table').is_on_screen)
             self.assertEqual(app.query_one('#activity-table', DataTable).row_count, 3)
-            app.query_one('#tabs', TabbedContent).active = 'health-tab'
+            await pilot.click('#--content-tab-health-tab')
+            await pilot.pause()
+            self.assertEqual(app.query_one('#tabs', TabbedContent).active, 'health-tab')
             app.accept_health(Observation(time.time() + .01, False, error='gateway_unavailable'))
             await pilot.pause()
             self.assertIn('UNVERIFIED', str(app.query_one('#health-note', Static).render()))
             self.assertEqual(self.registry.read()['revision'], 3)
+
+    async def test_minimum_terminal_forms_and_actual_tab_navigation(self):
+        app = AdminApp(self.registry, ControlledObserver(), auto_health=False)
+        async with app.run_test(size=(80, 24)) as pilot:
+            await self.register(app, pilot)
+            await pilot.click('#save-review')
+            await pilot.pause()
+            self.assertEqual(self.registry.read()['stores'][-1]['id'], 'STORE-DE-01')
+            for tab in ['environment', 'health', 'activity', 'stores']:
+                await pilot.click('#--content-tab-' + tab + '-tab')
+                await pilot.pause()
+                self.assertEqual(app.query_one('#tabs', TabbedContent).active, tab + '-tab')
+            await pilot.press('o')
+            app.screen.query_one('#desired-state', Select).value = 'suspended'
+            await pilot.click('#review-form')
+            await pilot.click('#save-review')
+            await pilot.pause()
+            await pilot.press('o')
+            self.assertEqual(app.screen.query_one('#desired-state', Select).value, 'suspended')
+            await pilot.press('escape')
 
 
 if __name__ == '__main__':unittest.main()

@@ -20,10 +20,11 @@ async def capture(folder, state_dir):
             app.selected = 'STORE-DE-01'
             app.render_state()
         for tab in ['stores', 'health', 'environment', 'activity']:
-            app.query_one('#tabs', TabbedContent).active = tab + '-tab'
+            await pilot.click('#--content-tab-' + tab + '-tab')
             await pilot.pause()
+            assert app.query_one('#tabs', TabbedContent).active == tab + '-tab'
             app.save_screenshot(tab + '.svg', path=str(folder))
-        app.query_one('#tabs', TabbedContent).active = 'stores-tab'
+        await pilot.click('#--content-tab-stores-tab')
         await pilot.resize_terminal(80, 24)
         await pilot.pause()
         app.save_screenshot('stores-80x24.svg', path=str(folder))
