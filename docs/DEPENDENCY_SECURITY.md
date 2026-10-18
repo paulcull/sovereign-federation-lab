@@ -1,6 +1,6 @@
 # Dependency security and update procedure
 
-The dependency audit covers the application, optional scaling tools, browser and
+The dependency audit covers the application, optional scaling and terminal tools, browser and
 audit tooling, and the actual images resolved by both Compose files, including
 build helpers. It does not inspect customer records or private pilot credentials.
 Use synthetic data for the functional acceptance that follows an upgrade.
@@ -140,7 +140,7 @@ until **15 November 2026 at 00:00 UTC**. This does not approve production, a ban
 pilot, a public preview or real customer data. It does not patch the binaries or
 claim that the Grafana Tempo findings or other embedded code are unreachable.
 
-The register now has **57 exact scopes covering 98 otherwise-blocking finding
+The 16 October register had **57 exact scopes covering 98 otherwise-blocking finding
 instances** in the observed inventory: 34 CockroachDB, 60 Grafana and four Loki.
 Only explicit `--risk-context synthetic-lab` can apply them; strict mode still
 rejects the vulnerable artifacts. New CVEs, changed packages, versions or image
@@ -166,6 +166,35 @@ validation; no vendor fork is introduced here.
 
 See the [observability upgrade evidence](security/observability-upgrade-2026-10-16.json)
 for selected releases, configuration provenance, container checks and local limits.
+
+## Additional Grafana acceptance — 18 October 2026
+
+The user explicitly approved **CVE-2026-100349** after its newly reported HIGH
+finding blocked the full lab run. **SFL-RA-0058** covers only
+`github.com/getkin/kin-openapi` **v0.144.0**, severity **HIGH**, in
+`grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f`.
+The owner is **paulcull**, and expiry remains **15 November 2026 at 00:00 UTC**.
+
+The dependency can panic through a nil-pointer dereference during response
+validation, causing denial of service. The library fix is **0.146.0**. The latest
+official Grafana image still resolved to the pinned digest at the 18 October
+check. Acceptance leaves the vulnerable code present; it makes no assertion
+that the affected path is unreachable.
+
+This is the same trusted single-host, synthetic-data-only scope, with loopback
+gateways and internal SQL/admin ports. It grants no production, bank-pilot,
+public-preview or real-customer-data approval. The prior 57 records are unchanged.
+The register now has **58 exact scopes**; against the recorded full CI inventory,
+the additional record covers its one remaining finding, bringing accepted
+instances to **99**. The [approval and scanner provenance](security/grafana-risk-acceptance-2026-10-18.json)
+retain the exact affected target, raw report hash and prior workflow.
+
+Strict mode, expiry checks, exact image/digest/package/version/severity matching,
+all Python advisory checks and scan-completeness checks remain enforced. New or
+changed findings do not inherit this decision. Focused regressions exercise the
+new record's boundaries and retained raw finding; fresh CI remains the authority
+for the complete post-approval scan. Replace the image with a compatible patched
+vendor build, rerun full acceptance and retire the record before expiry.
 
 ## Refresh dependencies
 

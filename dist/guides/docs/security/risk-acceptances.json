@@ -912,6 +912,22 @@
       "rationale": "Permit continued synthetic development with the exact pinned grafana/loki vendor image and explicitly approved findings enumerated in docs/security/non-cockroach-exception-requests-2026-10-16.json while awaiting compatible patched vendor builds. The vulnerable code remains present; no finding is claimed unreachable or patched by this acceptance.",
       "conditions": "Synthetic data only; trusted single-host lab; development gateways bound to loopback; SQL and admin ports remain internal to Compose. This is not production, bank-pilot, public-preview or real-customer-data approval. The context flag declares this operating scope; the audit does not independently verify runtime exposure or data contents.",
       "remediation": "Replace with a compatible vendor image containing the fixes, execute complete container and dependency acceptance, and retire this record. Review before expiry or any deployment, image, package-version or exposure change. Unlisted findings and other components remain subject to the gate."
+    },
+    {
+      "id": "SFL-RA-0058",
+      "context": "synthetic-lab",
+      "image": "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f",
+      "cve": "CVE-2026-100349",
+      "package": "github.com/getkin/kin-openapi",
+      "installed_version": "v0.144.0",
+      "severity": "HIGH",
+      "owner": "paulcull",
+      "approved_by": "Explicit user approval in the repository development chat on 2026-10-18: ok - add this to approved exceptions, in direct response to the identified Grafana CVE-2026-100349 finding. Exact pinned image/package/version/severity only; existing synthetic-lab scope and 2026-11-15T00:00:00Z expiry retained.",
+      "approved_at": "2026-10-18T17:10:40Z",
+      "expires_at": "2026-11-15T00:00:00Z",
+      "rationale": "Permit continued synthetic development with the exact pinned Grafana 13.2.4 image while awaiting a compatible vendor build containing kin-openapi 0.146.0 or later. Response validation can panic through a nil-pointer dereference and cause denial of service. The vulnerable code remains present; this acceptance does not claim the finding is fixed or unreachable.",
+      "conditions": "Synthetic data only; trusted single-host lab; development gateways bound to loopback; SQL and admin ports remain internal to Compose. This is not production, bank-pilot, public-preview or real-customer-data approval. The context flag declares this operating scope; the audit does not independently verify runtime exposure or data contents.",
+      "remediation": "Replace with a compatible vendor image containing kin-openapi 0.146.0 or later, execute complete container and dependency acceptance, and retire this record. Review before expiry or any deployment, image, package-version or exposure change. Unlisted findings and other components remain subject to the gate."
     }
   ]
 }

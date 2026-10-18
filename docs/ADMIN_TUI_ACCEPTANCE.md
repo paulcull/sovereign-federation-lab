@@ -61,9 +61,12 @@ local gateway for SVG captures of Stores, Health, Environment, Activity and the
 configuration. The separate terminal CI job and full/compact live-health gates
 are included in `.github/workflows/lab.yml`.
 
-The inherited container security blocker is **CVE-2026-100349** in Grafana 13.2.4
-(`github.com/getkin/kin-openapi` v0.144.0; library fix 0.146.0). No exception for
-that finding has been approved or added. See [the exact image/finding record](security/mdm-workspace-2026-10-18.json).
-Existing lab-only risk acceptances remain unchanged. A production controller,
+The initial container security blocker was **CVE-2026-100349** in Grafana 13.2.4
+(`github.com/getkin/kin-openapi` v0.144.0; library fix 0.146.0). On 18 October
+the user approved [SFL-RA-0058](security/grafana-risk-acceptance-2026-10-18.json)
+for this exact image/finding in the synthetic lab through 15 November 2026 at
+00:00 UTC. The vulnerable code remains; strict mode still blocks it. Fresh CI
+must establish the resulting audit outcome. The previous 57 records are unchanged.
+A production controller,
 automatic scaling/provisioning, target assignment and monitoring service switches
 are not implemented by saving desired intent.
