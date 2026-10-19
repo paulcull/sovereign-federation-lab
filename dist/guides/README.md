@@ -21,6 +21,12 @@ node status, durable health checks and native synthetic backup/restore rehearsal
 Its **Environment** view covers supporting infrastructure separately. See
 [cluster control](docs/CLUSTER_CONTROL.md) for the implemented scope and commands.
 
+For searchable logical stores/nodes, reviewed configuration and live SQL/OPA
+health, use the optional **`./lab admin` terminal control plane**. Register Germany
+or adjust desired counts without assigning infrastructure targets yet. See the
+[admin walkthrough](docs/ADMIN_TUI.md) for installation and the distinction
+between saved intent, observed health and hosting readiness.
+
 Search application logs at **http://localhost:8080/grafana/d/sovereign-logs**. The provisioned Grafana dashboard queries Loki through a real OpenTelemetry logs pipeline. Run `./lab telemetry` to verify the complete path. See the [observability guide](docs/OBSERVABILITY.md).
 
 `./lab up` rebuilds documentation, validates local navigation, builds images and waits for actual CockroachDB/OPA readiness. Both service entry points reject SQLite configuration. A live API failure stays visible and never switches to browser simulation. The hosted portal is separately and explicitly configured as a browser demonstration.

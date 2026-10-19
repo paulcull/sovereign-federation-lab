@@ -90,6 +90,10 @@ class AuditTests(unittest.TestCase):
         # scan batch. This assertion also protects against command failure reuse.
         self.assertFalse(report.exists())
         if command[0] == 'pip-audit':
+            locked = {str(path.relative_to(AUDIT.ROOT)) for path in
+                      map(Path, [command[i + 1] for i, part in enumerate(command) if part == '-r'])}
+            self.assertEqual(locked, {'poc/requirements.txt', 'scale/requirements.txt',
+                                     'requirements-dev.txt', 'requirements-admin.txt'})
             if self.python_report is not None:
                 report.write_text(json.dumps(self.python_report))
             return SimpleNamespace(returncode=self.python_code)
@@ -188,23 +192,89 @@ class AuditTests(unittest.TestCase):
 
     def test_shipped_observability_register_matches_only_the_approved_scopes(self):
         policy = json.loads(AUDIT.RISK_POLICY.read_text())['acceptances']
-        self.assertEqual(len(policy), 57)
+        self.assertEqual(len(policy), 58)
         requests = self.observability_requests()
         records = [r for r in policy if not r['image'].startswith('cockroachdb/')]
         expected = {(request['image'], finding['VulnerabilityID'], finding['PkgName'],
                      finding['InstalledVersion'], finding['Severity'])
                     for request in requests for finding in request['findings']}
         self.assertEqual(len(expected), 23)
-        self.assertEqual(len(records), 23)
+        request = self.additional_grafana_request()
+        finding = request['finding']
+        expected.add((request['image'], finding['VulnerabilityID'], finding['PkgName'],
+                      finding['InstalledVersion'], finding['Severity']))
+        self.assertEqual(len(expected), 24)
+        self.assertEqual(len(records), 24)
         self.assertEqual({(r['image'], r['cve'], r['package'], r['installed_version'], r['severity'])
                           for r in records}, expected)
         self.assertEqual({r['id'] for r in records},
-                         {f'SFL-RA-{number:04d}' for number in range(35, 58)})
+                         {f'SFL-RA-{number:04d}' for number in range(35, 59)})
         self.assertEqual({r['id'] for r in records},
-                         {risk_id for request in requests for risk_id in request['active_acceptance_ids']})
+                         {risk_id for request in requests for risk_id in request['active_acceptance_ids']} | {'SFL-RA-0058'})
         self.assertEqual({r['context'] for r in records}, {'synthetic-lab'})
         self.assertEqual({r['owner'] for r in records}, {'paulcull'})
         self.assertEqual({r['expires_at'] for r in records}, {'2026-11-15T00:00:00Z'})
+
+    def additional_grafana_request(self):
+        return json.loads((AUDIT.ROOT / 'docs/security/grafana-risk-acceptance-2026-10-18.json').read_text())
+
+    def prepare_additional_grafana_risk(self):
+        request = self.additional_grafana_request()
+        self.risk_context = 'synthetic-lab'
+        self.now = datetime(2026, 10, 19, tzinfo=timezone.utc)
+        self.images = [request['image']]
+        self.repo_digests = {request['image']: request['repo_digests'][:]}
+        self.vulnerabilities = [dict(request['finding'])]
+
+    def test_additional_grafana_acceptance_is_exact_and_retains_the_raw_finding(self):
+        self.prepare_additional_grafana_risk()
+        policy = json.loads(AUDIT.RISK_POLICY.read_text())['acceptances']
+        record = next(r for r in policy if r['id'] == 'SFL-RA-0058')
+        self.assertEqual(tuple(record[k] for k in ['context', 'image', 'cve', 'package', 'installed_version', 'severity']),
+            ('synthetic-lab', 'grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f',
+             'CVE-2026-100349', 'github.com/getkin/kin-openapi', 'v0.144.0', 'HIGH'))
+        self.assertEqual(record['expires_at'], '2026-11-15T00:00:00Z')
+        self.assertEqual(record['owner'], 'paulcull')
+        code, summary = self.invoke()
+        self.assertEqual(code, 0)
+        self.assertEqual(summary['status'], 'passed_with_risk_acceptance')
+        self.assertEqual(summary['accepted_high_critical'], 1)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 0)
+        image = summary['images'][0]
+        self.assertEqual(image['accepted_findings'][0]['risk_acceptance_id'], 'SFL-RA-0058')
+        raw = json.loads((self.output / image['report']).read_text())
+        self.assertEqual(raw['Results'][0]['Vulnerabilities'], self.vulnerabilities)
+
+    def test_additional_grafana_acceptance_cannot_expand_context_time_or_scope(self):
+        for mode in ['strict', 'expired', 'not_yet_approved', 'cve', 'package', 'version', 'severity', 'image', 'digest', 'missing_digest']:
+            with self.subTest(mode=mode):
+                self.prepare_additional_grafana_risk()
+                if mode == 'strict':self.risk_context = None
+                elif mode == 'expired':self.now = datetime(2026, 11, 15, tzinfo=timezone.utc)
+                elif mode == 'not_yet_approved':self.now = datetime(2026, 10, 18, tzinfo=timezone.utc)
+                elif mode in ['cve', 'package', 'version', 'severity']:
+                    field, value = {'cve': ('VulnerabilityID', 'CVE-2099-99999'),
+                        'package': ('PkgName', 'unapproved-package'), 'version': ('InstalledVersion', 'v0.146.0'),
+                        'severity': ('Severity', 'CRITICAL')}[mode]
+                    self.vulnerabilities[0][field] = value
+                elif mode == 'image':
+                    self.images = ['grafana/grafana:other']
+                    self.repo_digests[self.images[0]] = self.additional_grafana_request()['repo_digests'][:]
+                else:
+                    self.repo_digests[self.images[0]] = [] if mode == 'missing_digest' else ['grafana/grafana@sha256:' + '0' * 64]
+                code, summary = self.invoke()
+                self.assertEqual(code, 1)
+                self.assertFalse(summary['passed'])
+                self.assertEqual(summary['accepted_high_critical'], 0)
+                self.assertEqual(summary['unaccepted_fixable_high_critical'], 1)
+
+    def test_additional_grafana_acceptance_does_not_hide_another_finding(self):
+        self.prepare_additional_grafana_risk()
+        self.vulnerabilities.append(self.vulnerabilities[0] | {'VulnerabilityID': 'CVE-2099-99999'})
+        code, summary = self.invoke()
+        self.assertEqual(code, 1)
+        self.assertEqual(summary['accepted_high_critical'], 1)
+        self.assertEqual(summary['unaccepted_fixable_high_critical'], 1)
 
     def test_observability_acceptances_retain_all_64_raw_finding_instances(self):
         accepted = 0

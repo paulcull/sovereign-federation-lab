@@ -89,7 +89,10 @@ The initial PR run passed all functional stages, including complete migration,
 outages, telemetry and full/compact/full restoration. Its security gate discovered
 new Nginx and Grafana findings. The gateway now uses the official same-version
 Nginx slim image, omitting the unused vulnerable XML/image-filter dependencies.
-The new Grafana finding remains outside prior exception scopes and blocks the
-gate pending remediation or explicit approval. See the
-[dated security evidence](security/mdm-workspace-2026-10-18.json); the active risk
-register is unchanged by this record.
+The new Grafana finding initially remained outside prior exception scopes and
+blocked the gate. The user explicitly approved the exact additional scope on
+18 October as [SFL-RA-0058](security/grafana-risk-acceptance-2026-10-18.json),
+for the trusted synthetic lab only, expiring 15 November 2026 at 00:00 UTC.
+See the [dated security evidence](security/mdm-workspace-2026-10-18.json).
+The vulnerable code remains and strict mode still rejects it; fresh CI must
+establish the post-approval result.

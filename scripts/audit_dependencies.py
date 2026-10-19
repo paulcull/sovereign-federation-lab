@@ -138,7 +138,7 @@ def audit(args, output, reports, summary):
     python_report = reports / 'python.json'
     command = [args.pip_audit, '--vulnerability-service', 'pypi', '--require-hashes',
                '--progress-spinner', 'off', '--format', 'json', '--output', str(python_report)]
-    for requirements in ['poc/requirements.txt', 'scale/requirements.txt', 'requirements-dev.txt']:
+    for requirements in ['poc/requirements.txt', 'scale/requirements.txt', 'requirements-dev.txt', 'requirements-admin.txt']:
         command.extend(['-r', str(ROOT / requirements)])
     result = subprocess.run(command, cwd=ROOT, check=False)
     if result.returncode not in (0, 1) or not python_report.exists():

@@ -1,0 +1,52 @@
+{
+  "recorded_at": "2026-10-18T17:10:40Z",
+  "risk_acceptance_id": "SFL-RA-0058",
+  "approval_quote": "ok - add this to approved exceptions",
+  "owner": "paulcull",
+  "context": "synthetic-lab",
+  "expires_at": "2026-11-15T00:00:00Z",
+  "image": "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f",
+  "repo_digests": [
+    "grafana/grafana@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f"
+  ],
+  "finding": {
+    "VulnerabilityID": "CVE-2026-100349",
+    "PkgName": "github.com/getkin/kin-openapi",
+    "InstalledVersion": "v0.144.0",
+    "FixedVersion": "0.146.0",
+    "Severity": "HIGH"
+  },
+  "affected_target": "usr/share/grafana/bin/grafana",
+  "finding_instances": 1,
+  "evidence": {
+    "workflow": "https://github.com/paulcull/sovereign-federation-lab/actions/runs/39145936779",
+    "head_commit": "5871f2529153674f3fd67f6c8488303f065439f5",
+    "tested_merge_commit": "99ad2a31aa1b773d041f472f9a25b670f2278162",
+    "artifact": "lab-evidence",
+    "trivy_report": "run-9dac154be0544906a394f6df3973b2a1/image-02.json",
+    "trivy_report_sha256": "931042321d0a620ef35f76cd8336274d7423248f1f6ba88b4adbec2ade02b155"
+  },
+  "decision": {
+    "existing_57_records_unchanged": true,
+    "total_exact_scopes": 58,
+    "previously_accepted_instances": 98,
+    "newly_accepted_instances": 1,
+    "expected_accepted_instances_in_recorded_inventory": 99,
+    "vulnerability_remains_present": true,
+    "scanner_or_workflow_logic_changed": false
+  },
+  "conditions": "Synthetic data only; trusted single-host lab; development gateways bound to loopback; SQL and admin ports remain internal to Compose. This is not production, bank-pilot, public-preview or real-customer-data approval. The context flag declares this operating scope; the audit does not independently verify runtime exposure or data contents.",
+  "remediation": "Replace with a compatible vendor image containing kin-openapi 0.146.0 or later, execute complete container and dependency acceptance, and retire this record. Review before expiry or any deployment, image, package-version or exposure change. Unlisted findings and other components remain subject to the gate.",
+  "retained_inventory_validation": {
+    "kind": "Reclassification of retained complete scanner reports; not a fresh scan",
+    "source_workflow": "https://github.com/paulcull/sovereign-federation-lab/actions/runs/39145936779",
+    "source_commit": "99ad2a31aa1b773d041f472f9a25b670f2278162",
+    "policy_sha256": "c93e916f2cec980c87d34a616e951b80a75612eb65ccba1205687b3e9d32914f",
+    "previous_57_records_unchanged": true,
+    "fixable_high_critical": 99,
+    "accepted": 99,
+    "unaccepted": 0,
+    "new_record_instances": 1,
+    "strict_unaccepted": 99
+  }
+}

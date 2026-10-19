@@ -2,6 +2,8 @@
 .env.*
 !.env.example
 .venv/
+.venv-admin/
+.lab-admin/
 .pilot/
 .pilot*/
 __pycache__/

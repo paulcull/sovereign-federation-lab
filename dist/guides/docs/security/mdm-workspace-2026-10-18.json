@@ -14,7 +14,7 @@
     "focused_scan": "Full Trivy 0.76.0 scan: 21 OS packages, no libexpat, zero fixable HIGH/CRITICAL findings. This is focused evidence; complete CI remains required."
   },
   "remaining_block": {
-    "status": "Unapproved; security gate remains blocking",
+    "status": "Approved exact synthetic-lab exception SFL-RA-0058 on 2026-10-18; vulnerable code remains and strict mode still blocks",
     "image": "grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f",
     "binary": "usr/share/grafana/bin/grafana",
     "cve": "CVE-2026-100349",
@@ -24,7 +24,10 @@
     "severity": "HIGH",
     "reported_effect": "Denial of service through a nil-pointer dereference in response validation",
     "release_check": "On 18 October, Grafana latest resolved to the same pinned 13.2.4 image. A library fix is available; no newer vendor image was observed.",
-    "proposed_scope_if_approved": "Only this exact image/CVE/package/version/severity, synthetic single-host lab, loopback gateway, existing lab controls, expiry 15 November 2026 00:00 UTC. No production, bank-data or public-preview approval.",
-    "risk_policy_changed": false
+    "risk_policy_changed": true,
+    "previous_status": "Unapproved; security gate remains blocking",
+    "approved_scope": "Only this exact image/CVE/package/version/severity, synthetic single-host lab, loopback gateway, existing lab controls, expiry 15 November 2026 00:00 UTC. No production, bank-data or public-preview approval.",
+    "risk_acceptance_id": "SFL-RA-0058",
+    "approval_record": "docs/security/grafana-risk-acceptance-2026-10-18.json"
   }
 }

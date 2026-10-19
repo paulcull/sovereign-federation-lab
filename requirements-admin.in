@@ -1,0 +1,2 @@
+# Optional terminal application; never installed in business service images.
+textual==8.2.8

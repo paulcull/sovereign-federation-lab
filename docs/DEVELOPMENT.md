@@ -76,6 +76,8 @@ SQL stays inside Compose networking; only the gateway is published on loopback.
 | `./lab doctor` | Check Docker, Compose features and resolved configuration |
 | `./lab up` | Build docs/images; start and wait for SQL/OPA readiness |
 | `./lab status` | Container state and dependency readiness |
+| `./lab admin` | Optional rich terminal: logical registry, reviewed intent, receipts and read-only live health; [setup](ADMIN_TUI.md) |
+| `./lab admin status` | Standard-library JSON configuration and health; no Textual required |
 | `./lab smoke` | Gateway routes, actual database identities and OPA |
 | `./lab faults` | Stop real source OPA/Collector; verify fail-closed export, durable SQL audit and recovery |
 | `./lab test` | Engines, Rego, real API/SQL scenarios, migration, restart and OTel receipt |

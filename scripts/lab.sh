@@ -61,6 +61,12 @@ read_isolation() (
   dc run --rm --no-deps --user "$(id -u):$(id -g)" tools poc/tests/pilot_read_isolation.py recovered
 )
 case "${1:-help}" in
+  admin)
+    shift
+    admin_python=${LAB_ADMIN_PYTHON:-python3}
+    if [ -z "${LAB_ADMIN_PYTHON:-}" ] && [ -x "$ROOT/.venv-admin/bin/python" ]; then admin_python="$ROOT/.venv-admin/bin/python"; fi
+    exec "$admin_python" -m admin "$@"
+    ;;
   pilot-up|pilot-compact-up)
     compact=0
     if [ "$1" = pilot-compact-up ]; then
@@ -255,6 +261,8 @@ case "${1:-help}" in
   help|--help|-h)
     cat <<'HELP'
 Sovereign Federation Lab — CockroachDB only
+  ./lab admin        Logical store/node TUI and live gateway health (optional dependencies)
+  ./lab admin config|status|history     JSON administration without terminal dependencies
   ./lab pilot-compact-up   Two-store MDM: SG/UK; US/India and telemetry suspended
   ./lab pilot-compact-test Verify the compact MDM footprint against real SQL/OPA
   ./lab pilot-compact-status Check actual running and suspended services
